@@ -1,29 +1,387 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>Seras学院 自習室在室人数</title>
+
     <link rel="icon" href="mogura.png">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seras学院 自習室在室人数</title> <style>
-        /* 画面の余白をなくし、高さを100%にする設定 */
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            overflow: hidden; /* 外側のスクロールバーを消す */
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Noto+Sans+JP:wght@500;700;900&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --brand-color: #f29f30;
+            --bg-color: #f2f4f8;
+            --text-main: #2d3436;
+            --text-sub: #a4b0be;
+
+            --status-low: #00cec9;
+            --status-mid: #f29f30;
+            --status-high: #ff7675;
         }
-        /* iframeを画面いっぱいに広げる設定 */
-        iframe {
-            display: block;
+
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px 20px 40px 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ヘッダー */
+        header {
+            margin: 20px 0 40px 0;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            font-weight: 900;
+            letter-spacing: 0.02em;
+            margin: 0;
+            color: var(--text-main);
+        }
+
+        .brand {
+            color: var(--brand-color);
+        }
+
+        .subtitle {
+            font-size: 0.8rem;
+            color: var(--text-sub);
+            font-weight: 700;
+            margin-top: 8px;
+            letter-spacing: 0.05em;
+        }
+
+        /* メインエリア */
+        main {
             width: 100%;
+            max-width: 420px;
+        }
+
+        /* --- カードデザイン共通 --- */
+        .card-base {
+            background: #ffffff;
+            border-radius: 32px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.04);
+            position: relative;
+        }
+
+        /* 在室人数カード */
+        .status-card {
+            padding: 28px;
+            margin-bottom: 24px;
+            transition: transform 0.2s ease;
+        }
+
+        .card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .room-name {
+            font-size: 1.2rem;
+            font-weight: 900;
+            color: var(--text-main);
+        }
+
+        .status-badge {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 100px;
+            color: #fff;
+            background: #dfe6e9;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: background 0.4s ease;
+        }
+
+        .number-area {
+            text-align: center;
+            margin: 15px 0 20px 0;
+        }
+
+        .number {
+            font-size: 4.5rem;
+            font-weight: 900;
+            line-height: 1;
+            letter-spacing: -2px;
+            color: var(--text-main);
+            font-feature-settings: "tnum";
+        }
+
+        .unit {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-sub);
+            margin-left: 6px;
+        }
+
+        .bar-bg {
+            width: 100%;
+            height: 12px;
+            background: #f1f2f6;
+            border-radius: 100px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
             height: 100%;
-            border: none; /* 枠線を消す */
+            width: 0%;
+            border-radius: 100px;
+            transition: width 1s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.4s;
+        }
+
+        /* --- 更新日時（カードの直下へ移動） --- */
+        .timestamp-area {
+            text-align: right;
+            /* 右寄せで控えめに */
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            font-weight: 500;
+            margin-top: -10px;
+            margin-bottom: 50px;
+            /* ガイドとの距離を確保 */
+            padding-right: 10px;
+        }
+
+        /* --- ガイドセクション --- */
+        .section-title {
+            font-size: 1.0rem;
+            /* サイズアップ */
+            font-weight: 900;
+            color: var(--brand-color);
+            /* ブランドカラーに変更して目立たせる */
+            margin: 0 0 20px 0;
+            letter-spacing: 0.1em;
+            text-align: center;
+            /* 中央揃えに */
+            text-transform: uppercase;
+        }
+
+        .guide-card {
+            padding: 10px;
+            margin-bottom: 40px;
+        }
+
+        .guide-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 20px;
+            border-bottom: 1px solid #f2f4f8;
+        }
+
+        .guide-item:last-child {
+            border-bottom: none;
+        }
+
+        .guide-icon {
+            font-size: 1.8rem;
+            background: #f8f9fa;
+            min-width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 16px;
+        }
+
+        .guide-content {
+            padding-top: 2px;
+        }
+
+        .guide-head {
+            font-size: 1rem;
+            font-weight: 900;
+            color: var(--text-main);
+            margin-bottom: 4px;
+            line-height: 1.4;
+        }
+
+        .guide-desc {
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            font-weight: 500;
+            line-height: 1.6;
+        }
+
+        .error-msg {
+            text-align: center;
+            color: var(--status-high);
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            display: none;
         }
     </style>
 </head>
+
 <body>
-    <iframe src="https://script.google.com/macros/s/AKfycbwzt1p4sAXrPWeY9LSo6xzxB_AtXjazXFiaRpdokBXsFc9i8RvcP_mXEd4B3lSwbSpisQ/exec">
-        <p>お使いのブラウザはiframeに対応していません。<a href="https://script.google.com/macros/s/AKfycbwzt1p4sAXrPWeY9LSo6xzxB_AtXjazXFiaRpdokBXsFc9i8RvcP_mXEd4B3lSwbSpisQ/exec">こちらをクリックしてアプリを開いてください。</a></p>
-    </iframe>
+
+    <header>
+        <h1><span class="brand">Seras学院</span> 自習室状況</h1>
+        <div class="subtitle">リアルタイム更新中</div>
+    </header>
+
+    <main>
+        <div id="errorDisplay" class="error-msg"></div>
+
+        <div class="card-base status-card">
+            <div class="card-top">
+                <div class="room-name">1号館</div>
+                <div class="status-badge" id="badge1">--</div>
+            </div>
+
+            <div class="number-area">
+                <span id="num1" class="number">--</span><span class="unit">人</span>
+            </div>
+
+            <div class="bar-bg">
+                <div id="bar1" class="bar-fill"></div>
+            </div>
+        </div>
+
+        <div class="card-base status-card">
+            <div class="card-top">
+                <div class="room-name">2号館</div>
+                <div class="status-badge" id="badge2">--</div>
+            </div>
+
+            <div class="number-area">
+                <span id="num2" class="number">--</span><span class="unit">人</span>
+            </div>
+
+            <div class="bar-bg">
+                <div id="bar2" class="bar-fill"></div>
+            </div>
+        </div>
+
+        <div class="timestamp-area">
+            <div id="lastUpdated">データ読み込み中...</div>
+        </div>
+
+        <div class="section-title">GUIDE & RULES</div>
+
+        <div class="card-base guide-card">
+
+            <div class="guide-item">
+                <div class="guide-icon">🔥</div>
+                <div class="guide-content">
+                    <div class="guide-head">自習室を使い倒そう</div>
+                    <div class="guide-desc">迷ったら来る。それが成績アップへの最短ルートです。自分の部屋だと思って積極的に活用しよう。</div>
+                </div>
+            </div>
+
+            <div class="guide-item">
+                <div class="guide-icon">🤝</div>
+                <div class="guide-content">
+                    <div class="guide-head">お互いにリスペクトを</div>
+                    <div class="guide-desc">みんなが本気で勉強しています。大きな音や振動には気配りを。譲り合いの心が空間を良くします。</div>
+                </div>
+            </div>
+
+            <div class="guide-item">
+                <div class="guide-icon">🤫</div>
+                <div class="guide-content">
+                    <div class="guide-head">2号館は「没頭」エリア</div>
+                    <div class="guide-desc">ここでの私語は厳禁です。静寂こそが最強の武器。深い集中を作りたい時は2号館へ。</div>
+                </div>
+            </div>
+
+            <div class="guide-item">
+                <div class="guide-icon">🚦</div>
+                <div class="guide-content">
+                    <div class="guide-head">移動は安全第一で</div>
+                    <div class="guide-desc">校舎間の移動は交通ルールを守りましょう。焦る必要はありません。事故にはくれぐれも気をつけて。</div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script>
+        const BASE_URL = "https://script.google.com/macros/s/AKfycbwp6ObSIRVNPg1tca4HWXesELgutIGNAXsbHOuyyB6VV6Y_FwTJMSwthzpGgdHTaSqM/exec";
+        const API_URL = BASE_URL + "?mode=json";
+
+        const CAPACITIES = {
+            building1: 20,
+            building2: 12
+        };
+
+        const STATUS_CONFIG = {
+            low: { text: "空いています", color: "var(--status-low)" },
+            mid: { text: "やや混雑", color: "var(--status-mid)" },
+            high: { text: "混雑しています", color: "var(--status-high)" }
+        };
+
+        async function fetchOccupancy() {
+            try {
+                const response = await fetch(API_URL, { cache: "no-store" });
+                if (!response.ok) throw new Error("Network Error");
+                const data = await response.json();
+
+                updateCard("1", data.building1, CAPACITIES.building1);
+                updateCard("2", data.building2, CAPACITIES.building2);
+
+                const time = new Date(data.timestamp).toLocaleTimeString("ja-JP", { hour: '2-digit', minute: '2-digit' });
+                document.getElementById("lastUpdated").textContent = "最終更新: " + time;
+                document.getElementById("errorDisplay").style.display = "none";
+
+            } catch (e) {
+                console.error(e);
+                const err = document.getElementById("errorDisplay");
+                err.textContent = "データの更新に失敗しました。再接続中...";
+                err.style.display = "block";
+            }
+        }
+
+        function updateCard(idSuffix, count, max) {
+            const numEl = document.getElementById("num" + idSuffix);
+            const badgeEl = document.getElementById("badge" + idSuffix);
+            const barEl = document.getElementById("bar" + idSuffix);
+
+            numEl.textContent = count;
+
+            const ratio = count / max;
+            let status;
+
+            if (ratio <= 0.33) {
+                status = STATUS_CONFIG.low;
+            } else if (ratio <= 0.66) {
+                status = STATUS_CONFIG.mid;
+            } else {
+                status = STATUS_CONFIG.high;
+            }
+
+            badgeEl.textContent = status.text;
+            badgeEl.style.background = status.color;
+
+            const percent = Math.min(ratio * 100, 100);
+            barEl.style.width = percent + "%";
+            barEl.style.backgroundColor = status.color;
+        }
+
+        fetchOccupancy();
+        setInterval(fetchOccupancy, 5000);
+    </script>
+
 </body>
+
 </html>
