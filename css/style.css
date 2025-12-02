@@ -36,7 +36,7 @@ header {
 }
 
 h1 {
-    font-size: 1.4rem;
+    font-size: 1.6rem;
     font-weight: 900;
     letter-spacing: 0.02em;
     margin: 0;
@@ -75,6 +75,58 @@ main {
     padding: 28px;
     margin-bottom: 24px;
     transition: transform 0.2s ease;
+    position: relative;
+    /* モグラの絶対配置のための基準 */
+    overflow: visible;
+    /* カードからはみ出すモグラを表示 */
+}
+
+/* モグラの装飾画像 */
+.mogura-decoration {
+    position: absolute;
+    top: -77px;
+    /* カードの上端から少しはみ出す */
+    right: 15px;
+    /* 右上に配置 */
+    width: 75px;
+    /* サイズ調整 */
+    height: auto;
+    transform: rotate(-8deg);
+    /* 少し傾けて動きを出す */
+    filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.15));
+    /* モグラに影をつける */
+    z-index: -1;
+    /* カードコンテンツより手前に */
+    transition: transform 1.3s ease;
+}
+
+/* ホバー時にモグラが少し動く */
+.status-card:hover .mogura-decoration {
+    transform: rotate(-8deg) translateY(-3px);
+}
+
+/* ガイドカード用のモグラ装飾（左上配置） */
+.mogura-decoration-guide {
+    position: absolute;
+    top: -90px;
+    /* カードの上端から少しはみ出す */
+    left: 15px;
+    /* 左上に配置 */
+    width: 90px;
+    /* サイズ調整 */
+    height: auto;
+    transform: rotate(8deg);
+    /* 右に傾ける（本館と逆向き） */
+    filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.15));
+    /* モグラに影をつける */
+    z-index: -1;
+    /* カードコンテンツより後ろに */
+    transition: transform 1.3s ease;
+}
+
+/* ホバー時にガイドカードのモグラも動く */
+.guide-card:hover .mogura-decoration-guide {
+    transform: rotate(8deg) translateY(-3px);
 }
 
 .card-top {
@@ -112,8 +164,10 @@ main {
     }
 
     50% {
-        transform: scale(1.05);
-        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+        transform: scale(1.08);
+        /* 1.05と1.1の中間 */
+        box-shadow: 0 10px 18px rgba(0, 0, 0, 0.18);
+        /* 中間の影の強さ */
     }
 
     100% {
@@ -200,6 +254,10 @@ main {
 .guide-card {
     padding: 10px;
     margin-bottom: 40px;
+    position: relative;
+    /* モグラの絶対配置のための基準 */
+    overflow: visible;
+    /* カードからはみ出すモグラを表示 */
 }
 
 .guide-item {
