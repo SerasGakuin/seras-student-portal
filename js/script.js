@@ -1,5 +1,5 @@
 // Google Apps Script (GAS) のWebアプリURL
-const BASE_URL = "https://script.google.com/macros/s/AKfycbwp6ObSIRVNPg1tca4HWXesELgutIGNAXsbHOuyyB6VV6Y_FwTJMSwthzpGgdHTaSqM/exec";
+const BASE_URL = "https://script.google.com/macros/s/AKfycbz8_KP_SevWBym9rk1omza08XnPWtzefmz4Qro3hERYdUe9JRU4y9ivyZ4FqSg6syEXaA/exec";
 // JSONモードでデータを取得するためのパラメータを追加
 const API_URL = BASE_URL + "?mode=json";
 
@@ -24,10 +24,20 @@ const STATUS_CONFIG = {
  */
 async function fetchOccupancy() {
     try {
+        console.log("Fetching data from:", API_URL); // デバッグ用
+
         // キャッシュ無効化して最新データを取得
         const response = await fetch(API_URL, { cache: "no-store" });
-        if (!response.ok) throw new Error("Network Error");
+
+        console.log("Response status:", response.status); // デバッグ用
+        console.log("Response ok:", response.ok); // デバッグ用
+
+        if (!response.ok) {
+            throw new Error(`Network Error: ${response.status} ${response.statusText}`);
+        }
+
         const data = await response.json();
+        console.log("Received data:", data); // デバッグ用
 
         // 1号館と2号館のカードを更新
         updateCard("1", data.building1, CAPACITIES.building1);
@@ -41,10 +51,10 @@ async function fetchOccupancy() {
         document.getElementById("errorDisplay").style.display = "none";
 
     } catch (e) {
-        console.error(e);
+        console.error("Error details:", e); // 詳細なエラー情報
         // エラー発生時のユーザーへの通知
         const err = document.getElementById("errorDisplay");
-        err.textContent = "データの更新に失敗しました。再接続中...";
+        err.textContent = "データの更新に失敗しました: " + e.message;
         err.style.display = "block";
     }
 }
