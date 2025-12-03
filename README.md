@@ -27,5 +27,8 @@ Seras学院の自習室（1号館・2号館）の在室人数をリアルタイ�
 │   └── style.css   # スタイルシート
 ├── js/
 │   └── script.js   # アプリケーションロジック
-└── mogura.png      # ファビコン画像
+└── images/
+    ├── mogura_icon.png      # ファビコン画像
+    ├── mogura_insert.png    # 本館カード装飾用モグラ画像
+    └── mogura_insert_2.png  # ガイドカード装飾用モグラ画像
 ```
