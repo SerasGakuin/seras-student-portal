@@ -15,7 +15,7 @@ const CAPACITIES = {
 // high: 混雑 (67-100%)
 const STATUS_CONFIG = {
     low: { text: "空いています", color: "var(--status-low)" },
-    mid: { text: "やや混雑", color: "var(--status-mid)" },
+    mid: { text: "やや混雑しています", color: "var(--status-mid)" },
     high: { text: "混雑しています", color: "var(--status-high)" }
 };
 
