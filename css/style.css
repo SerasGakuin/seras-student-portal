@@ -1,7 +1,16 @@
 :root {
-    /* ブランドカラーと基本テーマ色 */
+    /* ========================================
+       カラーパレット
+       ======================================== */
+
+    /* ブランドカラー */
     --brand-color: #f29f30;
+
+    /* 背景色 */
     --bg-color: #f2f4f8;
+    --card-bg-color: #ffffff;
+
+    /* テキストカラー */
     --text-main: #2d3436;
     --text-sub: #a4b0be;
 
@@ -12,6 +21,35 @@
     /* やや混雑 */
     --status-high: #ff7675;
     /* 混雑 */
+
+    /* ========================================
+       サイズ・スペーシング
+       ======================================== */
+
+    /* カードのサイズ */
+    --card-max-width: 420px;
+    --card-border-radius: 32px;
+    --card-padding: 28px;
+
+    /* フォントサイズ */
+    --font-size-large: 4.5rem;
+    --font-size-medium: 1.6rem;
+    --font-size-normal: 1rem;
+    --font-size-small: 0.85rem;
+
+    /* ========================================
+       エフェクト
+       ======================================== */
+
+    /* シャドウ */
+    --shadow-card: 0 20px 40px rgba(0, 0, 0, 0.04);
+    --shadow-badge: 0 4px 10px rgba(0, 0, 0, 0.1);
+    --shadow-mogura: 0 10px 16px rgba(0, 0, 0, 0.15);
+
+    /* トランジション */
+    --transition-fast: 0.2s ease;
+    --transition-normal: 0.4s ease;
+    --transition-slow: 1s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 body {
@@ -36,7 +74,7 @@ header {
 }
 
 h1 {
-    font-size: 1.6rem;
+    font-size: var(--font-size-medium);
     font-weight: 900;
     letter-spacing: 0.02em;
     margin: 0;
@@ -58,23 +96,23 @@ h1 {
 /* --- メインコンテンツ領域 --- */
 main {
     width: 100%;
-    max-width: 420px;
+    max-width: var(--card-max-width);
     /* スマートフォン向けに幅を制限 */
 }
 
 /* --- カードデザイン共通設定 --- */
 .card-base {
-    background: #ffffff;
-    border-radius: 32px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.04);
+    background: var(--card-bg-color);
+    border-radius: var(--card-border-radius);
+    box-shadow: var(--shadow-card);
     position: relative;
 }
 
 /* --- 在室人数表示カード --- */
 .status-card {
-    padding: 28px;
+    padding: var(--card-padding);
     margin-bottom: 24px;
-    transition: transform 0.2s ease;
+    transition: transform var(--transition-fast);
     position: relative;
     /* モグラの絶対配置のための基準 */
     overflow: visible;
@@ -249,7 +287,7 @@ main {
 }
 
 .number {
-    font-size: 4.5rem;
+    font-size: var(--font-size-large);
     font-weight: 900;
     line-height: 1;
     letter-spacing: -2px;

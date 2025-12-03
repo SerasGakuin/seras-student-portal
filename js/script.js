@@ -1,57 +1,54 @@
-// Google Apps Script (GAS) のWebアプリURL
-const BASE_URL = "https://script.google.com/macros/s/AKfycbz8_KP_SevWBym9rk1omza08XnPWtzefmz4Qro3hERYdUe9JRU4y9ivyZ4FqSg6syEXaA/exec";
-// JSONモードでデータを取得するためのパラメータを追加
-const API_URL = BASE_URL + "?mode=json";
+/**
+ * Seras学院 自習室在室人数モニター
+ * メインスクリプト
+ */
 
-// 各号館の定員設定
-const CAPACITIES = {
-    building1: 20, // 1号館の定員
-    building2: 12  // 2号館の定員
-};
-
-// 混雑状況の閾値と表示設定
-// low: 空き (0-33%)
-// mid: やや混雑 (34-66%)
-// high: 混雑 (67-100%)
-const STATUS_CONFIG = {
-    low: { text: "空いています", color: "var(--status-low)" },
-    mid: { text: "やや混雑しています", color: "var(--status-mid)" },
-    high: { text: "混雑しています", color: "var(--status-high)" }
-};
+import { CONFIG } from './config.js';
 
 /**
  * サーバーから在室人数データを取得し、画面を更新する非同期関数
  */
 async function fetchOccupancy() {
     try {
-        console.log("Fetching data from:", API_URL); // デバッグ用
+        if (CONFIG.DEBUG_MODE) {
+            console.log("Fetching data from:", CONFIG.API_URL);
+        }
 
         // キャッシュ無効化して最新データを取得
-        const response = await fetch(API_URL, { cache: "no-store" });
+        const response = await fetch(CONFIG.API_URL, { cache: "no-store" });
 
-        console.log("Response status:", response.status); // デバッグ用
-        console.log("Response ok:", response.ok); // デバッグ用
+        if (CONFIG.DEBUG_MODE) {
+            console.log("Response status:", response.status);
+            console.log("Response ok:", response.ok);
+        }
 
         if (!response.ok) {
             throw new Error(`Network Error: ${response.status} ${response.statusText}`);
         }
 
         const data = await response.json();
-        console.log("Received data:", data); // デバッグ用
+
+        if (CONFIG.DEBUG_MODE) {
+            console.log("Received data:", data);
+        }
 
         // 1号館と2号館のカードを更新
-        updateCard("1", data.building1, CAPACITIES.building1);
-        updateCard("2", data.building2, CAPACITIES.building2);
+        updateCard("1", data.building1, CONFIG.CAPACITIES.building1);
+        updateCard("2", data.building2, CONFIG.CAPACITIES.building2);
 
         // 最終更新時刻の表示更新
-        const time = new Date(data.timestamp).toLocaleTimeString("ja-JP", { hour: '2-digit', minute: '2-digit' });
+        const time = new Date(data.timestamp).toLocaleTimeString("ja-JP", {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
         document.getElementById("lastUpdated").textContent = "最終更新: " + time;
 
         // エラー表示を非表示にする
         document.getElementById("errorDisplay").style.display = "none";
 
     } catch (e) {
-        console.error("Error details:", e); // 詳細なエラー情報
+        console.error("Error details:", e);
+
         // エラー発生時のユーザーへの通知
         const err = document.getElementById("errorDisplay");
         err.textContent = "データの更新に失敗しました: " + e.message;
@@ -81,12 +78,12 @@ function updateCard(idSuffix, count, max) {
     let status;
 
     // 混雑率に応じたステータスの決定
-    if (ratio <= 0.33) {
-        status = STATUS_CONFIG.low;
-    } else if (ratio <= 0.66) {
-        status = STATUS_CONFIG.mid;
+    if (ratio <= CONFIG.STATUS_THRESHOLDS.low) {
+        status = CONFIG.STATUS_CONFIG.low;
+    } else if (ratio <= CONFIG.STATUS_THRESHOLDS.mid) {
+        status = CONFIG.STATUS_CONFIG.mid;
     } else {
-        status = STATUS_CONFIG.high;
+        status = CONFIG.STATUS_CONFIG.high;
     }
 
     // バッジ（テキストと背景色）の更新
@@ -102,5 +99,5 @@ function updateCard(idSuffix, count, max) {
 // 初回実行
 fetchOccupancy();
 
-// 5秒ごとにデータを更新
-setInterval(fetchOccupancy, 5000);
+// 設定された間隔でデータを更新
+setInterval(fetchOccupancy, CONFIG.UPDATE_INTERVAL);
