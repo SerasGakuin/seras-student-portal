@@ -1,0 +1,287 @@
+/* ========================================
+   Seras学院 共通CSS変数
+   ======================================== */
+:root {
+  /* カラーパレット */
+  --brand-color: #f29f30;
+  --bg-color: #f2f4f8;
+  --card-bg-color: #ffffff;
+  --text-main: #2d3436;
+  --text-sub: #a4b0be;
+  --status-low: #00cec9;
+  --status-mid: #f29f30;
+  --status-high: #ff7675;
+
+  /* サイズ・スペーシング */
+  --card-max-width: 420px;
+  --card-border-radius: 32px;
+  --card-padding: 28px;
+  --font-size-large: 4.5rem;
+  --font-size-medium: 1.6rem;
+  --font-size-normal: 1rem;
+  --font-size-small: 0.85rem;
+
+  /* エフェクト */
+  --shadow-card: 0 10px 30px -5px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 20px 40px -5px rgba(0, 0, 0, 0.1);
+  --shadow-badge: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-input: 0 2px 6px rgba(0, 0, 0, 0.02);
+  --shadow-input-focus: 0 4px 12px rgba(242, 159, 48, 0.15);
+
+  /* トランジション */
+  --transition-fast: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* ========================================
+   Base Styles
+   ======================================== */
+body {
+  font-family: 'Inter', 'Noto Sans JP', sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  margin: 0;
+  padding: 20px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  background-image: radial-gradient(#cbd5e0 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: 0 0;
+}
+
+header {
+  margin: 20px 0 60px 0;
+  text-align: center;
+}
+
+h1 {
+  font-size: var(--font-size-medium);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  margin: 0;
+  color: var(--text-main);
+}
+
+.brand {
+  color: var(--brand-color);
+}
+
+.container {
+  width: 100%;
+  max-width: var(--card-max-width);
+  margin: 0 auto;
+}
+
+/* ========================================
+   Components
+   ======================================== */
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: var(--card-border-radius);
+  box-shadow: var(--shadow-card);
+  padding: var(--card-padding);
+  margin-bottom: 24px;
+  position: relative;
+  transition: transform var(--transition-bounce), box-shadow var(--transition-normal);
+  text-align: center;
+  display: flex;
+  /* Added */
+  flex-direction: column;
+  /* Added */
+  align-items: center;
+  /* Added */
+  /* Booking specific */
+}
+
+.glass-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.btn-base {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 20px;
+  border: none;
+  border-radius: 20px;
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: #fff;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+  letter-spacing: 0.05em;
+  box-sizing: border-box;
+  /* Added */
+}
+
+.btn-base:active {
+  transform: scale(0.98);
+}
+
+.btn-base:disabled {
+  background: #cbd5e0;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.btn-primary {
+  background: var(--brand-color);
+  box-shadow: 0 10px 20px rgba(242, 159, 48, 0.25);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px rgba(242, 159, 48, 0.35);
+}
+
+.btn-meeting {
+  background: linear-gradient(135deg, #f29f30 0%, #ffbe76 100%);
+  box-shadow: 0 10px 20px rgba(242, 159, 48, 0.25);
+  /* margin-top: 16px; Removed to let flex gap handle spacing or manual margins */
+}
+
+.btn-meeting:hover {
+  box-shadow: 0 15px 30px rgba(242, 159, 48, 0.35);
+  transform: translateY(-2px);
+}
+
+.btn-rest {
+  background: linear-gradient(135deg, #00cec9 0%, #55efc4 100%);
+  box-shadow: 0 10px 20px rgba(0, 206, 201, 0.25);
+  margin-top: 16px;
+}
+
+.btn-rest:hover {
+  box-shadow: 0 15px 30px rgba(0, 206, 201, 0.35);
+  transform: translateY(-2px);
+}
+
+.btn-gradient-teal {
+  background: linear-gradient(135deg, #00cec9 0%, #55efc4 100%);
+  box-shadow: 0 10px 20px rgba(0, 206, 201, 0.25);
+}
+
+/* --- Form Elements --- */
+form {
+  width: 100%;
+  /* Added */
+}
+
+.form-group {
+  margin-bottom: 24px;
+  text-align: left;
+  width: 100%;
+  /* Added */
+}
+
+label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: var(--text-main);
+  padding-left: 4px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 16px 20px;
+  border: 2px solid transparent;
+  border-radius: 16px;
+  font-size: 1rem;
+  font-family: inherit;
+  background-color: #f2f4f8;
+  color: var(--text-main);
+  transition: all 0.2s;
+  box-sizing: border-box;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+  appearance: none;
+}
+
+.form-input:focus {
+  border-color: var(--brand-color);
+  outline: none;
+  background-color: #fff;
+  box-shadow: 0 0 0 4px rgba(242, 159, 48, 0.1);
+}
+
+select.form-input {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23a4b0be' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 20px;
+}
+
+.user-badge {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-sub);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 8px 20px;
+  border-radius: 20px;
+  display: inline-block;
+  box-shadow: var(--shadow-badge);
+  backdrop-filter: blur(4px);
+  margin-top: 10px;
+}
+
+.menu-icon {
+  width: 24px;
+  height: 24px;
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-link {
+  display: inline-block;
+  margin-top: 24px;
+  color: var(--text-sub);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: color 0.2s;
+  padding: 8px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.back-link:hover {
+  color: var(--text-main);
+  background: rgba(0, 0, 0, 0.03);
+}
+
+/* ========================================
+   Animations
+   ======================================== */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
