@@ -4,6 +4,9 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLiff } from '@/lib/liff';
+import { GlassCard } from '@/components/GlassCard';
+import { Button } from '@/components/Button';
+import { FormGroup } from '@/components/FormGroup';
 
 export default function RestPage() {
     const router = useRouter();
@@ -61,10 +64,9 @@ export default function RestPage() {
                 <h1><span className="brand">Seras学院</span> 休み登録</h1>
             </header>
 
-            <div className="glass-card animate-slide-up" style={{ textAlign: 'left' }}>
+            <GlassCard className="animate-slide-up" style={{ textAlign: 'left' }}>
                 <form onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <label>休む日</label>
+                    <FormGroup label="休む日">
                         <input
                             type="date"
                             className="form-input"
@@ -72,11 +74,11 @@ export default function RestPage() {
                             onChange={(e) => setDate(e.target.value)}
                             required
                         />
-                    </div>
+                    </FormGroup>
 
-                    <button type="submit" className="btn-base btn-gradient-teal" disabled={isSubmitting}>
+                    <Button type="submit" variant="gradient-teal" disabled={isSubmitting}>
                         {isSubmitting ? '送信中...' : '登録する'}
-                    </button>
+                    </Button>
                 </form>
 
                 <Link href="/" className="back-link">
@@ -88,7 +90,7 @@ export default function RestPage() {
                     </svg>
                     メニューに戻る
                 </Link>
-            </div>
+            </GlassCard>
         </div>
     );
 }

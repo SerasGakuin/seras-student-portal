@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { useLiff } from '@/lib/liff';
+import { GlassCard } from '@/components/GlassCard';
+import { Button } from '@/components/Button';
 
 export default function Home() {
   const { profile, isLoading, isLoggedIn } = useLiff();
@@ -37,10 +39,10 @@ export default function Home() {
       </header>
 
       <main>
-        <div className="glass-card animate-slide-up" style={{ gap: '16px' }}>
+        <GlassCard className="animate-slide-up" style={{ gap: '16px' }}>
           <p style={{ marginBottom: '4px', fontWeight: 700 }}>ご希望の手続きを選択してください</p>
 
-          <Link href="/booking" className="btn-base btn-meeting">
+          <Button href="/booking" variant="meeting">
             <span className="menu-icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -51,9 +53,9 @@ export default function Home() {
               </svg>
             </span>
             面談を予約する
-          </Link>
+          </Button>
 
-          <Link href="/rest" className="btn-base btn-rest" style={{ marginTop: 0 }}>
+          <Button href="/rest" variant="rest" style={{ marginTop: 0 }}>
             <span className="menu-icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -65,8 +67,8 @@ export default function Home() {
               </svg>
             </span>
             休む日を登録する
-          </Link>
-        </div>
+          </Button>
+        </GlassCard>
       </main>
     </div>
   );

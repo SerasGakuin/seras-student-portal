@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Seras学院 予約システム (Next.js版)
 
-## Getting Started
+## 開発・運用ワークフロー
 
-First, run the development server:
+### 1. 開発の進め方 (ローカル)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+デザインの修正や機能追加を行う場合の手順です。
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. **開発サーバーの起動**:
+   ```bash
+   cd next-portal
+   npm run dev
+   ```
+   `http://localhost:3000` でプレビューできます。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+2. **コードの編集**:
+   - **ページ/画面**: `src/app/` 以下のファイルを編集します。
+     - メニュー: `page.tsx`
+     - 予約画面: `booking/page.tsx`
+     - 休み登録: `rest/page.tsx`
+   - **デザイン/CSS**: `src/app/globals.css` を編集します。
+   - **コンポーネント**: `src/lib/` や `src/components/` (作成した場合) を編集します。
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+   編集するとブラウザが自動的にリロードされ、変更が反映されます。
 
-## Learn More
+### 2. デプロイ (本番反映)
 
-To learn more about Next.js, take a look at the following resources:
+Vercelを使用しているため、**GitHubにPushするだけで自動的にデプロイされます**。
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. **変更をコミット**:
+   ```bash
+   git add .
+   git commit -m "デザイン修正: ボタンの余白を調整"
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+2. **GitHubへPush**:
+   ```bash
+   git push origin feature/nextjs-migration
+   ```
+   
+   - **Preview Deployment**: ブランチにPushすると、Vercelが「プレビュー環境」を作成します。Pull Request上で確認できます。
+   - **Production Deployment**: `main` ブランチにマージされると、本番環境 (`https://next-portal-....vercel.app`) が更新されます。
 
-## Deploy on Vercel
+### 3. 環境変数
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+本番環境で動作させるには、Vercelのダッシュボードで環境変数を設定する必要があります。
+詳細は `NEXT_STEPS.md` を参照してください。

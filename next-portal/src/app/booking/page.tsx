@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLiff } from '@/lib/liff';
+import { GlassCard } from '@/components/GlassCard';
+import { Button } from '@/components/Button';
+import { FormGroup } from '@/components/FormGroup';
 
 export default function BookingPage() {
     const router = useRouter();
@@ -105,10 +108,9 @@ export default function BookingPage() {
                 <h1><span className="brand">Seras学院</span> 面談予約</h1>
             </header>
 
-            <div className="glass-card animate-slide-up" style={{ textAlign: 'left' }}>
+            <GlassCard className="animate-slide-up" style={{ textAlign: 'left' }}>
                 <form onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <label>面談タイプ</label>
+                    <FormGroup label="面談タイプ">
                         <select
                             name="meetingType"
                             className="form-input"
@@ -120,10 +122,9 @@ export default function BookingPage() {
                             <option value="特訓">特訓</option>
                             <option value="強制通塾">強制通塾</option>
                         </select>
-                    </div>
+                    </FormGroup>
 
-                    <div className="form-group">
-                        <label>日付</label>
+                    <FormGroup label="日付">
                         <select
                             name="date"
                             className="form-input"
@@ -136,10 +137,9 @@ export default function BookingPage() {
                                 <option key={opt.value} value={opt.value}>{opt.label}</option>
                             ))}
                         </select>
-                    </div>
+                    </FormGroup>
 
-                    <div className="form-group">
-                        <label>来塾時間</label>
+                    <FormGroup label="来塾時間">
                         <select
                             name="arrivalTime"
                             className="form-input"
@@ -152,14 +152,14 @@ export default function BookingPage() {
                             <option value="T16:00:00">16:00~17:00</option>
                             <option value="T17:00:00">17:00~18:00</option>
                             <option value="T18:00:00">18:00~19:00</option>
-                            <option value="T19:00:00">19:00~20:00</option>
-                            <option value="T20:00:00">20:00~21:00</option>
-                            <option value="T21:00:00">21:00~22:00</option>
+                            <option value="T19:00:00">18:00~19:00</option>
+                            <option value="T20:00:00">19:00~20:00</option>
+                            <option value="T21:00:00">20:00~21:00</option>
+                            <option value="T22:00:00">21:00~22:00</option>
                         </select>
-                    </div>
+                    </FormGroup>
 
-                    <div className="form-group">
-                        <label>退塾時間</label>
+                    <FormGroup label="退塾時間">
                         <select
                             name="leaveTime"
                             className="form-input"
@@ -176,11 +176,11 @@ export default function BookingPage() {
                             <option value="T21:00:00">20:00~21:00</option>
                             <option value="T22:00:00">21:00~22:00</option>
                         </select>
-                    </div>
+                    </FormGroup>
 
-                    <button type="submit" className="btn-base btn-primary" disabled={isSubmitting}>
+                    <Button type="submit" variant="primary" disabled={isSubmitting}>
                         {isSubmitting ? '送信中...' : '予約する'}
-                    </button>
+                    </Button>
                 </form>
 
                 <Link href="/" className="back-link">
@@ -192,7 +192,7 @@ export default function BookingPage() {
                     </svg>
                     メニューに戻る
                 </Link>
-            </div>
+            </GlassCard>
         </div>
     );
 }
