@@ -11,7 +11,7 @@ Seras学院の生徒向けWebサービスを統合したポータルサイトで
 
 ### 2. 予約システム (`/booking`)
 面談予約と休み登録を管理します。
-- **面談予約** (`/booking/reserve`): 先生との面談を予約
+- **面談予約** (`/booking/reserve`): 面談を予約。
 - **休み登録** (`/booking/rest`): 休みを登録
 - **技術スタック**: Next.js 16, React 19, TypeScript, LINE LIFF
 - **バックエンド**: Google Apps Script (Calendar API, Sheets API)
@@ -135,11 +135,12 @@ npm run lint
 
 ## 🗺️ 今後の開発ロードマップ
 
-### フェーズ1: Next.js移行（完了）
+### フェーズ1: Next.js移行 & UI刷新（完了）
 - [x] HTML版からNext.jsへの移行
-- [x] UI/UXの実装
+- [x] UI/UXの実装（ボタン選択式、タイムレンジスライダー）
 - [x] フォームロジックの実装
 - [x] バックエンドとの結合テスト
+- [x] デザインのブランド統一（オレンジ基調）
 
 ### フェーズ2: LIFF連携（次フェーズ）
 - [ ] LIFF IDの取得と設定

@@ -45,9 +45,9 @@ export default function RestPage() {
             } else {
                 throw new Error(data.message || '登録に失敗しました');
             }
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: any) {
-            alert(error.message);
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            alert(message);
         } finally {
             setIsSubmitting(false);
         }
