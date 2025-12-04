@@ -22,7 +22,7 @@ export async function POST(request: Request) {
         const studentName = await getStudentNameFromLineId(userId);
         if (!studentName) {
             return NextResponse.json<ApiResponse>(
-                { status: 'error', message: '未登録生徒' },
+                { status: 'error', message: '生徒として未登録のLINE IDです' },
                 { status: 404 }
             );
         }

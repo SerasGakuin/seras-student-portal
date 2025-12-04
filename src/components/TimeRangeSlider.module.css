@@ -1,0 +1,118 @@
+.sliderContainer {
+    padding: 1.5rem 0.5rem 2.5rem;
+    width: 100%;
+    user-select: none;
+    touch-action: none;
+}
+
+.trackWrapper {
+    position: relative;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.track {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 30px;
+    /* Even thicker track */
+    background: #e2e8f0;
+    border-radius: 15px;
+    transform: translateY(-50%);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.range {
+    position: absolute;
+    top: 50%;
+    height: 30px;
+    /* Match track height */
+    background: var(--brand-color);
+    border-radius: 15px;
+    transform: translateY(-50%);
+    pointer-events: none;
+    box-shadow: 0 2px 8px rgba(242, 159, 48, 0.3);
+    /* No transition for left/width to allow instant JS updates for smoothness */
+}
+
+.thumb {
+    position: absolute;
+    top: 50%;
+    width: 40px;
+    /* Even larger thumb */
+    height: 40px;
+    background: #ffffff;
+    border: 4px solid var(--brand-color);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    cursor: grab;
+    z-index: 2;
+    transition: transform 0.1s, box-shadow 0.2s;
+    /* Only animate transform/shadow, not position */
+}
+
+.thumb:active {
+    cursor: grabbing;
+    transform: translate(-50%, -50%) scale(1.1);
+    box-shadow: 0 6px 12px rgba(242, 159, 48, 0.25);
+}
+
+.thumb::after {
+    display: none;
+}
+
+.labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+    padding: 0 20px;
+    /* Offset for larger thumb width */
+}
+
+.label {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    font-weight: 600;
+}
+
+.label::before {
+    content: '';
+    position: absolute;
+    top: -22px;
+    width: 2px;
+    height: 10px;
+    background: #cbd5e1;
+    border-radius: 1px;
+}
+
+.timeDisplay {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-main);
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.duration {
+    font-size: 0.9rem;
+    color: var(--brand-color);
+    font-weight: 700;
+    background: #fff7ed;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    border: 1px solid rgba(242, 159, 48, 0.2);
+}
