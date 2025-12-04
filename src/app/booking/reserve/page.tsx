@@ -6,11 +6,11 @@ import { useLiff } from '@/lib/liff';
 import { GlassCard } from '@/components/GlassCard';
 import { Button } from '@/components/Button';
 import { FormGroup } from '@/components/FormGroup';
-import { FormSelect } from '@/components/FormSelect';
+import { ButtonGroup } from '@/components/ButtonGroup';
 import { BackLink } from '@/components/BackLink';
 import { LoadingOverlay } from '@/components/LoadingOverlay';
-import { DateSelect } from '@/components/DateSelect';
-import { TimeSelect } from '@/components/TimeSelect';
+import { DateButtonSelect } from '@/components/DateButtonSelect';
+import { TimeRangeSlider } from '@/components/TimeRangeSlider';
 import { CONFIG } from '@/lib/config';
 import { ApiResponse, BookingRequest } from '@/types';
 
@@ -22,13 +22,12 @@ export default function BookingPage() {
     // Form State
     const [formData, setFormData] = useState<Omit<BookingRequest, 'userId'>>({
         meetingType: '面談',
-        date: '',
-        arrivalTime: 'T14:00:00',
-        leaveTime: 'T15:00:00',
+        date: getTomorrowDateString(),
+        arrivalTime: 'T18:00:00',
+        leaveTime: 'T22:00:00',
     });
 
-    const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const { name, value } = e.target;
+    const handleFieldChange = (name: string, value: string) => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
@@ -91,42 +90,29 @@ export default function BookingPage() {
             <GlassCard className="animate-slide-up" style={{ textAlign: 'left' }}>
                 <form onSubmit={handleSubmit}>
                     <FormGroup label="面談タイプ">
-                        <FormSelect
+                        <ButtonGroup
                             name="meetingType"
+                            options={CONFIG.MEETING_TYPES}
                             value={formData.meetingType}
-                            onChange={handleChange}
-                            required
-                        >
-                            {CONFIG.MEETING_TYPES.map(type => (
-                                <option key={type.value} value={type.value}>{type.label}</option>
-                            ))}
-                        </FormSelect>
+                            onChange={(value) => handleFieldChange('meetingType', value)}
+                        />
                     </FormGroup>
 
                     <FormGroup label="日付">
-                        <DateSelect
+                        <DateButtonSelect
                             name="date"
                             value={formData.date}
-                            onChange={handleChange}
-                            required
+                            onChange={(value) => handleFieldChange('date', value)}
                         />
                     </FormGroup>
 
-                    <FormGroup label="来塾時間">
-                        <TimeSelect
-                            name="arrivalTime"
-                            value={formData.arrivalTime}
-                            onChange={handleChange}
-                            required
-                        />
-                    </FormGroup>
-
-                    <FormGroup label="退塾時間">
-                        <TimeSelect
-                            name="leaveTime"
-                            value={formData.leaveTime}
-                            onChange={handleChange}
-                            required
+                    <FormGroup label="時間">
+                        <TimeRangeSlider
+                            startTime={formData.arrivalTime}
+                            endTime={formData.leaveTime}
+                            onChange={(start, end) => {
+                                setFormData(prev => ({ ...prev, arrivalTime: start, leaveTime: end }));
+                            }}
                         />
                     </FormGroup>
 
@@ -141,4 +127,14 @@ export default function BookingPage() {
             </GlassCard>
         </div>
     );
+}
+
+// Helper function to get tomorrow's date string (YYYY-MM-DD)
+function getTomorrowDateString() {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const year = tomorrow.getFullYear();
+    const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
+    const day = String(tomorrow.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }

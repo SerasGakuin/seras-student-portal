@@ -22,7 +22,7 @@ export async function POST(request: Request) {
         const studentName = await getStudentNameFromLineId(userId);
         if (!studentName) {
             return NextResponse.json<ApiResponse>(
-                { status: 'error', message: '未登録生徒' },
+                { status: 'error', message: '生徒として未登録のLINE IDです' },
                 { status: 404 }
             );
         }
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
 
         // Create calendar event
         const calendar = await getGoogleCalendar();
-        const title = `【${meetingType}】${studentName}`;
+        const title = `【${meetingType}】${studentName}さん`;
         const description = `予約システムからの登録\nタイプ: ${meetingType}\n生徒名: ${studentName}`;
 
         const event = await calendar.events.insert({

@@ -42,7 +42,7 @@ export const LiffProvider = ({ children }: { children: React.ReactNode }) => {
                     console.warn('LIFF ID is not set. Running in mock mode.');
                     // Mock data for development
                     setProfile({
-                        userId: 'xxxxxx', // Test ID
+                        userId: 'U873f976fc1f2ab959918871c84714da9', // Test ID
                         displayName: 'テストユーザー',
                     });
                     setIsLoggedIn(true);
@@ -72,7 +72,7 @@ export const LiffProvider = ({ children }: { children: React.ReactNode }) => {
                 // Fallback to mock data in dev if init fails (e.g. wrong LIFF ID)
                 if (process.env.NODE_ENV === 'development') {
                     setProfile({
-                        userId: 'xxxxxx',
+                        userId: 'U873f976fc1f2ab959918871c84714da9',
                         displayName: 'テストユーザー (Fallback)',
                     });
                     setIsLoggedIn(true);
