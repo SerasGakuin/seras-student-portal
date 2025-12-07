@@ -67,7 +67,6 @@ export default function OccupancyPage() {
                     count={data?.building1}
                     max={CAPACITIES.building1}
                     moleImage="/images/mogura_insert.png"
-                    comingSoon
                 />
 
                 <OccupancyCard
