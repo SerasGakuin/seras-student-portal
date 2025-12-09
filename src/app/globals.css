@@ -37,9 +37,9 @@
   --font-noto-sans-jp: 'Noto Sans JP', sans-serif;
   --font-size-base: 16px;
   --font-size-large: 4.5rem;
-  /* Restored original size */
+  --font-size-xl: 1.5rem;
   --font-size-medium: 1.6rem;
-  /* Restored original size */
+  --font-size-md: 1rem;
   --font-size-normal: 1rem;
   --font-size-small: 0.85rem;
 
@@ -48,6 +48,11 @@
   --card-border-radius: 24px;
   --card-padding: 24px;
   --header-height: 60px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --primary-color: var(--brand-color);
 
   /* --- Shadows --- */
   --shadow-card: 0 10px 30px -5px rgba(0, 0, 0, 0.06);

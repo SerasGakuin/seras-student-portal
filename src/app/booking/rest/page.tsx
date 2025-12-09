@@ -10,6 +10,7 @@ import { FormInput } from '@/components/ui/FormInput';
 import { BackLink } from '@/components/ui/BackLink';
 import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
 import { getDisplayName } from '@/lib/utils';
+import { LoginRequired } from '@/components/ui/LoginRequired';
 
 import { PageHeader } from '@/components/ui/PageHeader';
 
@@ -62,7 +63,7 @@ export default function RestPage() {
     }
 
     if (!isLoggedIn) {
-        return <div className="container"><p>ログインが必要です。</p></div>;
+        return <LoginRequired />;
     }
 
     return (
