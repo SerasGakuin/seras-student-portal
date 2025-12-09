@@ -2,6 +2,7 @@
 
 import { GlassCard } from './GlassCard';
 import { Button } from './Button';
+import { BackLink } from './BackLink';
 import styles from './LoginRequired.module.css';
 
 export const LoginRequired = () => {
@@ -23,6 +24,10 @@ export const LoginRequired = () => {
                 <Button variant="primary" onClick={handleReload}>
                     再読み込み
                 </Button>
+
+                <BackLink href="/">
+                    ホームに戻る
+                </BackLink>
             </GlassCard>
         </div>
     );
