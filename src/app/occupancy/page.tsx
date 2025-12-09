@@ -10,7 +10,7 @@ import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
 // Configuration
 const API_URL = "/api/occupancy";
 const CAPACITIES = {
-    building1: 20,
+    building1: 25,
     building2: 12
 };
 const UPDATE_INTERVAL = 5000;
