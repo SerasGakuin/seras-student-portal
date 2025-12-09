@@ -23,6 +23,8 @@ interface OccupancyData {
 
 
 
+import { PageHeader } from '@/components/ui/PageHeader';
+
 export default function OccupancyPage() {
     const [data, setData] = useState<OccupancyData | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -50,10 +52,10 @@ export default function OccupancyPage() {
 
     return (
         <div className="container">
-            <header>
-                <h1><span className="brand">Seras学院</span> 自習室の在室人数</h1>
-                <p className="subtitle">リアルタイム更新中</p>
-            </header>
+            <PageHeader
+                title={<><span className="brand">Seras学院</span> 自習室の在室人数</>}
+                subtitle="リアルタイム更新中"
+            />
 
             <main>
                 {error && (

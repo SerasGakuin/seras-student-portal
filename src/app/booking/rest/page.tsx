@@ -9,10 +9,13 @@ import { FormGroup } from '@/components/ui/FormGroup';
 import { FormInput } from '@/components/ui/FormInput';
 import { BackLink } from '@/components/ui/BackLink';
 import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
+import { getDisplayName } from '@/lib/utils';
+
+import { PageHeader } from '@/components/ui/PageHeader';
 
 export default function RestPage() {
     const router = useRouter();
-    const { profile, isLoggedIn, isLoading: isLiffLoading } = useLiff();
+    const { profile, student, isLoggedIn, isLoading: isLiffLoading } = useLiff();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [date, setDate] = useState('');
 
@@ -40,7 +43,8 @@ export default function RestPage() {
             const data = await res.json();
 
             if (data.status === 'ok') {
-                alert('休み登録が完了しました！');
+                const name = getDisplayName(student, profile);
+                alert(`${name}さんの休む日は、${date}で予約完了しました！`);
                 router.push('/booking');
             } else {
                 throw new Error(data.message || '登録に失敗しました');
@@ -63,9 +67,10 @@ export default function RestPage() {
 
     return (
         <div className="container">
-            <header>
-                <h1><span className="brand">Seras学院</span> 休み登録</h1>
-            </header>
+            <PageHeader
+                title={<><span className="brand">Seras学院</span> 休み登録</>}
+                subtitle="欠席する日を登録してください"
+            />
 
             <GlassCard className="animate-slide-up" style={{ textAlign: 'left' }}>
                 <form onSubmit={handleSubmit}>

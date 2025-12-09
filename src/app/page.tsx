@@ -3,13 +3,15 @@
 import { PortalCard } from '@/components/ui/PortalCard';
 import styles from './page.module.css';
 
+import { PageHeader } from '@/components/ui/PageHeader';
+
 export default function PortalHome() {
   return (
     <div className="container">
-      <header>
-        <h1><span className="brand">Seras学院</span> 生徒ポータル</h1>
-        <p className="subtitle">各種サービスにアクセスできます</p>
-      </header>
+      <PageHeader
+        title={<><span className="brand">Seras学院</span> 生徒ポータル</>}
+        subtitle="各種サービスにアクセスできます"
+      />
 
       <main>
         <div className={styles.grid}>

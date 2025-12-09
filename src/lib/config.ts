@@ -1,8 +1,13 @@
 export const CONFIG = {
     SPREADSHEET: {
-        ID: '1DbTXo6BsT3dbxVo8A_dxTHv_bVNv5kZVbQsQglLKat8',
-        SHEETS: {
-            OCCUPANCY: '在室人数',
+        STUDENT: {
+            ID: process.env.STUDENT_SPREADSHEET_ID || '',
+        },
+        OCCUPANCY: {
+            ID: process.env.OCCUPANCY_SPREADSHEET_ID || '',
+            SHEETS: {
+                OCCUPANCY: '在室人数',
+            },
         },
     },
     API: {
@@ -19,7 +24,7 @@ export const CONFIG = {
         { value: 'T19:00:00', label: '19:00~20:00' },
         { value: 'T20:00:00', label: '20:00~21:00' },
         { value: 'T21:00:00', label: '21:00~22:00' },
-        { value: 'T22:00:00', label: '21:00~22:00' }, // Duplicate in original, keeping for now or fixing? Original had T22:00:00 as 21:00-22:00 too? No, let's check.
+        { value: 'T22:00:00', label: '22:00~23:00' },
     ] as const,
     MEETING_TYPES: [
         { value: '面談', label: '面談' },
