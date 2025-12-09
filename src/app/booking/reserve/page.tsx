@@ -12,11 +12,14 @@ import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
 import { DateButtonSelect } from '@/features/booking/components/DateButtonSelect';
 import { TimeRangeSlider } from '@/features/booking/components/TimeRangeSlider';
 import { CONFIG } from '@/lib/config';
+import { getDisplayName } from '@/lib/utils';
 import { ApiResponse, BookingRequest } from '@/types';
+
+import { PageHeader } from '@/components/ui/PageHeader';
 
 export default function BookingPage() {
     const router = useRouter();
-    const { profile, isLoggedIn, isLoading: isLiffLoading } = useLiff();
+    const { profile, student, isLoggedIn, isLoading: isLiffLoading } = useLiff();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Form State
@@ -60,7 +63,10 @@ export default function BookingPage() {
             const data: ApiResponse = await res.json();
 
             if (data.status === 'ok') {
-                alert('予約が完了しました！');
+                const name = getDisplayName(student, profile);
+                const start = formData.arrivalTime.replace('T', '').slice(0, 5);
+                const end = formData.leaveTime.replace('T', '').slice(0, 5);
+                alert(`${name}さんの${formData.meetingType}は、${formData.date} ${start}-${end}で予約完了しました！`);
                 router.push('/booking');
             } else {
                 throw new Error(data.message || '予約に失敗しました');
@@ -83,9 +89,10 @@ export default function BookingPage() {
 
     return (
         <div className="container">
-            <header>
-                <h1><span className="brand">Seras学院</span> 面談予約</h1>
-            </header>
+            <PageHeader
+                title={<><span className="brand">Seras学院</span> 面談予約</>}
+                subtitle="ご希望の日時を選択してください"
+            />
 
             <GlassCard className="animate-slide-up" style={{ textAlign: 'left' }}>
                 <form onSubmit={handleSubmit}>

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getStudentNameFromLineId } from '@/lib/studentMaster';
+import { getStudentFromLineId } from '@/lib/studentMaster';
 import { getGoogleCalendar } from '@/lib/googleCalendar';
 import { ApiResponse, RestDayRequest } from '@/types';
 
@@ -19,13 +19,14 @@ export async function POST(request: Request) {
         }
 
         // Get student name
-        const studentName = await getStudentNameFromLineId(userId);
-        if (!studentName) {
+        const student = await getStudentFromLineId(userId);
+        if (!student) {
             return NextResponse.json<ApiResponse>(
                 { status: 'error', message: '生徒として未登録のLINE IDです' },
                 { status: 404 }
             );
         }
+        const studentName = student.name;
 
         // Create calendar event (all-day event)
         const calendar = await getGoogleCalendar();

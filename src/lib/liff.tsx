@@ -2,19 +2,16 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import liff from '@line/liff';
+import { Student, StudentProfile } from '@/types';
 
 const LIFF_ID = process.env.NEXT_PUBLIC_LIFF_ID || '';
 
-interface Profile {
-    userId: string;
-    displayName: string;
-    pictureUrl?: string;
-}
-
 interface LiffContextType {
     liff: typeof liff | null;
-    profile: Profile | null;
+    profile: StudentProfile | null;
+    student: Student | null;
     isLoggedIn: boolean;
+    isRegistered: boolean;
     error: string | null;
     isLoading: boolean;
 }
@@ -22,7 +19,9 @@ interface LiffContextType {
 const LiffContext = createContext<LiffContextType>({
     liff: null,
     profile: null,
+    student: null,
     isLoggedIn: false,
+    isRegistered: false,
     error: null,
     isLoading: true,
 });
@@ -30,8 +29,10 @@ const LiffContext = createContext<LiffContextType>({
 export const useLiff = () => useContext(LiffContext);
 
 export const LiffProvider = ({ children }: { children: React.ReactNode }) => {
-    const [profile, setProfile] = useState<Profile | null>(null);
+    const [profile, setProfile] = useState<StudentProfile | null>(null);
+    const [student, setStudent] = useState<Student | null>(null);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [isRegistered, setIsRegistered] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -41,11 +42,16 @@ export const LiffProvider = ({ children }: { children: React.ReactNode }) => {
                 if (!LIFF_ID) {
                     console.warn('LIFF ID is not set. Running in mock mode.');
                     // Mock data for development
-                    setProfile({
-                        userId: 'U873f976fc1f2ab959918871c84714da9', // Test ID
+                    const mockProfile = {
+                        userId: 'Ufd3f1cc5afd45924f995d7b51304c550', // Test ID
                         displayName: 'テストユーザー',
-                    });
+                    };
+                    setProfile(mockProfile);
                     setIsLoggedIn(true);
+
+                    // Mock Login attempt
+                    await attemptLogin(mockProfile.userId);
+
                     setIsLoading(false);
                     return;
                 }
@@ -55,27 +61,30 @@ export const LiffProvider = ({ children }: { children: React.ReactNode }) => {
                 if (liff.isLoggedIn()) {
                     setIsLoggedIn(true);
                     const p = await liff.getProfile();
-                    setProfile({
+                    const userProfile = {
                         userId: p.userId,
                         displayName: p.displayName,
                         pictureUrl: p.pictureUrl,
-                    });
+                    };
+                    setProfile(userProfile);
+
+                    // Attempt to login with backend using LINE ID
+                    await attemptLogin(userProfile.userId);
                 } else {
                     setIsLoggedIn(false);
-                    // Auto login if not logged in (optional, depending on UX)
-                    // liff.login();
+                    // Login is not forced here; user can browse as guest if allowed, or trigger login elsewhere
                 }
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } catch (err: any) {
                 console.error('LIFF init failed', err);
                 setError(err.message);
-                // Fallback to mock data in dev if init fails (e.g. wrong LIFF ID)
                 if (process.env.NODE_ENV === 'development') {
-                    setProfile({
-                        userId: 'U873f976fc1f2ab959918871c84714da9',
+                    const mockProfile = {
+                        userId: 'Ufd3f1cc5afd45924f995d7b51304c550',
                         displayName: 'テストユーザー (Fallback)',
-                    });
+                    };
+                    setProfile(mockProfile);
                     setIsLoggedIn(true);
+                    await attemptLogin(mockProfile.userId);
                 }
             } finally {
                 setIsLoading(false);
@@ -85,8 +94,34 @@ export const LiffProvider = ({ children }: { children: React.ReactNode }) => {
         initLiff();
     }, []);
 
+    const attemptLogin = async (lineUserId: string) => {
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lineUserId }),
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                if (data.student) {
+                    setStudent(data.student);
+                    setIsRegistered(true);
+                } else {
+                    setIsRegistered(false);
+                }
+            } else {
+                console.warn('Login API returned non-OK status:', res.status);
+                setIsRegistered(false);
+            }
+        } catch (e) {
+            console.error('Failed to login to backend:', e);
+            setIsRegistered(false);
+        }
+    };
+
     return (
-        <LiffContext.Provider value={{ liff: LIFF_ID ? liff : null, profile, isLoggedIn, error, isLoading }}>
+        <LiffContext.Provider value={{ liff: LIFF_ID ? liff : null, profile, student, isLoggedIn, isRegistered, error, isLoading }}>
             {children}
         </LiffContext.Provider>
     );

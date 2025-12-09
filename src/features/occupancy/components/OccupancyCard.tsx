@@ -18,7 +18,9 @@ interface OccupancyCardProps {
     comingSoon?: boolean;
 }
 
+
 export const OccupancyCard = ({ title, count, max, moleImage, comingSoon }: OccupancyCardProps) => {
+
     const getStatus = (count: number | undefined, max: number): StatusConfig => {
         if (count === undefined) return { text: "--", color: "#dfe6e9" };
         const ratio = count / max;

@@ -28,3 +28,8 @@ export interface RestDayRequest {
     userId: string;
     date: string;
 }
+
+export interface Student {
+    lineId: string;
+    name: string;
+}

@@ -6,6 +6,8 @@ import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
 import { BackLink } from '@/components/ui/BackLink';
 import styles from '../page.module.css';
 
+import { PageHeader } from '@/components/ui/PageHeader';
+
 export default function BookingMenu() {
     const { isLoading } = useLiff();
 
@@ -15,10 +17,10 @@ export default function BookingMenu() {
 
     return (
         <div className="container">
-            <header>
-                <h1><span className="brand">Seras学院</span> 予約システム</h1>
-                <p className="subtitle">ご希望の手続きを選択してください</p>
-            </header>
+            <PageHeader
+                title={<><span className="brand">Seras学院</span> 予約システム</>}
+                subtitle="ご希望の手続きを選択してください"
+            />
 
             <main>
                 <div className={styles.grid}>

@@ -8,8 +8,8 @@ export async function GET() {
         const sheets = await getGoogleSheets();
 
         const response = await sheets.spreadsheets.values.get({
-            spreadsheetId: CONFIG.SPREADSHEET.ID,
-            range: `${CONFIG.SPREADSHEET.SHEETS.OCCUPANCY}!A2:B2`,
+            spreadsheetId: CONFIG.SPREADSHEET.OCCUPANCY.ID,
+            range: `${CONFIG.SPREADSHEET.OCCUPANCY.SHEETS.OCCUPANCY}!A2:B2`,
         });
 
         const rows = response.data.values;
