@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getStudentFromLineId } from '@/lib/studentMaster';
 import { getGoogleCalendar } from '@/lib/googleCalendar';
+import { sendPushMessage } from '@/lib/line';
 import { ApiResponse, BookingRequest } from '@/types';
 
 const CALENDAR_ID = process.env.CALENDAR_ID || 'primary';
@@ -56,6 +57,12 @@ export async function POST(request: Request) {
                 },
             },
         });
+
+        // Send confirmation message via LINE
+        await sendPushMessage(
+            userId,
+            `【${meetingType}】${studentName}さんの${meetingType}は、${date} ${startTime}-${endTime}で予約完了しました！`
+        );
 
         return NextResponse.json<ApiResponse>({
             status: 'ok',

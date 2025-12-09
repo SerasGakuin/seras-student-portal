@@ -1,4 +1,5 @@
 export const CONFIG = {
+    LINE_CHANNEL_ACCESS_TOKEN: process.env.LINE_CHANNEL_ACCESS_TOKEN || '',
     SPREADSHEET: {
         STUDENT: {
             ID: process.env.STUDENT_SPREADSHEET_ID || '',
