@@ -21,6 +21,7 @@ Seras学院の生徒学習支援を目的としたWebアプリケーションの
 - **[データベース定義](./docs/database.md)**: Google Sheetsのカラム定義。
 - **[テストガイド](./docs/testing.md)**: テストの実行方法と方針。
 - **[デプロイ](./docs/deployment.md)**: Vercelへのデプロイ手順。
+- **[開発ガイド (AI/Contributing)](./CONTRIBUTING.md)**: 開発フローとAIエージェントへの指示。
 
 ## クイックスタート
 

@@ -6,3 +6,4 @@
 - **[デプロイガイド (Deployment)](./deployment.md)**: Vercel へのデプロイ手順。
 - **[API 仕様書 (API Spec)](./api-spec.md)**: エンドポイント詳細とデータスキーマ。
 - **[データベース定義 (Database)](./database.md)**: Google Sheets の構造定義。
+- **[AI エージェントガイド (AI Guidelines)](./AGENTS.md)**: AI への指示書と開発ルール。
