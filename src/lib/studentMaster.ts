@@ -22,21 +22,50 @@ export const getStudentFromLineId = async (lineId: string): Promise<Student | nu
         }
 
         const headers = rows[0];
-        const lineIdIndex = headers.indexOf('生徒LINEID');
-        const nameIndex = headers.indexOf('名前');
 
-        if (lineIdIndex === -1 || nameIndex === -1) {
-            console.error('Required columns not found in spreadsheet');
+        // Dynamic column mapping
+        const colMap = new Map<string, number>();
+        headers.forEach((header, index) => {
+            colMap.set(header, index);
+        });
+
+        // Required columns
+        const COLS = {
+            LINE_ID: '生徒LINEID',
+            NAME: '名前',
+            GRADE: '学年',
+            STATUS: 'Status',
+        };
+
+        // Validate existence of required columns
+        const missingCols = Object.values(COLS).filter(col => !colMap.has(col));
+        if (missingCols.length > 0) {
+            console.error(`Missing required columns: ${missingCols.join(', ')}`);
             return null;
         }
+
+        const idxLineId = colMap.get(COLS.LINE_ID)!;
+        const idxName = colMap.get(COLS.NAME)!;
+        const idxGrade = colMap.get(COLS.GRADE)!;
+        const idxStatus = colMap.get(COLS.STATUS)!;
 
         // Search for the student
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
-            if (row[lineIdIndex] === lineId) {
+            const currentLineId = row[idxLineId];
+
+            if (currentLineId === lineId) {
+                // Ensure row has enough columns (google sheets might truncate empty trailing cells)
+                // Accessing index outside array returns undefined, so we handle that safely.
+                const name = row[idxName] || '';
+                const grade = row[idxGrade] as Student['grade'];
+                const status = row[idxStatus] as Student['status'];
+
                 return {
-                    lineId: row[lineIdIndex],
-                    name: row[nameIndex]
+                    lineId: currentLineId,
+                    name,
+                    grade,
+                    status,
                 };
             }
         }

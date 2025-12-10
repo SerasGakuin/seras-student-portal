@@ -29,7 +29,12 @@ export interface RestDayRequest {
     date: string;
 }
 
+export type Grade = '中1' | '中2' | '中3' | '高1' | '高2' | '高3' | '既卒' | '講師';
+export type StudentStatus = '在塾' | '体験' | '退塾' | '休塾' | '在塾(講師)' | '退塾(講師)' | '教室長';
+
 export interface Student {
     lineId: string;
     name: string;
+    grade: Grade;
+    status: StudentStatus;
 }
