@@ -1,23 +1,24 @@
 import { NextResponse } from 'next/server';
-import { getStudentFromLineId } from '@/lib/studentMaster';
-import { getGoogleCalendar } from '@/lib/googleCalendar';
-import { sendPushMessage } from '@/lib/line';
-import { ApiResponse, BookingRequest } from '@/types';
-
-const CALENDAR_ID = process.env.CALENDAR_ID || 'primary';
+import { createMeetingEvent } from '@/services/calendarService';
+import { sendPushMessage } from '@/services/lineService';
+import { getStudentFromLineId } from '@/services/studentService';
+import { BookingRequestSchema } from '@/lib/schema';
+import { ApiResponse } from '@/types';
 
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { userId, date, meetingType, arrivalTime, leaveTime } = body as BookingRequest;
 
-        // Validation
-        if (!userId || !date || !meetingType || !arrivalTime || !leaveTime) {
+        // Validate request body with Zod
+        const validation = BookingRequestSchema.safeParse(body);
+        if (!validation.success) {
             return NextResponse.json<ApiResponse>(
-                { status: 'error', message: 'Missing required fields' },
+                { status: 'error', message: 'Invalid request data', data: validation.error.format() },
                 { status: 400 }
             );
         }
+
+        const { userId, date, meetingType, arrivalTime, leaveTime } = validation.data;
 
         // Get student name
         const student = await getStudentFromLineId(userId);
@@ -27,54 +28,36 @@ export async function POST(request: Request) {
                 { status: 404 }
             );
         }
-        const studentName = student.name;
 
-        // Parse times (format: "T17:00:00")
-        const startTime = arrivalTime.replace('T', '');
-        const endTime = leaveTime.replace('T', '');
+        // Create calendar event via Service
+        const eventResult = await createMeetingEvent(
+            student.name,
+            date,
+            meetingType,
+            arrivalTime,
+            leaveTime
+        );
 
-        // Explicitly set timezone to JST (+09:00) to prevent server from interpreting as UTC
-        const startDateTime = new Date(`${date}T${startTime}+09:00`);
-        const endDateTime = new Date(`${date}T${endTime}+09:00`);
-
-        // Create calendar event
-        const calendar = await getGoogleCalendar();
-        const title = `【${meetingType}】${studentName}さん`;
-        const description = `予約システムからの登録\nタイプ: ${meetingType}\n生徒名: ${studentName}`;
-
-        const event = await calendar.events.insert({
-            calendarId: CALENDAR_ID,
-            requestBody: {
-                summary: title,
-                description: description,
-                start: {
-                    dateTime: startDateTime.toISOString(),
-                    timeZone: 'Asia/Tokyo',
-                },
-                end: {
-                    dateTime: endDateTime.toISOString(),
-                    timeZone: 'Asia/Tokyo',
-                },
-            },
-        });
-
-        // Send confirmation message via LINE
-        // Remove seconds from time string (HH:MM:SS -> HH:MM)
+        // Send confirmation message via Service
+        // Format time for display (HH:MM)
         const formatTime = (t: string) => t.slice(0, 5);
+        // Note: The service expects raw T-prefixed time strings as input? 
+        // In calendarService.ts I implemented it to strip 'T'.
+        // My schema validation ensures it matches T\d\d... pattern.
+        // Wait, formatTime logic duplicates slicing. Ideally NotificationService handles formatting.
+        // For now, keeping format logic here or moving it to lineService?
+        // Let's keep it here for custom message construction or refactor later.
+
         await sendPushMessage(
             userId,
-            `【${meetingType}】${studentName}さんの${meetingType}は、${date} ${formatTime(startTime)}-${formatTime(endTime)}で予約完了しました！`
+            `【${meetingType}】${student.name}さんの${meetingType}は、${date} ${formatTime(arrivalTime.replace('T', ''))}-${formatTime(leaveTime.replace('T', ''))}で予約完了しました！`
         );
 
         return NextResponse.json<ApiResponse>({
             status: 'ok',
-            data: {
-                eventId: event.data.id,
-                title: title,
-                startTime: startDateTime.toISOString(),
-                endTime: endDateTime.toISOString(),
-            },
+            data: eventResult,
         });
+
     } catch (error: unknown) {
         console.error('Error in reserveMeeting API:', error);
         const message = error instanceof Error ? error.message : 'Unknown error';

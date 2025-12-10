@@ -38,14 +38,14 @@ export function TimeRangeSlider({ startTime, endTime, onChange }: TimeRangeSlide
     useEffect(() => {
         const start = timeToHour(startTime);
         const end = timeToHour(endTime);
-        setLocalStart(start);
-        setLocalEnd(end);
+        if (localStart !== start) setLocalStart(start);
+        if (localEnd !== end) setLocalEnd(end);
         // Only update visual if not dragging to prevent jump
         if (!isDragging) {
             setVisualStart(start);
             setVisualEnd(end);
         }
-    }, [startTime, endTime, isDragging]);
+    }, [startTime, endTime, isDragging, localStart, localEnd]);
 
     // Calculate percentage for positioning
     const getPercent = (hour: number) => {

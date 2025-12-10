@@ -1,23 +1,24 @@
 import { NextResponse } from 'next/server';
-import { getStudentFromLineId } from '@/lib/studentMaster';
-import { getGoogleCalendar } from '@/lib/googleCalendar';
-import { sendPushMessage } from '@/lib/line';
-import { ApiResponse, RestDayRequest } from '@/types';
-
-const CALENDAR_ID = process.env.CALENDAR_ID || 'primary';
+import { createRestDayEvent } from '@/services/calendarService';
+import { sendPushMessage } from '@/services/lineService';
+import { getStudentFromLineId } from '@/services/studentService';
+import { RestDayRequestSchema } from '@/lib/schema';
+import { ApiResponse } from '@/types';
 
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { userId, date } = body as RestDayRequest;
 
-        // Validation
-        if (!userId || !date) {
+        // Validate request body with Zod
+        const validation = RestDayRequestSchema.safeParse(body);
+        if (!validation.success) {
             return NextResponse.json<ApiResponse>(
-                { status: 'error', message: 'Missing required fields' },
+                { status: 'error', message: 'Invalid request data', data: validation.error.format() },
                 { status: 400 }
             );
         }
+
+        const { userId, date } = validation.data;
 
         // Get student name
         const student = await getStudentFromLineId(userId);
@@ -27,41 +28,21 @@ export async function POST(request: Request) {
                 { status: 404 }
             );
         }
-        const studentName = student.name;
 
-        // Create calendar event (all-day event)
-        const calendar = await getGoogleCalendar();
-        const title = `【休み】${studentName}`;
-        const description = `予約システムからの登録\n生徒名: ${studentName}`;
-
-        const event = await calendar.events.insert({
-            calendarId: CALENDAR_ID,
-            requestBody: {
-                summary: title,
-                description: description,
-                start: {
-                    date: date, // All-day event uses 'date' instead of 'dateTime'
-                },
-                end: {
-                    date: date,
-                },
-            },
-        });
+        // Create calendar event via Service
+        const eventResult = await createRestDayEvent(student.name, date);
 
         // Send confirmation message via LINE
         await sendPushMessage(
             userId,
-            `【休む日】${studentName}さんの休む日は、${date}で予約完了しました！`
+            `【休む日】${student.name}さんの休む日は、${date}で予約完了しました！`
         );
 
         return NextResponse.json<ApiResponse>({
             status: 'ok',
-            data: {
-                eventId: event.data.id,
-                title: title,
-                date: date,
-            },
+            data: eventResult,
         });
+
     } catch (error: unknown) {
         console.error('Error registering rest day:', error);
         const message = error instanceof Error ? error.message : 'Unknown error';

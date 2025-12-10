@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { api } from '@/lib/api';
 import { OccupancyCard } from '@/features/occupancy/components/OccupancyCard';
 import { GuideCard } from '@/features/occupancy/components/GuideCard';
 import styles from './page.module.css';
@@ -29,22 +30,20 @@ export default function OccupancyPage() {
     const [data, setData] = useState<OccupancyData | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchOccupancy = async () => {
-        try {
-            const response = await fetch(API_URL, { cache: "no-store" });
-            if (!response.ok) {
-                throw new Error(`Network Error: ${response.status}`);
-            }
-            const jsonData = await response.json();
-            setData(jsonData);
-            setError(null);
-        } catch (err) {
-            console.error('Fetch error:', err);
-            setError('データの取得に失敗しました');
-        }
-    };
+
 
     useEffect(() => {
+        const fetchOccupancy = async () => {
+            try {
+                const data = await api.occupancy.get();
+                setData(data);
+                setError(null);
+            } catch (err) {
+                console.error('Fetch error:', err);
+                setError('データの取得に失敗しました');
+            }
+        };
+
         fetchOccupancy();
         const interval = setInterval(fetchOccupancy, UPDATE_INTERVAL);
         return () => clearInterval(interval);

@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import liff from '@line/liff';
 import { Student, StudentProfile } from '@/types';
+import { api } from '@/lib/api';
 
 const LIFF_ID = process.env.NEXT_PUBLIC_LIFF_ID || '';
 
@@ -74,9 +75,10 @@ export const LiffProvider = ({ children }: { children: React.ReactNode }) => {
                     setIsLoggedIn(false);
                     // Login is not forced here; user can browse as guest if allowed, or trigger login elsewhere
                 }
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error('LIFF init failed', err);
-                setError(err.message);
+                const message = err instanceof Error ? err.message : String(err);
+                setError(message);
                 if (process.env.NODE_ENV === 'development') {
                     const mockProfile = {
                         userId: 'Ufd3f1cc5afd45924f995d7b51304c550',
@@ -96,26 +98,19 @@ export const LiffProvider = ({ children }: { children: React.ReactNode }) => {
 
     const attemptLogin = async (lineUserId: string) => {
         try {
-            const res = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ lineUserId }),
-            });
+            const data = await api.auth.login(lineUserId);
 
-            if (res.ok) {
-                const data = await res.json();
-                if (data.student) {
-                    setStudent(data.student);
-                    setIsRegistered(true);
-                } else {
-                    setIsRegistered(false);
-                }
+            if (data.student) {
+                setStudent(data.student);
+                setIsRegistered(true);
             } else {
-                console.warn('Login API returned non-OK status:', res.status);
                 setIsRegistered(false);
             }
         } catch (e) {
             console.error('Failed to login to backend:', e);
+            // Don't set error state here to avoid blocking UI for non-fatal login fails (e.g. just unregistered)
+            // But if it's network error, might be good.
+            // For now preserving original logic: just set registered=false
             setIsRegistered(false);
         }
     };
