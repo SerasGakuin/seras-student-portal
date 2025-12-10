@@ -20,6 +20,7 @@ export function TimeRangeSlider({ startTime, endTime, onChange }: TimeRangeSlide
     const [visualStart, setVisualStart] = useState(MIN_HOUR);
     const [visualEnd, setVisualEnd] = useState(MIN_HOUR + 1);
     const [isDragging, setIsDragging] = useState<'start' | 'end' | null>(null);
+    const [dragStartValue, setDragStartValue] = useState<number | null>(null);
 
     // Convert string time (T14:00:00) to hour number (14)
     const timeToHour = (timeStr: string) => {
@@ -54,6 +55,7 @@ export function TimeRangeSlider({ startTime, endTime, onChange }: TimeRangeSlide
     const handlePointerDown = (type: 'start' | 'end') => (e: React.PointerEvent) => {
         e.preventDefault();
         setIsDragging(type);
+        setDragStartValue(type === 'start' ? localStart : localEnd);
         e.currentTarget.setPointerCapture(e.pointerId);
     };
 
@@ -67,16 +69,52 @@ export function TimeRangeSlider({ startTime, endTime, onChange }: TimeRangeSlide
             // Ignore error if element didn't have capture
         }
 
-        // Snap to nearest hour on release
-        const snappedStart = Math.round(visualStart);
-        const snappedEnd = Math.round(visualEnd);
+        // Directional Snapping Logic
+        // If user moved more than a small threshold (0.25 = 25% of an hour) in a direction, capture that.
+        const THRESHOLD = 0.25;
+
+        // Helper to snap based on drag start
+        const snapDirectional = (current: number, start: number | null) => {
+            if (start === null) return Math.round(current);
+
+            const diff = current - start;
+
+            // If moved left significantly
+            if (diff < -THRESHOLD) {
+                return Math.floor(current);
+                // e.g. 17.8 (start 18) -> diff -0.2 -> floor(17.8) = 17
+                // e.g. 17.2 (start 18) -> diff -0.8 -> floor(17.2) = 17
+            }
+
+            // If moved right significantly
+            if (diff > THRESHOLD) {
+                return Math.ceil(current);
+                // e.g. 18.2 (start 18) -> diff 0.2 -> ceil(18.2) = 19
+            }
+
+            // If strictly within threshold, stay at start (snap back)
+            // Unless we are already closer to another integer essentially? 
+            // Actually, if I moved 17.6 to 17.5 (start 17), diff is 0.5. 
+            // Wait, logic above only works if I move away from start.
+            // If I dragged from 18 to 17.9 (diff -0.1), stay at 18. Good.
+
+            return start;
+        };
+
+        const snappedStart = isDragging === 'start'
+            ? snapDirectional(visualStart, dragStartValue)
+            : Math.round(visualStart);
+
+        const snappedEnd = isDragging === 'end'
+            ? snapDirectional(visualEnd, dragStartValue)
+            : Math.round(visualEnd);
 
         // Ensure constraints are met after snap
         let finalStart = snappedStart;
         let finalEnd = snappedEnd;
 
         if (finalStart >= finalEnd) {
-            // If they collapsed, separate them
+            // If they collapsed, prioritize the one being dragged
             if (isDragging === 'start') finalStart = finalEnd - 1;
             else finalEnd = finalStart + 1;
         }
@@ -95,6 +133,7 @@ export function TimeRangeSlider({ startTime, endTime, onChange }: TimeRangeSlide
         setVisualEnd(finalEnd);
         setLocalStart(finalStart);
         setLocalEnd(finalEnd);
+        setDragStartValue(null);
         onChange(hourToTime(finalStart), hourToTime(finalEnd));
     };
 
@@ -166,10 +205,18 @@ export function TimeRangeSlider({ startTime, endTime, onChange }: TimeRangeSlide
     return (
         <div className={styles.sliderContainer}>
             <div className={styles.timeDisplay}>
-                {localStart}:00 - {localEnd}:00
-                <span className={styles.duration}>
-                    ({localEnd - localStart}時間)
-                </span>
+                <div className={styles.timeBlock}>
+                    <span className={styles.timeValue}>{localStart}:00</span>
+                    <span className={styles.subLabel}>来塾</span>
+                </div>
+                <span className={styles.timeSeparator}>-</span>
+                <div className={styles.timeBlock}>
+                    <span className={styles.timeValue}>{localEnd}:00</span>
+                    <span className={styles.subLabel}>退塾</span>
+                </div>
+                <div className={styles.durationBadge}>
+                    {localEnd - localStart}時間
+                </div>
             </div>
 
             <div
@@ -208,7 +255,11 @@ export function TimeRangeSlider({ startTime, endTime, onChange }: TimeRangeSlide
 
             <div className={styles.labels}>
                 {labels.map(hour => (
-                    <div key={hour} className={styles.label}>
+                    <div
+                        key={hour}
+                        className={styles.label}
+                        style={{ left: `${getPercent(hour)}%` }}
+                    >
                         {hour}
                     </div>
                 ))}
