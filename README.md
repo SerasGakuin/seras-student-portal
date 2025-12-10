@@ -10,7 +10,7 @@ Seras学院の生徒学習支援を目的としたWebアプリケーションの
 - **LINE統合認証**: LINEアカウントを利用したシングルサインオン (SSO) で、生徒はストレスなくログイン可能です。
 - **リアルタイム在室モニタリング**: 自習室（本館・2号館）の利用状況を可視化します。
 - **予約管理システム**: 面談予約や欠席連絡をWeb上で行い、Googleカレンダーと自動同期します。
-- **講師モード** (Beta): 講師が生徒データやスケジュールを管理するためのダッシュボード機能（開発中）。
+- **講師・教室長モード**: 講師による生徒検索、教室長による自習室の開館/閉館管理機能（権限ベースのUI切り替え）。
 
 ## ドキュメント
 開発者向けの詳細ドキュメントは `docs/` ディレクトリに格納されています。
@@ -20,7 +20,7 @@ Seras学院の生徒学習支援を目的としたWebアプリケーションの
 - **[API仕様書](./docs/api-spec.md)**: APIエンドポイントとデータスキーマ。
 - **[データベース定義](./docs/database.md)**: Google Sheetsのカラム定義。
 - **[テストガイド](./docs/testing.md)**: テストの実行方法と方針。
-- **[デプロイ](./docs/deployment.md)**: Vercelへのデプロイ手順。
+- **[デプロイ](./docs/deployment.md)**: Vercelへのデプロイ手順とAnalytics設定。
 - **[開発ガイド (AI/Contributing)](./CONTRIBUTING.md)**: 開発フローとAIエージェントへの指示。
 
 ## クイックスタート
@@ -46,5 +46,6 @@ npm run dev
 - **Language**: TypeScript
 - **Auth**: LINE LIFF v2
 - **Data**: Google Sheets API, Google Calendar API
+- **Analytics**: Vercel Analytics
 - **Testing**: Jest
 - **Validation**: Zod

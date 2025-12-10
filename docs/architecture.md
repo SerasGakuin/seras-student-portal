@@ -60,16 +60,28 @@ src/
 4.  **Infrastracture Layer (`src/lib`)**:
     *   **役割**: 外部システム（Google, LINE）との通信詳細を隠蔽する。
 
-### B. 型安全性とバリデーション (Zod & TypeScript)
+## 3. UI/UX 実装パターン (UI Patterns)
+
+### A. Granular Loading (きめ細やかな読み込み)
+従来の「ロード中は画面全体をスケルトンにする」手法は、UXを損なうため廃止しました。
+*   **個別更新**: 教室長が開館/閉館操作を行った際、操作された建物のカード**だけ**をスケルトン表示にします。
+*   `PrincipalControlPanel` による操作ロックと `OccupancyCard` の `isLoading` Props を連動させています。
+
+### B. パフォーマンス最適化 (React.memo)
+リアルタイム性を確保するため、`OccupancyPage` は数秒ごとにポーリングを行いますが、以下の対策でチラつき（Flickr）を防止しています。
+*   **コンポーネントのメモ化**: `PageHeader` などの静的コンポーネントを `React.memo` でラップし、不要な再レンダリングを阻止。
+*   **Propsの定数化**: 親コンポーネントから渡す JSX やオブジェクトを定数 (`const`) として定義。
+
+### C. 型安全性とバリデーション (Zod & TypeScript)
 「入力は疑え」の原則に基づき、API の入り口で必ず **Zod** による検証を行います。
 *   `src/lib/schema.ts` に全スキーマを集約。
 *   型定義 (`src/types`) とスキーマ定義 (`src/lib/schema.ts`) を連携させ、コンパイル時と実行時の両方で安全性を担保します。
 
-### C. 変更への強さ (Robustness)
+### D. 変更への強さ (Robustness)
 外部依存（特に Google Sheets）の脆さをコードで吸収しています。
 *   **動的カラムマッピング**: スプレッドシートの列順序が変わっても、ヘッダー名（「生徒LINEID」など）で検索するため、プログラムは壊れません。
 
-## 3. データフロー
+## 4. データフロー
 
 例：**生徒が面談予約をする場合**
 
@@ -84,7 +96,7 @@ src/
     *   生徒に完了通知を送る。
 6.  **Response**: UI に成功 (`{ status: 'ok' }`) を返す。
 
-## 4. 認証と権限 (Authentication & Authorization)
+## 5. 認証と権限 (Authentication & Authorization)
 
 本システムでは、ユーザーの状態を以下の3段階で識別しています。
 

@@ -26,3 +26,8 @@ next build
 ## LINE Developers の設定
 デプロイ後、**LINE Login Channel** の設定を更新してください。
 - **LIFF URL**: 本番環境の URL に変更する必要があります。エンドポイント設定で「LIFF URL」として登録・公開してください。
+
+## アナリティクス (Analytics)
+**@vercel/analytics** を導入しており、Vercel Dashboard から訪問数やページビューを確認できます。
+- 設定不要で、デプロイするだけで自動的にデータ収集が開始されます。
+- `src/app/layout.tsx` にコンポーネントが配置されています。

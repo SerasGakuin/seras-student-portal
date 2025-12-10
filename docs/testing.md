@@ -17,13 +17,13 @@ npm test -- --watch
 
 ## 何をテストするか
 1.  **Services (`src/services/*.ts`)**: **必須**。
-    - 生徒データのパース処理が正しいか。
-    - Zod バリデーションが意図通り機能するか。
-    - 外部API呼び出し時のパラメータが正しいか（モックを使用）。
+    - `studentService`: 生徒データのパース、動的カラム対応、バリデーション。
+    - `calendarService`: タイムゾーン考慮 (JST)、イベント作成パラメータ。
+    - `lineService`: (現在はモック前提だが) 送信ロジック。
     
 2.  **Utilities (`src/lib/*.ts`)**: 複雑な処理があれば推奨。
 
-3.  **UI Components**: 現フェーズでは任意（ロジックのテストを優先）。
+3.  **UI Components**: ロジックが複雑な場合（例: `TimeRangeSlider`）はStorybook等での検証を推奨（現在は手動確認がメイン）。
 
 ## 新しいテストの書き方
 ソースコードと同じディレクトリに `*.test.ts` ファイルを作成します。
