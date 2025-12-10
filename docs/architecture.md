@@ -98,7 +98,7 @@ src/
 
 ## 5. 認証と権限 (Authentication & Authorization)
 
-本システムでは、ユーザーの状態を以下の3段階で識別しています。
+本システムでは、ユーザーの状態を以下の5段階で識別しています。
 
 ### ユーザーステート定義
 
@@ -106,7 +106,9 @@ src/
 | :--- | :--- | :--- | :--- |
 | **1. 未ログイン (Guest)** | LIFF SDK `liff.isLoggedIn()` が `false` | LINEアプリ外、またはログイン未完了の状態。 | • ログインボタンの表示のみ |
 | **2. 未登録 (Unregistered)** | LIFFログイン済み (`lineId`有) だが、バックエンド (`AuthService`) が生徒データを返さない (`null`) | LINEログインはできているが、スプレッドシートに `lineId` が登録されていない（または間違っている）。 | • 「生徒登録が見つかりません」画面の表示<br>• ログアウト |
-| **3. 生徒 (Student)** | LIFFログイン済み かつ バックエンドから正規の生徒データ (`Student`) が返却された | 正常な利用状態。 | • 在室状況の閲覧<br>• 面談予約<br>• 欠席登録 |
+| **3. 生徒 (Student)** | `Status` = "在塾" 等 | 通常の生徒アカウント。 | • 在室状況の閲覧<br>• 面談予約<br>• 欠席登録 |
+| **4. 講師 (Teacher)** | `Status` = "在塾(講師)" | 講師アカウント。 | • **生徒リストの閲覧** (誰がどの校舎にいるか)<br>• 生徒と同じ予約機能 |
+| **5. 教室長 (Principal)** | `Status` = "教室長" | 管理者アカウント。 | • **自習室の開館/閉館操作**<br>• 生徒リストの閲覧<br>• 生徒と同じ予約機能 |
 
 ### 判定ロジックフロー
 
@@ -136,17 +138,20 @@ sequenceDiagram
             API-->>Frontend: { student: null }
             Frontend-->>User: 「未登録」画面 (機能制限)
         else 生徒データあり
-            Sheets-->>AuthService: { name, grade, status... }
+            Sheets-->>AuthService: { name, status... }
             AuthService-->>API: { student: {...} }
             API-->>Frontend: { student: {...} }
-            Frontend-->>User: ポータル画面 (全機能利用可)
+            
+            opt Status check in UI
+                Frontend->>Frontend: Status に応じてUI分岐 (講師/教室長)
+            end
+            
+            Frontend-->>User: ポータル画面 (権限に応じたUI)
         end
     end
 ```
 
-### 今後の拡張 (権限管理)
-「講師モード」や「保護者モード」を追加する場合、`Student` オブジェクト（または新たな `UserContext`）に含まれる **Role** プロパティで分岐を行います。
-
-1.  **スプレッドシート拡張**: `Role` 列を追加 (デフォルト: `student`)。
-2.  **型定義拡張**: `UserContext` 型に `role: 'student' | 'teacher' | 'parent'` を追加。
-3.  **UI分岐**: `src/app/layout.tsx` または各ページで `user.role` に基づいて表示を切り替え。
+### 権限管理の実装 (Role Management)
+スプレッドシートの `Status` カラムを利用して簡易的なロールベースアクセス制御 (RBAC) を実現しています。
+*   **講師**: `OccupancyCard` 内に生徒リスト (`TeacherSection`) を表示。
+*   **教室長**: `PrincipalControlPanel` を表示し、`isLoading` 制御を含む操作権限を付与。
