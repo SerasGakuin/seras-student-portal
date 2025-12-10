@@ -31,7 +31,7 @@
 }
 
 .title {
-    font-size: 1.4rem;
+    font-size: 1.2rem;
     font-weight: 800;
     margin-bottom: 0.8rem;
     letter-spacing: 0.02em;
@@ -39,7 +39,7 @@
 }
 
 .description {
-    font-size: 0.9rem;
+    font-size: 0.7rem;
     color: var(--text-sub);
     line-height: 1.6;
     font-weight: 500;

@@ -14,6 +14,7 @@ import { TimeRangeSlider } from '@/features/booking/components/TimeRangeSlider';
 import { CONFIG } from '@/lib/config';
 import { getDisplayName } from '@/lib/utils';
 import { LoginRequired } from '@/components/ui/LoginRequired';
+import { Unregistered } from '@/components/ui/Unregistered';
 import { ApiResponse, BookingRequest } from '@/types';
 
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -86,6 +87,10 @@ export default function BookingPage() {
 
     if (!isLoggedIn) {
         return <LoginRequired />;
+    }
+
+    if (!student && !isLiffLoading) {
+        return <Unregistered />;
     }
 
     return (

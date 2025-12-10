@@ -11,6 +11,7 @@ import { BackLink } from '@/components/ui/BackLink';
 import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
 import { getDisplayName } from '@/lib/utils';
 import { LoginRequired } from '@/components/ui/LoginRequired';
+import { Unregistered } from '@/components/ui/Unregistered';
 
 import { PageHeader } from '@/components/ui/PageHeader';
 
@@ -64,6 +65,10 @@ export default function RestPage() {
 
     if (!isLoggedIn) {
         return <LoginRequired />;
+    }
+
+    if (!student && !isLiffLoading) {
+        return <Unregistered />;
     }
 
     return (

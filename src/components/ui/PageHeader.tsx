@@ -18,12 +18,10 @@ export const PageHeader = ({ title, subtitle }: PageHeaderProps) => {
         <header>
             <h1>{title}</h1>
             <p className="subtitle">{subtitle}</p>
-            {student && (
-                <div className={styles.greetingBadge}>
-                    <span className={styles.icon}>👋</span>
-                    <span>こんにちは、{displayName}さん</span>
-                </div>
-            )}
+            <div className={styles.greetingBadge}>
+                <span className={styles.icon}>👋</span>
+                <span>こんにちは、{displayName}さん</span>
+            </div>
         </header>
     );
 };
