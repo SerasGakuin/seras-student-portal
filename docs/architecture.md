@@ -23,7 +23,7 @@ src/
 │   ├── booking/            # 予約機能に関わる UI / Components
 │   │   └── components/     # TimeRangeSlider などドメイン固有の部品
 │   └── occupancy/          # 混雑状況機能に関わる UI / Components
-│       └── components/     # OccupancyCard など
+│       └── components/     # OccupancyCard, PrincipalControlPanel など
 │
 ├── services/               # ビジネスロジック層 (Service Layer)
 │   # ここがアプリケーションの「脳」です。Next.js に依存しない純粋な TS 関数。
@@ -50,6 +50,7 @@ src/
 1.  **Presentation Layer (`src/app`, `src/features`)**:
     *   **役割**: 画面の描画とユーザー入力の受け付け。
     *   **ルール**: ビジネスロジックを極力書かない。「API クライアントを呼んで、結果を表示する」ことに徹する。
+    *   **例**: `OccupancyCard` は表示に専念し、更新操作は `PrincipalControlPanel` が担当する（責務の分離）。
 2.  **API Handler Layer (`src/app/api`)**:
     *   **役割**: HTTPリクエストの受付、入力バリデーション (Zod)、レスポンスの返却。
     *   **ルール**: ロジックは書かず、サービス層 (`src/services`) に処理を委譲する。
