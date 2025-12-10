@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Noto_Sans_JP } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { LiffProvider } from "@/lib/liff";
 
@@ -13,10 +14,6 @@ export const metadata: Metadata = {
     icon: "/images/mogura_icon.png",
   },
 };
-
-import { Analytics } from "@vercel/analytics/next";
-
-// ... imports
 
 export default function RootLayout({
   children,
