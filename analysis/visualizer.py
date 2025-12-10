@@ -48,7 +48,10 @@ def _setup_axis(ax: plt.Axes, title: str, xlabel: str = "Hour", ylabel: str = "O
 def plot_daily_trends(df: pl.DataFrame, start_date: Optional[Union[str, date]] = None) -> None:
     """
     Plots daily occupancy trends (Total only) overlaying all days on one plot.
+    Colors are separated by Weekday vs Weekend, with high transparency.
     """
+    from matplotlib.lines import Line2D
+    
     df_sorted, unique_dates = _prepare_data(df, start_date)
     
     if len(unique_dates) == 0:
@@ -58,10 +61,11 @@ def plot_daily_trends(df: pl.DataFrame, start_date: Optional[Union[str, date]] =
     plt.figure(figsize=(10, 6))
     ax = plt.gca()
     
-    # Use a sequential or categorical palette for days
-    colors = sns.color_palette("viridis", n_colors=len(unique_dates))
+    # Define colors
+    c_weekday = sns.color_palette("muted")[0] # Blue
+    c_weekend = sns.color_palette("muted")[3] # Red
 
-    for i, d in enumerate(unique_dates):
+    for d in unique_dates:
         day_df = df_sorted.filter(pl.col("Date") == d)
         
         # X-axis: decimal hours
@@ -71,13 +75,24 @@ def plot_daily_trends(df: pl.DataFrame, start_date: Optional[Union[str, date]] =
         
         values = day_df["Total"]
         
-        day_name = day_df["Day"][0] if "Day" in day_df.columns else ""
-        label = f"{d} ({day_name})"
+        # Determine color based on weekday (Mon=0, Sun=6)
+        # 0-4: Weekday, 5-6: Weekend
+        is_weekend = d.weekday() >= 5
+        color = c_weekend if is_weekend else c_weekday
         
-        sns.lineplot(x=decimal_time, y=values, label=label, linewidth=2, color=colors[i], ax=ax)
+        # Plot with high transparency
+        # Set legend=False to avoid cluttering the legend with every single day
+        sns.lineplot(x=decimal_time, y=values, linewidth=1.5, color=color, alpha=0.3, ax=ax, legend=False)
 
     _setup_axis(ax, title="Daily Occupancy Trends (Total)", ylabel="Total Occupancy")
-    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', frameon=False)
+    
+    # Custom Legend
+    legend_elements = [
+        Line2D([0], [0], color=c_weekday, lw=2, label='Weekday'),
+        Line2D([0], [0], color=c_weekend, lw=2, label='Weekend (Sat/Sun)')
+    ]
+    ax.legend(handles=legend_elements, loc='upper left', frameon=True)
+    
     sns.despine()
     plt.tight_layout()
     plt.show()
