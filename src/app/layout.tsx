@@ -14,6 +14,10 @@ export const metadata: Metadata = {
   },
 };
 
+import { Analytics } from "@vercel/analytics/next";
+
+// ... imports
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -24,6 +28,7 @@ export default function RootLayout({
       <body className={`${inter.variable} ${notoSansJP.variable}`}>
         <LiffProvider>
           {children}
+          <Analytics />
         </LiffProvider>
       </body>
     </html>
