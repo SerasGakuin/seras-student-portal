@@ -39,7 +39,12 @@ src/
 │   ├── liff.tsx            # LINE LIFF SDK ラッパー
 │   └── googleSheets.ts     # Google API クライアント初期化
 │
-└── types/                  # 型定義 (TypeScript Interfaces)
+├── types/                  # 型定義 (TypeScript Interfaces)
+│
+└── analysis/               # データ分析 (Python/Jupyter)
+    ├── data_loader.ipynb   # データ読み込み・前処理
+    ├── visualizer.py       # 可視化ロジック
+    └── loader.py           # データロードユーティリティ
 ```
 
 ## 2. 設計思想 (Design Philosophy)

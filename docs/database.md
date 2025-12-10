@@ -2,7 +2,7 @@
 
 本アプリケーションは Google Sheets を簡易データベースとして使用しています。
 
-## 生徒マスタ (Student Master Sheet)
+## 生徒マスター (Student Master Sheet)
 **Config Key**: `STUDENT_SPREADSHEET_ID`
 
 | カラム名 (Header) | 必須 | 説明 |
@@ -14,7 +14,7 @@
 
 *注: システムはヘッダー名で列を識別するため、これらのヘッダーが存在すれば列の順序は自由に変更可能です。*
 
-## 入退室ログ (Occupancy Log Sheet)
+## 在室人数 (Occupancy Log Sheet)
 **Config Key**: `OCCUPANCY_SPREADSHEET_ID`
 **Sheet Name**: `在室人数`
 
@@ -26,6 +26,18 @@
 | **D2** | 2号館 開館状況 (IsOpen) | 1=Open, 0=Closed |
 | **A3:A** | 本館在室者 (Names) | フルネーム (空白あり、歯抜けあり) |
 | **B3:B** | 2号館在室者 (Names) | フルネーム (空白あり、歯抜けあり) |
+
+**Sheet Name**: `occupancy_logs` (履歴データ)
+
+| カラム | 説明 |
+| :--- | :--- |
+| **Timestamp** | 日時 (YYYY/MM/DD HH:mm:ss) |
+| **Date** | 日付 (YYYY-MM-DD) |
+| **Day** | 曜日 (Mon, Tue...) |
+| **Hour** | 時間 (0-23) |
+| **Building1** | 本館人数 |
+| **Building2** | 2号館人数 |
+| **Total** | 合計人数 |
 
 **Sheet Name**: `open_logs`
 

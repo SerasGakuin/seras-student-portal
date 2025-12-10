@@ -5,10 +5,14 @@ Seras学院生徒ポータルの開発環境構築手順です。
 ## 前提条件
 - **Node.js**: v20以上
 - **npm**: Node.jsに同梱
+- **Python**: v3.12以上 (`uv` 利用のため)
+- **uv**: 高速なPythonパッケージマネージャ
 - **Google Cloud Platform アカウント**: Sheets & Calendar API 利用のため
 - **LINE Developers アカウント**: LIFF 連携のため
 
 ## インストール手順
+
+### A. Webアプリケーション (Next.js)
 
 1.  **リポジトリの複製**
     ```bash
@@ -26,8 +30,8 @@ Seras学院生徒ポータルの開発環境構築手順です。
 
     ```env
     # --- Google Workspace 連携 ---
-    # サービスアカウントの秘密鍵 (\n で改行を表現するか、1行にして記述)
-    GOOGLE_SHEETS_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n..."
+    # サービスアカウントの秘密鍵 (\\n で改行を表現するか、1行にして記述)
+    GOOGLE_SHEETS_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\\n..."
     # サービスアカウントのメールアドレス
     GOOGLE_SHEETS_CLIENT_EMAIL="example@project-id.iam.gserviceaccount.com"
     
@@ -51,6 +55,43 @@ Seras学院生徒ポータルの開発環境構築手順です。
     npm run dev
     ```
     ブラウザで `http://localhost:3000` にアクセスして動作確認を行ってください。
+
+### B. データ分析環境 (Python/Jupyter)
+
+本プロジェクトでは実験的にデータ分析環境を `analysis/` ディレクトリに用意しています。パッケージ管理には `uv` を使用します。
+
+1.  **uv のインストール** (未導入の場合)
+    ```bash
+    # macOS / Linux
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    ```
+
+2.  **分析用環境変数の設定**
+    `analysis/` ディレクトリ内に `.env` ファイルを作成します。
+    ※ Webアプリと同じ認証情報を使用します。
+
+    ```bash
+    cd analysis
+    touch .env
+    ```
+
+    `analysis/.env` の内容:
+    ```env
+    GOOGLE_SERVICE_ACCOUNT_EMAIL="example@project-id.iam.gserviceaccount.com"
+    GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n..."
+    OCCUPANCY_SPREADSHEET_ID="your_occupancy_log_spreadsheet_id"
+    ```
+
+3.  **環境の同期とJupyterの起動**
+    `uv` を使用して依存関係を同期し、Jupyter Labを起動します。
+
+    ```bash
+    # 仮想環境の作成とパッケージ同期
+    uv sync
+
+    # Jupyter Lab の起動
+    uv run -- jupyter lab
+    ```
 
 ## 開発時のモック (Mocking)
 有効なAPIキーがない場合、アプリケーションの一部機能が動作しません。

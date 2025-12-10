@@ -11,6 +11,7 @@ Seras学院の生徒学習支援を目的としたWebアプリケーションの
 - **リアルタイム在室モニタリング**: 自習室（本館・2号館）の利用状況を可視化します。
 - **予約管理システム**: 面談予約や欠席連絡をWeb上で行い、Googleカレンダーと自動同期します。
 - **講師・教室長モード**: 講師による生徒検索、教室長による自習室の開館/閉館管理機能（権限ベースのUI切り替え）。
+- **データ分析 (実験的機能)**: Python/Jupyter と `uv` を用いた、入退室ログの可視化と傾向分析環境（`analysis/`）。
 
 ## ドキュメント
 開発者向けの詳細ドキュメントは `docs/` ディレクトリに格納されています。
@@ -46,6 +47,7 @@ npm run dev
 - **Language**: TypeScript
 - **Auth**: LINE LIFF v2
 - **Data**: Google Sheets API, Google Calendar API
+- **Analysis**: Python (uv, Polars, Matplotlib/Seaborn)
 - **Analytics**: Vercel Analytics
 - **Testing**: Jest
 - **Validation**: Zod
