@@ -10,7 +10,11 @@ interface PageHeaderProps {
     subtitle: string;
 }
 
-export const PageHeader = ({ title, subtitle }: PageHeaderProps) => {
+import { memo } from 'react';
+
+// ... imports
+
+export const PageHeader = memo(({ title, subtitle }: PageHeaderProps) => {
     const { student, profile, isLoading } = useLiff();
     const displayName = getDisplayName(student, profile);
 
@@ -30,4 +34,5 @@ export const PageHeader = ({ title, subtitle }: PageHeaderProps) => {
             )}
         </header>
     );
-};
+});
+PageHeader.displayName = 'PageHeader';

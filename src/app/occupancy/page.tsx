@@ -18,6 +18,13 @@ const CAPACITIES = {
 };
 const UPDATE_INTERVAL = 5000;
 
+// Stable header title to prevent re-renders
+const PAGE_TITLE = (
+    <>
+        <span className="brand">Seras学院</span> 自習室の在室人数
+    </>
+);
+
 export default function OccupancyPage() {
     const [data, setData] = useState<OccupancyData | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -79,7 +86,7 @@ export default function OccupancyPage() {
     return (
         <div className="container">
             <PageHeader
-                title={<><span className="brand">Seras学院</span> 自習室の在室人数</>}
+                title={PAGE_TITLE}
                 subtitle="リアルタイム更新中"
             />
 
