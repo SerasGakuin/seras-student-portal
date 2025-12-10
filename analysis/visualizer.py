@@ -1,15 +1,23 @@
-import polars as pl
-import matplotlib.pyplot as plt
-from datetime import datetime
+from typing import Optional, Union
+from datetime import date
 
-def plot_daily_trends(df: pl.DataFrame) -> None:
+def plot_daily_trends(df: pl.DataFrame, start_date: Optional[Union[str, date]] = None) -> None:
     """
     Plots daily occupancy trends with one line per day.
     
     Args:
         df: Polars DataFrame containing 'Timestamp', 'Date', 'Total', and 'Day' columns.
             'Timestamp' must be of type Datetime.
+        start_date: Optional start date filter (inclusive). Format "YYYY-MM-DD" or date object.
     """
+    # Filter by start_date if provided
+    if start_date:
+        if isinstance(start_date, str):
+            start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+        
+        # Ensure 'Date' column is of type Date for comparison
+        df = df.filter(pl.col("Date") >= start_date)
+
     # Ensure data is sorted
     df_sorted = df.sort("Timestamp")
     
