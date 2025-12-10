@@ -8,6 +8,7 @@ export const CONFIG = {
             ID: process.env.OCCUPANCY_SPREADSHEET_ID || '',
             SHEETS: {
                 OCCUPANCY: '在室人数',
+                OPEN_LOGS: 'open_logs',
             },
         },
     },

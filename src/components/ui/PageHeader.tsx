@@ -11,17 +11,23 @@ interface PageHeaderProps {
 }
 
 export const PageHeader = ({ title, subtitle }: PageHeaderProps) => {
-    const { student, profile } = useLiff();
+    const { student, profile, isLoading } = useLiff();
     const displayName = getDisplayName(student, profile);
 
     return (
         <header>
             <h1>{title}</h1>
             <p className="subtitle">{subtitle}</p>
-            <div className={styles.greetingBadge}>
-                <span className={styles.icon}>👋</span>
-                <span>こんにちは、{displayName}さん</span>
-            </div>
+            {isLoading ? (
+                <div className={`${styles.skeletonBadge} ${styles.animatePulse}`}>
+                    <div className={styles.skeletonText}></div>
+                </div>
+            ) : (
+                <div className={styles.greetingBadge}>
+                    <span className={styles.icon}>👋</span>
+                    <span>こんにちは、{displayName}さん</span>
+                </div>
+            )}
         </header>
     );
 };

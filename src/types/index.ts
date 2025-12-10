@@ -5,9 +5,15 @@ export interface ApiResponse<T = unknown> {
 }
 
 export interface OccupancyData {
-    building1: number;
-    building2: number;
+    building1: BuildingStatus;
+    building2: BuildingStatus;
     timestamp: string;
+}
+
+export interface BuildingStatus {
+    count: number;
+    isOpen: boolean;
+    members: OccupancyMember[];
 }
 
 export interface StudentProfile {
@@ -22,6 +28,11 @@ export interface BookingRequest {
     date: string;
     arrivalTime: string;
     leaveTime: string;
+}
+
+export interface OccupancyMember {
+    name: string;
+    grade: string;
 }
 
 export interface RestDayRequest {

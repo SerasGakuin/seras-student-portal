@@ -13,6 +13,7 @@ import { DateButtonSelect } from '@/features/booking/components/DateButtonSelect
 import { TimeRangeSlider } from '@/features/booking/components/TimeRangeSlider';
 import { CONFIG } from '@/lib/config';
 import { getDisplayName } from '@/lib/utils';
+import { api } from '@/lib/api';
 import { LoginRequired } from '@/components/ui/LoginRequired';
 import { Unregistered } from '@/components/ui/Unregistered';
 import { ApiResponse, BookingRequest } from '@/types';
@@ -53,27 +54,28 @@ export default function BookingPage() {
         setIsSubmitting(true);
 
         try {
-            const res = await fetch(CONFIG.API.RESERVE_MEETING, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    userId: profile.userId,
-                    ...formData,
-                } as BookingRequest),
+            // Use api.booking.reserveMeeting()
+            const response = await api.booking.reserveMeeting({
+                userId: profile.userId,
+                meetingType: formData.meetingType,
+                date: formData.date,
+                arrivalTime: formData.arrivalTime,
+                leaveTime: formData.leaveTime,
             });
 
-            const data: ApiResponse = await res.json();
+            // api client throws on error, so if we are here, success.
+            // The `response` from `api.booking.reserveMeeting` is the data itself (e.g., event details).
+            // The original code checked `data.status === 'ok'`.
+            // With the api client, if no error is thrown, it's a success.
 
-            if (data.status === 'ok') {
-                const name = getDisplayName(student, profile);
-                const start = formData.arrivalTime.replace('T', '').slice(0, 5);
-                const end = formData.leaveTime.replace('T', '').slice(0, 5);
-                alert(`${name}さんの${formData.meetingType}は、${formData.date} ${start}-${end}で予約完了しました！`);
-                router.push('/booking');
-            } else {
-                throw new Error(data.message || '予約に失敗しました');
-            }
+            const name = getDisplayName(student, profile);
+            const start = formData.arrivalTime.replace('T', '').slice(0, 5);
+            const end = formData.leaveTime.replace('T', '').slice(0, 5);
+            alert(`${name}さんの${formData.meetingType}は、${formData.date} ${start}-${end}で予約完了しました！`);
+            router.push('/booking');
+
         } catch (error: unknown) {
+            console.error('Booking failed:', error);
             const message = error instanceof Error ? error.message : 'Unknown error';
             alert(message);
         } finally {

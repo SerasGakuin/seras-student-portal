@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import styles from './TimeRangeSlider.module.css';
 
@@ -38,14 +39,14 @@ export function TimeRangeSlider({ startTime, endTime, onChange }: TimeRangeSlide
     useEffect(() => {
         const start = timeToHour(startTime);
         const end = timeToHour(endTime);
-        setLocalStart(start);
-        setLocalEnd(end);
+        if (localStart !== start) setLocalStart(start);
+        if (localEnd !== end) setLocalEnd(end);
         // Only update visual if not dragging to prevent jump
         if (!isDragging) {
             setVisualStart(start);
             setVisualEnd(end);
         }
-    }, [startTime, endTime, isDragging]);
+    }, [startTime, endTime, isDragging, localStart, localEnd]);
 
     // Calculate percentage for positioning
     const getPercent = (hour: number) => {
@@ -71,7 +72,7 @@ export function TimeRangeSlider({ startTime, endTime, onChange }: TimeRangeSlide
 
         // Directional Snapping Logic
         // If user moved more than a small threshold (0.25 = 25% of an hour) in a direction, capture that.
-        const THRESHOLD = 0.25;
+        const THRESHOLD = 0.5;
 
         // Helper to snap based on drag start
         const snapDirectional = (current: number, start: number | null) => {

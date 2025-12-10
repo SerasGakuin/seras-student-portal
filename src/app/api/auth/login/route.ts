@@ -1,28 +1,33 @@
 import { NextResponse } from 'next/server';
-import { getStudentFromLineId } from '@/lib/studentMaster';
+import { loginStudent } from '@/services/authService';
+import { ApiResponse } from '@/types';
 
 export async function POST(request: Request) {
     try {
-        const body = await request.json();
-        const { lineUserId } = body;
+        // Zod validation for login could actally go here if we defined LoginRequestSchema
+        // For now, minimal refactor
+        const { lineUserId } = await request.json();
 
         if (!lineUserId) {
-            return NextResponse.json({ error: 'lineUserId is required' }, { status: 400 });
+            return NextResponse.json<ApiResponse>(
+                { status: 'error', message: 'Missing lineUserId' },
+                { status: 400 }
+            );
         }
 
-        const student = await getStudentFromLineId(lineUserId);
+        const student = await loginStudent(lineUserId);
 
-        if (!student) {
-            return NextResponse.json({ error: 'Student not found', registered: false }, { status: 404 });
-        }
-
-        return NextResponse.json({
-            student,
-            registered: true
+        return NextResponse.json<ApiResponse>({
+            status: 'ok',
+            data: {
+                student: student, // Returns full Student object or null
+            },
         });
-
-    } catch (error) {
-        console.error('Login API Error:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    } catch (error: unknown) {
+        console.error('Error in login API:', error);
+        return NextResponse.json<ApiResponse>(
+            { status: 'error', message: 'Internal Server Error' },
+            { status: 500 }
+        );
     }
 }

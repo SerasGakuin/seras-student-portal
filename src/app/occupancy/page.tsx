@@ -1,54 +1,80 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { api } from '@/lib/api';
 import { OccupancyCard } from '@/features/occupancy/components/OccupancyCard';
+import { PrincipalControlPanel } from '@/features/occupancy/components/PrincipalControlPanel';
 import { GuideCard } from '@/features/occupancy/components/GuideCard';
 import styles from './page.module.css';
 import { BackLink } from '@/components/ui/BackLink';
-import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
+import { OccupancyData } from '@/types';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { useLiff } from '@/lib/liff';
 
 // Configuration
-const API_URL = "/api/occupancy";
 const CAPACITIES = {
     building1: 25,
     building2: 12
 };
 const UPDATE_INTERVAL = 5000;
 
-interface OccupancyData {
-    building1: number;
-    building2: number;
-    timestamp: string;
-}
-
-
-
-import { PageHeader } from '@/components/ui/PageHeader';
-
 export default function OccupancyPage() {
     const [data, setData] = useState<OccupancyData | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [updatingBuildingId, setUpdatingBuildingId] = useState<'1' | '2' | null>(null);
 
-    const fetchOccupancy = async () => {
-        try {
-            const response = await fetch(API_URL, { cache: "no-store" });
-            if (!response.ok) {
-                throw new Error(`Network Error: ${response.status}`);
-            }
-            const jsonData = await response.json();
-            setData(jsonData);
-            setError(null);
-        } catch (err) {
-            console.error('Fetch error:', err);
-            setError('データの取得に失敗しました');
-        }
-    };
+    // Get user details to pass to API for role-based data fetching
+    const { student, profile, isLoading: isAuthLoading } = useLiff();
+    const isPrincipal = student?.status === '教室長';
 
     useEffect(() => {
-        fetchOccupancy();
-        const interval = setInterval(fetchOccupancy, UPDATE_INTERVAL);
-        return () => clearInterval(interval);
-    }, []);
+        const fetchOccupancy = async () => {
+            try {
+                // Pass lineId to API to enable role-based data fetching (e.g. Member List)
+                const data = await api.occupancy.get(student?.lineId);
+                setData(data);
+                setError(null);
+            } catch (err) {
+                console.error('Fetch error:', err);
+                setError('データの取得に失敗しました');
+            }
+        };
+
+        if (!isAuthLoading) {
+            fetchOccupancy();
+            const interval = setInterval(fetchOccupancy, UPDATE_INTERVAL);
+            return () => clearInterval(interval);
+        }
+    }, [student?.lineId, isAuthLoading]);
+
+    const handleToggle = async (buildingId: '1' | '2', currentIsOpen: boolean) => {
+        if (!isPrincipal || !profile?.displayName) return;
+
+        const buildingName = buildingId === '1' ? '本館' : '2号館';
+        if (!confirm(`${buildingName}を${currentIsOpen ? '閉めます' : '開けます'}か？`)) return;
+
+        setUpdatingBuildingId(buildingId);
+
+        // Granular Loading:
+        // We do NOT set data to null. We keep existing data visible for other cards.
+        // We rely on updatingBuildingId to force skeleton state ONLY on the target card.
+        // The ControlPanel will also disable interactions.
+
+        try {
+            await api.occupancy.setStatus(buildingId, !currentIsOpen, profile.displayName);
+            // Re-fetch
+            const newData = await api.occupancy.get(student?.lineId);
+            setData(newData);
+        } catch (e) {
+            console.error('Failed to update status', e);
+            alert('ステータスの更新に失敗しました');
+            // Re-fetch to be safe
+            const fallbackData = await api.occupancy.get(student?.lineId);
+            setData(fallbackData);
+        } finally {
+            setUpdatingBuildingId(null);
+        }
+    };
 
     return (
         <div className="container">
@@ -58,23 +84,36 @@ export default function OccupancyPage() {
             />
 
             <main>
+                {/* Principal Controls (Top Position) */}
+                {isPrincipal && (
+                    <PrincipalControlPanel
+                        data={data}
+                        updatingBuildingId={updatingBuildingId}
+                        onToggle={handleToggle}
+                    />
+                )}
+
                 {error && (
                     <div style={{ color: 'var(--status-high)', textAlign: 'center', marginBottom: '20px', fontWeight: 'bold' }}>
                         データの更新に失敗しました: {error}
                     </div>
                 )}
 
+                {/* Building 1 */}
                 <OccupancyCard
                     title="本館"
-                    count={data?.building1}
+                    data={data?.building1}
                     max={CAPACITIES.building1}
                     moleImage="/images/mogura_insert.png"
+                    isLoading={updatingBuildingId === '1'}
                 />
 
+                {/* Building 2 */}
                 <OccupancyCard
                     title="2号館"
-                    count={data?.building2}
+                    data={data?.building2}
                     max={CAPACITIES.building2}
+                    isLoading={updatingBuildingId === '2'}
                 />
 
                 <div className={styles.timestamp}>
