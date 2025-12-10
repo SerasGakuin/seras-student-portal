@@ -59,9 +59,11 @@ export async function POST(request: Request) {
         });
 
         // Send confirmation message via LINE
+        // Remove seconds from time string (HH:MM:SS -> HH:MM)
+        const formatTime = (t: string) => t.slice(0, 5);
         await sendPushMessage(
             userId,
-            `【${meetingType}】${studentName}さんの${meetingType}は、${date} ${startTime}-${endTime}で予約完了しました！`
+            `【${meetingType}】${studentName}さんの${meetingType}は、${date} ${formatTime(startTime)}-${formatTime(endTime)}で予約完了しました！`
         );
 
         return NextResponse.json<ApiResponse>({
