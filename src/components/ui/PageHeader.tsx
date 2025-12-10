@@ -18,7 +18,11 @@ export const PageHeader = ({ title, subtitle }: PageHeaderProps) => {
         <header>
             <h1>{title}</h1>
             <p className="subtitle">{subtitle}</p>
-            {!isLoading && (
+            {isLoading ? (
+                <div className={`${styles.skeletonBadge} ${styles.animatePulse}`}>
+                    <div className={styles.skeletonText}></div>
+                </div>
+            ) : (
                 <div className={styles.greetingBadge}>
                     <span className={styles.icon}>👋</span>
                     <span>こんにちは、{displayName}さん</span>

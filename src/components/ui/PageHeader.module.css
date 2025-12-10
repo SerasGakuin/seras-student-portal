@@ -3,7 +3,13 @@
     align-items: center;
     gap: 8px;
     margin-top: 16px;
-    padding: 8px 20px;
+    padding: 0 20px;
+    /* Use vertical alignment with fixed height instead of padding */
+    height: 40px;
+    /* Fixed height for consistency */
+    box-sizing: border-box;
+    /* Include border in height */
+
     background: rgba(255, 255, 255, 0.65);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -24,7 +30,7 @@
 }
 
 .icon {
-    font-size: 1.1em;
+    font-size: 1.2rem;
 }
 
 @keyframes slideUpFade {
@@ -37,4 +43,63 @@
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Skeleton Styles */
+.skeletonBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    /* Match gap */
+    margin-top: 16px;
+    /* Match margin */
+    padding: 0 20px;
+    /* Match padding */
+    height: 40px;
+    /* Match height */
+    box-sizing: border-box;
+    /* Match box-sizing */
+
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid transparent;
+    /* Match border width invisibly */
+    border-radius: 30px;
+    /* Match radius */
+    width: 220px;
+    /* Slight adjustment to avg width */
+}
+
+.skeletonText {
+    width: 100%;
+    height: 16px;
+    background: rgba(0, 0, 0, 0.06);
+    border-radius: 4px;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.animatePulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }

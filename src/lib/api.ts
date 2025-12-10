@@ -1,5 +1,6 @@
-import { ApiResponse, Student } from '@/types';
+import { ApiResponse, Student, OccupancyData } from '@/types';
 import { BookingRequest, RestDayRequest } from '@/lib/schema';
+import { CONFIG } from '@/lib/config';
 
 // Helper to handle fetch responses typesafely
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
@@ -44,10 +45,23 @@ export const api = {
         },
     },
     occupancy: {
-        get: async (): Promise<{ building1: number; building2: number; timestamp: string }> => {
-            return fetchJson('/api/occupancy', {
+        get: async (lineUserId?: string): Promise<OccupancyData> => {
+            const headers: HeadersInit = {};
+            if (lineUserId) {
+                headers['x-line-user-id'] = lineUserId;
+            }
+            return fetchJson(CONFIG.API.OCCUPANCY, {
                 cache: 'no-store',
+                headers,
             });
         },
+        setStatus: (building: '1' | '2', isOpen: boolean, actorName: string) => fetchJson(
+            '/api/occupancy/status',
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ building, isOpen, actorName }),
+            }
+        ),
     },
 };

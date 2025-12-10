@@ -80,3 +80,62 @@ export const getStudentFromLineId = async (lineId: string): Promise<Student | nu
         return null;
     }
 };
+
+export const getStudentsByNames = async (names: string[]): Promise<Map<string, { grade: string }>> => {
+    if (names.length === 0) return new Map();
+
+    const SPREADSHEET_ID = process.env.STUDENT_SPREADSHEET_ID;
+    if (!SPREADSHEET_ID) return new Map();
+
+    const sheets = await getGoogleSheets();
+
+    try {
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId: SPREADSHEET_ID,
+            range: 'A:Z', // Fetch all to map names
+        });
+
+        const rows = response.data.values;
+        if (!rows || rows.length === 0) return new Map();
+
+        const headers = rows[0];
+        const colMap = new Map<string, number>();
+        headers.forEach((h, i) => colMap.set(h, i));
+
+        const idxName = colMap.get('名前');
+        const idxGrade = colMap.get('学年');
+
+        if (idxName === undefined || idxGrade === undefined) {
+            console.error('Missing Name or Grade column');
+            return new Map();
+        }
+
+        const studentMap = new Map<string, { grade: string }>();
+
+        // Create a lookup map from the spreadsheet
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            const name = row[idxName];
+            const grade = row[idxGrade];
+            if (name && grade) {
+                // Name match needs to be robust (trim)
+                studentMap.set(name.trim(), { grade });
+            }
+        }
+
+        const resultMap = new Map<string, { grade: string }>();
+        names.forEach(name => {
+            const trimmed = name.trim();
+            const hit = studentMap.get(trimmed);
+            if (hit) {
+                resultMap.set(trimmed, hit);
+            }
+        });
+
+        return resultMap;
+
+    } catch (error) {
+        console.error('Error fetching students by names:', error);
+        return new Map();
+    }
+};

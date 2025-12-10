@@ -16,6 +16,24 @@
 
 ## 入退室ログ (Occupancy Log Sheet)
 **Config Key**: `OCCUPANCY_SPREADSHEET_ID`
+**Sheet Name**: `在室人数`
 
-入退室記録用シート。
-(講師モード開発時にスキーマ詳細を追記予定)
+| セル/列 | 説明 | 備考 |
+| :--- | :--- | :--- |
+| **A2** | 本館人数 (Count) | 数値 |
+| **B2** | 2号館人数 (Count) | 数値 |
+| **C2** | 本館 開館状況 (IsOpen) | 1=Open, 0=Closed |
+| **D2** | 2号館 開館状況 (IsOpen) | 1=Open, 0=Closed |
+| **A3:A** | 本館在室者 (Names) | フルネーム (空白あり、歯抜けあり) |
+| **B3:B** | 2号館在室者 (Names) | フルネーム (空白あり、歯抜けあり) |
+
+**Sheet Name**: `open_logs`
+
+| カラム | 説明 |
+| :--- | :--- |
+| **A** | Timestamp (ISO) |
+| **B** | Actor Name (操作者) |
+| **C** | Action (OPEN/CLOSE) |
+| **D** | Building (本館/2号館) |
+| **E** | UserAgent / Context |
+
