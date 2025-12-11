@@ -33,7 +33,7 @@ COLORS = {
 # テーマ設定: モダンでフラットなデザイン ("paper" context, white style)
 sns.set_theme(style="white", context="paper", font_scale=1.1)
 plt.rcParams.update({
-    "font.family": ["Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", "sans-serif"],
+    "font.family": ["Hiragino Sans", "sans-serif"],
     "text.color": COLORS["text_main"],
     "axes.labelcolor": COLORS["text_main"],
     "xtick.color": COLORS["text_sub"],
