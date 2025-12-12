@@ -7,6 +7,7 @@ import styles from './OccupancyCard.module.css';
 import { BuildingStatus } from '@/types';
 import { useLiff } from '@/lib/liff';
 import { TeacherSection } from './TeacherSection';
+import { memo } from 'react';
 
 // StatusConfig removed as it was unused
 
@@ -20,7 +21,7 @@ interface OccupancyCardProps {
     isLoading?: boolean;
 }
 
-export const OccupancyCard = ({ title, data, max, moleImage, comingSoon, isLoading }: OccupancyCardProps) => {
+export const OccupancyCard = memo(({ title, data, max, moleImage, comingSoon, isLoading }: OccupancyCardProps) => {
     const { student, isLoading: isAuthLoading } = useLiff();
 
     // Determines if we are ready to render the final state
@@ -67,7 +68,7 @@ export const OccupancyCard = ({ title, data, max, moleImage, comingSoon, isLoadi
             isTeacher={isTeacher}
         />
     );
-};
+});
 
 interface CardContentProps {
     title: string;
@@ -174,4 +175,6 @@ const getStatus = (count: number, max: number, isOpen: boolean) => {
     if (ratio <= 0.66) return { text: "やや混雑", color: "var(--status-mid)" };
     return { text: "混雑", color: "var(--status-high)" };
 };
+
+OccupancyCard.displayName = 'OccupancyCard';
 

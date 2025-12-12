@@ -5,7 +5,7 @@
 .card {
     margin-bottom: 24px;
     overflow: visible;
-    transition: all 0.3s ease;
+    /* transition: all 0.3s ease; Removed to prevent layout shift during loading state change */
 }
 
 /* --- カード上部 (タイトル・バッジ) --- */
@@ -317,7 +317,8 @@
 /* --- Skeleton Loader --- */
 .skeleton {
     width: 100%;
-    height: 100%;
+    height: 120px;
+    /* Explicitly match statusContent height */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -326,8 +327,9 @@
 }
 
 .skeletonText {
-    width: 60px;
-    height: 36px;
+    width: 80px;
+    height: 48px;
+    /* Approximate the large number size */
     background: rgba(0, 0, 0, 0.06);
     border-radius: 8px;
 }
