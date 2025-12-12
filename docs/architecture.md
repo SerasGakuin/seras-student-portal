@@ -165,5 +165,14 @@ sequenceDiagram
 ### A. 自動閉館 (Auto-Close Cron)
 Vercel Cron Jobs を利用して、毎日23:00に自動実行されるジョブを設定しています。
 *   **目的**: 閉館忘れ防止。
-*   **実装**: `/api/cron/auto-close` をトリガーとして、`occupancyService` を介して2号館の状態をチェックし、OPENであればCLOSEに変更します。
+
+## 7. パフォーマンスとキャッシュ (Performance & Caching)
+
+### A. 混雑状況データのキャッシュ
+Google Sheets API の Rate Limit 回避とレスポンス向上を目的に、`occupancyService` 層でキャッシュを実装しています。
+*   **技術**: Next.js `unstable_cache`
+*   **有効期限**: 30秒 (`revalidate: 30`)
+*   **スコープ**: 全ユーザー共通のシートデータ (`occupancy-raw-sheet-data`)
+*   **無効化**: 教室長による `updateBuildingStatus` 実行時に `revalidateTag` で即時無効化し、UIへの反映遅延を防いでいます。
+
 
