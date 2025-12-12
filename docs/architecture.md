@@ -159,4 +159,11 @@ sequenceDiagram
 ### 権限管理の実装 (Role Management)
 スプレッドシートの `Status` カラムを利用して簡易的なロールベースアクセス制御 (RBAC) を実現しています。
 *   **講師**: `OccupancyCard` 内に生徒リスト (`TeacherSection`) を表示。
-*   **教室長**: `PrincipalControlPanel` を表示し、`isLoading` 制御を含む操作権限を付与。
+
+## 6. 自動化プロセス (Automation)
+
+### A. 自動閉館 (Auto-Close Cron)
+Vercel Cron Jobs を利用して、毎日23:00に自動実行されるジョブを設定しています。
+*   **目的**: 閉館忘れ防止。
+*   **実装**: `/api/cron/auto-close` をトリガーとして、`occupancyService` を介して2号館の状態をチェックし、OPENであればCLOSEに変更します。
+

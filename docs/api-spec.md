@@ -70,3 +70,16 @@ LINEユーザーが生徒として登録済みか確認
 一日欠席イベント作成 + LINE通知
 
 *   **Service Used**: `CalendarService`, `LineService`
+
+### 4. Cron Jobs
+
+#### GET /api/cron/auto-close
+**System Internal**. 毎日23:00にVercel Cronによって実行される。
+2号館が開館中(OPEN)の場合、自動的に閉館(CLOSE)に変更し、ログを記録する。
+
+*   **Logic**:
+    1.  `occupancyService.getOccupancyData` で現在の状態を確認。
+    2.  `building2.isOpen === true` なら `occupancyService.updateBuildingStatus(isOpen=false)` を実行。
+*   **Response**:
+    *   `{ status: 'ok', data: { closed: true }, message: '...' }` (変更あり)
+    *   `{ status: 'ok', data: { closed: false }, message: '...' }` (変更なし)
