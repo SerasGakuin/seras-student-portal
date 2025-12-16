@@ -38,10 +38,10 @@ const getStudentsMap = unstable_cache(
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
                 const rawData = {
-                    lineId: row[idxLineId],
-                    name: row[idxName],
-                    grade: row[idxGrade],
-                    status: row[idxStatus],
+                    lineId: row[idxLineId]?.trim() || '',
+                    name: row[idxName]?.trim() || '',
+                    grade: row[idxGrade]?.trim(),
+                    status: row[idxStatus]?.trim(),
                 };
 
                 const result = StudentSchema.safeParse(rawData);
@@ -58,7 +58,7 @@ const getStudentsMap = unstable_cache(
             return {};
         }
     },
-    ['all-students-map-v2'], // Bump version
+    ['all-students-map-v3'], // Bump version
     { revalidate: 3600, tags: ['student-data'] }
 );
 
