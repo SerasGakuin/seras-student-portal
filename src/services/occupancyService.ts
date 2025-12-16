@@ -71,38 +71,83 @@ export const occupancyService = {
 
 // --- Optimized Caching Implementation ---
 
+// --- Helper Functions (DRY / Robustness) ---
+
+/**
+ * Validates if the given entry time string represents "Today" in JST.
+ * This prevents stale data (e.g. forgot to checkout yesterday) from lingering.
+ * @param entryTimeRaw Raw date string from Spreadsheet (e.g. "Tue Dec 16 2025...")
+ */
+function isValidEntryForToday(entryTimeRaw: string): boolean {
+    if (!entryTimeRaw) return false;
+
+    try {
+        const entryDate = new Date(entryTimeRaw);
+        if (isNaN(entryDate.getTime())) return false;
+
+        // Compare YYYY-MM-DD in JST
+        // Note: Deployment server might be UTC, so we must specify timeZone explicitly.
+        const jstNow = new Date().toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" });
+        const jstEntry = entryDate.toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" });
+
+        return jstNow === jstEntry;
+    } catch (e) {
+        console.warn(`[Occupancy] Invalid date parsed: ${entryTimeRaw}`, e);
+        return false;
+    }
+}
+
+/**
+ * Formats entry time to "HH:mm" (JST).
+ */
+function formatEntryTime(entryTimeRaw: string): string {
+    if (!entryTimeRaw) return "";
+    try {
+        const date = new Date(entryTimeRaw);
+        if (isNaN(date.getTime())) return entryTimeRaw;
+        return date.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', timeZone: "Asia/Tokyo" });
+    } catch {
+        return entryTimeRaw;
+    }
+}
+
+
+// --- Optimized Caching Implementation ---
+
 // 1. Cached function to fetch raw data using batchGet from Google Sheets
 const getRawSheetData = unstable_cache(
     async () => {
         const sheets = await getGoogleSheets();
-        const sheetName = '入退室記録';
 
         // Batch Get: 
         // 1. Status (Open/Close) from legacy sheet (C2:D2)
-        // 2. Logs from new sheet (A2:D)
+        // 2. ACTIVE USERS from new dedicated view sheet (A2:D)
+        //    Using a dedicated view sheet is faster and cleaner than filtering thousands of logs here.
+        const activeUsersSheetName = '現在在室者';
+
         const response = await sheets.spreadsheets.values.batchGet({
             spreadsheetId: CONFIG.SPREADSHEET.OCCUPANCY.ID,
             ranges: [
                 `${CONFIG.SPREADSHEET.OCCUPANCY.SHEETS.OCCUPANCY}!C2:D2`,
-                `${sheetName}!A2:D`
+                `${activeUsersSheetName}!A2:D`
             ]
         });
 
         const statusRows = response.data.valueRanges?.[0].values || [];
-        const logRows = response.data.valueRanges?.[1].values || [];
+        const activeUserRows = response.data.valueRanges?.[1].values || [];
 
-        return { statusRows, logRows };
+        return { statusRows, activeUserRows };
     },
-    ['occupancy-combined-data-v2'], // Bump version for safety
+    ['occupancy-combined-data-v3'], // Bump version: v2 (Logs) -> v3 (Active Users Sheet)
     {
-        revalidate: 30, // Global cache for 30 seconds
+        revalidate: 10, // Global cache for 10 seconds (User requested)
         tags: ['occupancy-raw-sheet']
     }
 );
 
 // 2. Wrapper to process data for specific user
 async function getOccupancyDataWithOptimizedCache(lineUserId?: string | null): Promise<OccupancyData> {
-    const { statusRows, logRows } = await getRawSheetData();
+    const { statusRows, activeUserRows } = await getRawSheetData();
 
     // Default Status (Fallback to Open if missing)
     let b1Open = true;
@@ -114,35 +159,18 @@ async function getOccupancyDataWithOptimizedCache(lineUserId?: string | null): P
         b2Open = row[1] === undefined ? true : Number(row[1]) === 1;
     }
 
-    // Process Logs to determine current members
-    // Logic: Active if Entry Time exists AND Exit Time is empty
+    // Process Active Users
     const b1MembersList: { name: string; entryTime: string }[] = [];
     const b2MembersList: { name: string; entryTime: string }[] = [];
 
-    // Map to track latest entry for each person (in case of duplicates, though logic says "empty exit" is key)
-    // We iterate logs. If we find a row with NO exit time, they are present.
-    // If they have multiple rows with no exit time? We assume the latest one or all.
-    // Typically, a person should only have *one* active session.
+    for (const row of activeUserRows) {
+        const entryTimeRaw = row[0]; // Col A: Entry Time
+        // Col B (Exit Time) is guaranteed NULL by the Sheet QUERY, but we ignore it anyway
+        const buildingId = row[2];   // Col C
+        const name = row[3];         // Col D
 
-    // We need to be careful about date parsing. The timestamps are like "Tue Dec 16 2025 ...".
-    // We just pass it through or format it. User requested "14:35入室".
-    const formatEntryTime = (raw: string) => {
-        try {
-            const date = new Date(raw);
-            if (isNaN(date.getTime())) return raw; // Fallback
-            return date.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
-        } catch {
-            return raw;
-        }
-    };
-
-    for (const row of logRows) {
-        const entryTimeRaw = row[0];
-        const exitTimeRaw = row[1];
-        const buildingId = row[2];
-        const name = row[3];
-
-        if (name && entryTimeRaw && (!exitTimeRaw || exitTimeRaw.trim() === '')) {
+        // STRICT VALIDATION: Only include if valid name AND entry time is TODAY.
+        if (name && isValidEntryForToday(entryTimeRaw)) {
             const entryTime = formatEntryTime(entryTimeRaw);
             const memberObj = { name, entryTime };
 
@@ -150,17 +178,11 @@ async function getOccupancyDataWithOptimizedCache(lineUserId?: string | null): P
                 b1MembersList.push(memberObj);
             } else if (buildingId === '2') {
                 b2MembersList.push(memberObj);
-            } else {
-                // Fallback: Check if name was in legacy columns? No, stick to new schema strictly.
-                // Or maybe buildingId is missing? Assume 1? No, better to be strict.
-                // Assuming "1" if undefined for now as safeguard?
-                // Actually debug data showed "1" and "2" explicitly.
             }
         }
     }
 
-    // Counts are now derived from the list length, NOT the legacy A2/B2 cells.
-    // This ensures consistency between the count and the list.
+    // Counts derived from filtered list
     const b1Count = b1MembersList.length;
     const b2Count = b2MembersList.length;
 

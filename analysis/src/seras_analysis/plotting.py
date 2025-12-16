@@ -124,7 +124,7 @@ def plot_daily_trends(df: pl.DataFrame, start_date: Optional[Union[str, date]] =
         # メインライン
         ax.plot(sorted_times, means, color=color, linewidth=2, alpha=1.0, label=label)
 
-    _setup_axis(ax, title="日次在室トレンド (重ね合わせ)", ylabel="合計人数")
+    _setup_axis(ax, title="日次在室トレンド", ylabel="合計人数")
     
     ax.set_xlim(6, 23)
     ax.set_xticks(range(6, 24, 3))
@@ -150,8 +150,8 @@ def plot_daily_breakdown(df: pl.DataFrame, start_date: Optional[Union[str, date]
     n_rows = math.ceil(len(unique_dates) / n_cols)
     if n_rows == 0: n_rows = 1
     
-    c_b1 = COLORS["status_low"] # Building 1
-    c_b2 = COLORS["brand"]      # Building 2
+    c_b1 = COLORS["brand"] # Building 1
+    c_b2 = COLORS["status_low"]      # Building 2
     
     fig, axes = plt.subplots(n_rows, n_cols, figsize=(n_cols * 4, n_rows * 3), sharey=True, dpi=110)
     if n_rows * n_cols > 1:

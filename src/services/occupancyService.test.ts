@@ -17,28 +17,46 @@ describe('occupancyService', () => {
         ['1', '0'] // Building 1 = Open, Building 2 = Closed
     ];
 
-    // Range 2: Logs (Entry/Exit Log Sheet A2:D)
-    // Cols: [EntryTime, ExitTime, BuildingId, Name]
-    const mockLogRows = [
-        // Active in Building 1
-        ['Tue Dec 16 14:00:00 2025', '', '1', 'Student A'],
-        // Active in Building 1
-        ['Tue Dec 16 14:05:00 2025', '', '1', 'Student C'],
-        // Active in Building 2
-        ['Tue Dec 16 14:10:00 2025', '', '2', 'Student B'],
-        // Exited (Inactive)
-        ['Tue Dec 16 09:00:00 2025', 'Tue Dec 16 12:00:00 2025', '1', 'Student D'],
+    // Range 2: ACTIVE USERS VIEW (Entry/Exit Log Sheet A2:D)
+    // Cols: [EntryTime, ExitTime (Always NULL), BuildingId, Name]
+    // Note: We need dynamic dates to pass "Today" validation check.
+    const today = new Date().toLocaleDateString("en-US", { timeZone: "Asia/Tokyo" }); // Use simple raw format that works with Date constructor
+    // Actually, Date constructor behavior depends on node env.
+    // Let's assume the service expects "Tue Dec 16 2025..." format.
+    // For test stability, we should mock the date or construct a matching string.
+
+    // Construct a "Today" string that works with `new Date(str)` AND `isValidEntryForToday` logic.
+    // service uses `new Date().toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" })` for comparison.
+    // so we just need a date string that evaluates to the same YYYY-MM-DD in JST.
+    const nowJST = new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" });
+    const todayDate = new Date(nowJST);
+    const todayStr = todayDate.toString(); // "Tue Dec 17 2025 ..."
+
+    // Yesterday string
+    const yesterdayDate = new Date(todayDate);
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterdayStr = yesterdayDate.toString();
+
+    const mockActiveUserRows = [
+        // Active in Building 1 (TODAY) -> SHOULD BE INCLUDED
+        [todayStr, '', '1', 'Student A'],
+        // Active in Building 1 (TODAY) -> SHOULD BE INCLUDED
+        [todayStr, '', '1', 'Student C'],
+        // Active in Building 2 (TODAY) -> SHOULD BE INCLUDED
+        [todayStr, '', '2', 'Student B'],
+        // Stale Data (YESTERDAY) -> SHOULD BE FILTERED OUT
+        [yesterdayStr, '', '1', 'Student Stale'],
     ];
 
     const mockSheetsClient = {
         spreadsheets: {
             values: {
-                // Mock batchGet instead of get
+                // Mock batchGet
                 batchGet: jest.fn().mockResolvedValue({
                     data: {
                         valueRanges: [
                             { values: mockStatusRows },
-                            { values: mockLogRows }
+                            { values: mockActiveUserRows }
                         ]
                     }
                 }),
@@ -57,8 +75,9 @@ describe('occupancyService', () => {
         it('should correctly parse spreadsheet data', async () => {
             const data = await occupancyService.getOccupancyData(null);
 
-            // Counts should be derived from ACTIVE logs
+            // Counts should be derived from ACTIVE logs (Filtered by Today)
             // Building 1: Student A, Student C -> Count 2
+            // "Student Stale" (Yesterday) should be excluded
             expect(data.building1.count).toBe(2);
             // Building 1 Status: '1' -> Open
             expect(data.building1.isOpen).toBe(true);

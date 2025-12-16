@@ -29,12 +29,24 @@
 
 ## 入退室記録 (Entry/Exit Logs)
 **Config Key**: `OCCUPANCY_SPREADSHEET_ID`
-**Sheet Name**: `入退室記録`
+**Sheet Name**: `入退室記録` (Entry/Exit Logs)
 
 | カラム | 説明 | 備考 |
 | :--- | :--- | :--- |
 | **A** | 入室時刻 (Entry Time) | `Thu Dec 14 2025 ...` |
 | **B** | 退室時刻 (Exit Time) | 空欄 = 在室中 |
+| **C** | 場所 (Building) | 1=本館, 2=2号館 |
+| **D** | 名前 (Name) | 生徒氏名 |
+
+## 現在在室者 (Active Users View)
+**Config Key**: `OCCUPANCY_SPREADSHEET_ID`
+**Sheet Name**: `現在在室者`
+**Description**: `入退室記録`からB列（退室時刻）が空欄の行のみを抽出したVIEWシート。
+
+| カラム | 説明 | 備考 |
+| :--- | :--- | :--- |
+| **A** | 入室時刻 (Entry Time) | `Thu Dec 14 2025 ...` |
+| **B** | 退室時刻 (Exit Time) | **常に空欄** (NULL) |
 | **C** | 場所 (Building) | 1=本館, 2=2号館 |
 | **D** | 名前 (Name) | 生徒氏名 |
 
