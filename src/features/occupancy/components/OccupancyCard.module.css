@@ -312,6 +312,15 @@
     font-size: 0.9rem;
     font-weight: 700;
     color: var(--text-main);
+    flex: 1;
+}
+
+.entryTime {
+    font-size: 0.8rem;
+    color: var(--text-sub);
+    font-weight: 500;
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
 }
 
 /* --- Skeleton Loader --- */

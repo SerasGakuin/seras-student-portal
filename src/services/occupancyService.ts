@@ -71,17 +71,29 @@ export const occupancyService = {
 
 // --- Optimized Caching Implementation ---
 
-// 1. Cached function to fetch raw data from Google Sheets (Shared across ALL users)
+// 1. Cached function to fetch raw data using batchGet from Google Sheets
 const getRawSheetData = unstable_cache(
     async () => {
         const sheets = await getGoogleSheets();
-        const response = await sheets.spreadsheets.values.get({
+        const sheetName = '入退室記録';
+
+        // Batch Get: 
+        // 1. Status (Open/Close) from legacy sheet (C2:D2)
+        // 2. Logs from new sheet (A2:D)
+        const response = await sheets.spreadsheets.values.batchGet({
             spreadsheetId: CONFIG.SPREADSHEET.OCCUPANCY.ID,
-            range: `${CONFIG.SPREADSHEET.OCCUPANCY.SHEETS.OCCUPANCY}!A2:D100`,
+            ranges: [
+                `${CONFIG.SPREADSHEET.OCCUPANCY.SHEETS.OCCUPANCY}!C2:D2`,
+                `${sheetName}!A2:D`
+            ]
         });
-        return response.data.values || [];
+
+        const statusRows = response.data.valueRanges?.[0].values || [];
+        const logRows = response.data.valueRanges?.[1].values || [];
+
+        return { statusRows, logRows };
     },
-    ['occupancy-raw-sheet-data'],
+    ['occupancy-combined-data-v2'], // Bump version for safety
     {
         revalidate: 30, // Global cache for 30 seconds
         tags: ['occupancy-raw-sheet']
@@ -90,77 +102,106 @@ const getRawSheetData = unstable_cache(
 
 // 2. Wrapper to process data for specific user
 async function getOccupancyDataWithOptimizedCache(lineUserId?: string | null): Promise<OccupancyData> {
-    const rows = await getRawSheetData();
+    const { statusRows, logRows } = await getRawSheetData();
 
-    if (!rows || rows.length === 0) {
-        return {
-            building1: { count: 0, isOpen: true, members: [] },
-            building2: { count: 0, isOpen: true, members: [] },
-            timestamp: new Date().toISOString()
-        };
+    // Default Status (Fallback to Open if missing)
+    let b1Open = true;
+    let b2Open = true;
+
+    if (statusRows.length > 0) {
+        const row = statusRows[0];
+        b1Open = row[0] === undefined ? true : Number(row[0]) === 1;
+        b2Open = row[1] === undefined ? true : Number(row[1]) === 1;
     }
 
-    const row2 = rows[0];
-    const b1Count = Number(row2[0]);
-    const b2Count = Number(row2[1]);
-    const b1Open = row2[2] === undefined ? true : Number(row2[2]) === 1;
-    const b2Open = row2[3] === undefined ? true : Number(row2[3]) === 1;
+    // Process Logs to determine current members
+    // Logic: Active if Entry Time exists AND Exit Time is empty
+    const b1MembersList: { name: string; entryTime: string }[] = [];
+    const b2MembersList: { name: string; entryTime: string }[] = [];
 
-    const b1Names: string[] = [];
-    const b2Names: string[] = [];
+    // Map to track latest entry for each person (in case of duplicates, though logic says "empty exit" is key)
+    // We iterate logs. If we find a row with NO exit time, they are present.
+    // If they have multiple rows with no exit time? We assume the latest one or all.
+    // Typically, a person should only have *one* active session.
 
-    for (let i = 1; i < rows.length; i++) {
-        const row = rows[i];
-        if (row[0]) b1Names.push(row[0]);
-        if (row[1]) b2Names.push(row[1]);
+    // We need to be careful about date parsing. The timestamps are like "Tue Dec 16 2025 ...".
+    // We just pass it through or format it. User requested "14:35入室".
+    const formatEntryTime = (raw: string) => {
+        try {
+            const date = new Date(raw);
+            if (isNaN(date.getTime())) return raw; // Fallback
+            return date.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+        } catch {
+            return raw;
+        }
+    };
+
+    for (const row of logRows) {
+        const entryTimeRaw = row[0];
+        const exitTimeRaw = row[1];
+        const buildingId = row[2];
+        const name = row[3];
+
+        if (name && entryTimeRaw && (!exitTimeRaw || exitTimeRaw.trim() === '')) {
+            const entryTime = formatEntryTime(entryTimeRaw);
+            const memberObj = { name, entryTime };
+
+            if (buildingId === '1') {
+                b1MembersList.push(memberObj);
+            } else if (buildingId === '2') {
+                b2MembersList.push(memberObj);
+            } else {
+                // Fallback: Check if name was in legacy columns? No, stick to new schema strictly.
+                // Or maybe buildingId is missing? Assume 1? No, better to be strict.
+                // Assuming "1" if undefined for now as safeguard?
+                // Actually debug data showed "1" and "2" explicitly.
+            }
+        }
     }
 
-    // Auth Check (Per Request, not cached via unstable_cache to avoid key explosion)
-    // Authorization logic itself using studentService might hit DB/Sheet, 
-    // BUT studentService likely has its own caching or is lightweight. 
-    // IF studentService hits Sheets every time, we should optimize that too, 
-    // but for now optimizing the main polling target (Occupancy) is the user's request.
+    // Counts are now derived from the list length, NOT the legacy A2/B2 cells.
+    // This ensures consistency between the count and the list.
+    const b1Count = b1MembersList.length;
+    const b2Count = b2MembersList.length;
 
+    // Permissions
     let showDetails = false;
     if (lineUserId) {
         const student = await getStudentFromLineId(lineUserId);
-        if (student && (student.status === '在塾(講師)' || student.status === '教室長')) {
+        if (student && (student.status === '在塾' || student.status === '在塾(講師)' || student.status === '教室長')) {
             showDetails = true;
         }
     }
 
-    let b1Members: { name: string; grade: string }[] = [];
-    let b2Members: { name: string; grade: string }[] = [];
+    let b1MembersResult: { name: string; grade: string; entryTime?: string }[] = [];
+    let b2MembersResult: { name: string; grade: string; entryTime?: string }[] = [];
 
-    if (showDetails && (b1Names.length > 0 || b2Names.length > 0)) {
-        const allNames = [...b1Names, ...b2Names];
+    if (showDetails && (b1Count > 0 || b2Count > 0)) {
+        const allNames = [...b1MembersList.map(m => m.name), ...b2MembersList.map(m => m.name)];
         const detailsMap = await getStudentsByNames(allNames);
 
-        b1Members = b1Names.map(name => {
-            const info = detailsMap.get(name.trim());
-            return { name, grade: info?.grade || '' };
+        b1MembersResult = b1MembersList.map(m => {
+            const info = detailsMap.get(m.name.trim());
+            return { name: m.name, grade: info?.grade || '', entryTime: m.entryTime };
         });
 
-        b2Members = b2Names.map(name => {
-            const info = detailsMap.get(name.trim());
-            return { name, grade: info?.grade || '' };
+        b2MembersResult = b2MembersList.map(m => {
+            const info = detailsMap.get(m.name.trim());
+            return { name: m.name, grade: info?.grade || '', entryTime: m.entryTime };
         });
     }
 
     return {
         building1: {
-            count: isNaN(b1Count) ? 0 : b1Count,
+            count: b1Count,
             isOpen: b1Open,
-            members: b1Members
+            members: b1MembersResult
         },
         building2: {
-            count: isNaN(b2Count) ? 0 : b2Count,
+            count: b2Count,
             isOpen: b2Open,
-            members: b2Members
+            members: b2MembersResult
         },
-        // We use current server time for timestamp to indicate when response was generated,
-        // or we could use a cached timestamp if we stored it. 
-        // Using current time is fine as it confirms "server is alive".
         timestamp: new Date().toISOString(),
     };
 }

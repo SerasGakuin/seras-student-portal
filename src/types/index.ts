@@ -33,6 +33,7 @@ export interface BookingRequest {
 export interface OccupancyMember {
     name: string;
     grade: string;
+    entryTime?: string;
 }
 
 export interface RestDayRequest {

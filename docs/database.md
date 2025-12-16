@@ -24,8 +24,19 @@
 | **B2** | 2号館人数 (Count) | 数値 |
 | **C2** | 本館 開館状況 (IsOpen) | 1=Open, 0=Closed |
 | **D2** | 2号館 開館状況 (IsOpen) | 1=Open, 0=Closed |
-| **A3:A** | 本館在室者 (Names) | フルネーム (空白あり、歯抜けあり) |
-| **B3:B** | 2号館在室者 (Names) | フルネーム (空白あり、歯抜けあり) |
+| **A3:A** | 本館在室者 (Names) | **DEPRECATED** (Legacy Logic) |
+| **B3:B** | 2号館在室者 (Names) | **DEPRECATED** (Legacy Logic) |
+
+## 入退室記録 (Entry/Exit Logs)
+**Config Key**: `OCCUPANCY_SPREADSHEET_ID`
+**Sheet Name**: `入退室記録`
+
+| カラム | 説明 | 備考 |
+| :--- | :--- | :--- |
+| **A** | 入室時刻 (Entry Time) | `Thu Dec 14 2025 ...` |
+| **B** | 退室時刻 (Exit Time) | 空欄 = 在室中 |
+| **C** | 場所 (Building) | 1=本館, 2=2号館 |
+| **D** | 名前 (Name) | 生徒氏名 |
 
 **Sheet Name**: `occupancy_logs` (履歴データ)
 

@@ -18,6 +18,9 @@ export const TeacherSection = ({ members }: TeacherSectionProps) => {
                     <div key={i} className={styles.memberItem}>
                         <span className={styles.gradeBadge}>{m.grade}</span>
                         <span className={styles.memberName}>{m.name}</span>
+                        {m.entryTime && (
+                            <span className={styles.entryTime}>{m.entryTime}入室</span>
+                        )}
                     </div>
                 ))}
             </div>

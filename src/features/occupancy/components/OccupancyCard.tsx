@@ -30,9 +30,9 @@ export const OccupancyCard = memo(({ title, data, max, moleImage, comingSoon, is
 
     // Determine Roles
     // Principal (教室長): Can open/close
-    // Teacher (講師): Can view members
+    // Teacher (講師) or Student (在塾): Can view members
     const isPrincipal = student?.status === '教室長';
-    const isTeacher = student?.status === '在塾(講師)' || isPrincipal;
+    const canViewMembers = student?.status === '在塾' || student?.status === '在塾(講師)' || isPrincipal;
 
     if (moleImage) {
         return (
@@ -52,7 +52,7 @@ export const OccupancyCard = memo(({ title, data, max, moleImage, comingSoon, is
                     comingSoon={comingSoon}
                     isReady={isReady}
                     // isReady already includes isLoading logic
-                    isTeacher={isTeacher}
+                    canViewMembers={canViewMembers}
                 />
             </div>
         );
@@ -65,7 +65,7 @@ export const OccupancyCard = memo(({ title, data, max, moleImage, comingSoon, is
             data={data}
             comingSoon={comingSoon}
             isReady={isReady}
-            isTeacher={isTeacher}
+            canViewMembers={canViewMembers}
         />
     );
 });
@@ -76,11 +76,11 @@ interface CardContentProps {
     data?: BuildingStatus | null;
     comingSoon?: boolean;
     isReady: boolean | undefined;
-    isTeacher: boolean;
+    canViewMembers: boolean;
 }
 
 // Extracted for cleaner render logic and reuse
-const CardContent = ({ title, max, data, comingSoon, isReady, isTeacher }: CardContentProps) => {
+const CardContent = ({ title, max, data, comingSoon, isReady, canViewMembers }: CardContentProps) => {
     // If not ready, show Skeleton (Maintains correct height)
     if (!isReady || !data) {
         return (
@@ -146,8 +146,8 @@ const CardContent = ({ title, max, data, comingSoon, isReady, isTeacher }: CardC
                 )}
             </div>
 
-            {/* Teacher View: Member List */}
-            {isTeacher && data.isOpen && (
+            {/* Teacher/Member View: Member List */}
+            {canViewMembers && data.isOpen && (
                 <TeacherSection members={data.members} />
             )}
 

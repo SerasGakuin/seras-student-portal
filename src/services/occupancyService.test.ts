@@ -11,18 +11,36 @@ jest.mock('next/cache', () => ({
 }));
 
 describe('occupancyService', () => {
-    // Mock data
-    const mockValues = [
-        ['10', '5', '1', '0'], // Row 2: Counts and Status (1=Open, 0=Closed)
-        ['Student A', 'Student B'], // Row 3: Names
-        ['Student C', ''],          // Row 4: Names
+    // Mock Data for Batch Get
+    // Range 1: Status (Legacy Sheet C2:D2)
+    const mockStatusRows = [
+        ['1', '0'] // Building 1 = Open, Building 2 = Closed
+    ];
+
+    // Range 2: Logs (Entry/Exit Log Sheet A2:D)
+    // Cols: [EntryTime, ExitTime, BuildingId, Name]
+    const mockLogRows = [
+        // Active in Building 1
+        ['Tue Dec 16 14:00:00 2025', '', '1', 'Student A'],
+        // Active in Building 1
+        ['Tue Dec 16 14:05:00 2025', '', '1', 'Student C'],
+        // Active in Building 2
+        ['Tue Dec 16 14:10:00 2025', '', '2', 'Student B'],
+        // Exited (Inactive)
+        ['Tue Dec 16 09:00:00 2025', 'Tue Dec 16 12:00:00 2025', '1', 'Student D'],
     ];
 
     const mockSheetsClient = {
         spreadsheets: {
             values: {
-                get: jest.fn().mockResolvedValue({
-                    data: { values: mockValues }
+                // Mock batchGet instead of get
+                batchGet: jest.fn().mockResolvedValue({
+                    data: {
+                        valueRanges: [
+                            { values: mockStatusRows },
+                            { values: mockLogRows }
+                        ]
+                    }
                 }),
                 update: jest.fn().mockResolvedValue({}),
                 append: jest.fn().mockResolvedValue({})
@@ -39,20 +57,29 @@ describe('occupancyService', () => {
         it('should correctly parse spreadsheet data', async () => {
             const data = await occupancyService.getOccupancyData(null);
 
-            expect(data.building1.count).toBe(10);
+            // Counts should be derived from ACTIVE logs
+            // Building 1: Student A, Student C -> Count 2
+            expect(data.building1.count).toBe(2);
+            // Building 1 Status: '1' -> Open
             expect(data.building1.isOpen).toBe(true);
-            expect(data.building2.count).toBe(5);
-            expect(data.building2.isOpen).toBe(false); // 0 -> false
+
+            // Building 2: Student B -> Count 1
+            expect(data.building2.count).toBe(1);
+            // Building 2 Status: '0' -> Closed
+            expect(data.building2.isOpen).toBe(false);
         });
 
         it('should handle empty rows gracefully', async () => {
-            (getGoogleSheets as jest.Mock).mockResolvedValue({
+            const emptyClient = {
                 spreadsheets: {
                     values: {
-                        get: jest.fn().mockResolvedValue({ data: { values: [] } })
+                        batchGet: jest.fn().mockResolvedValue({
+                            data: { valueRanges: [{ values: [] }, { values: [] }] }
+                        })
                     }
                 }
-            });
+            };
+            (getGoogleSheets as jest.Mock).mockResolvedValue(emptyClient);
 
             const data = await occupancyService.getOccupancyData(null);
             expect(data.building1.count).toBe(0);
@@ -65,7 +92,8 @@ describe('occupancyService', () => {
             });
             (StudentService.getStudentsByNames as jest.Mock).mockResolvedValue(new Map([
                 ['Student A', { grade: '中1' }],
-                ['Student C', { grade: '高3' }]
+                ['Student C', { grade: '高3' }],
+                ['Student B', { grade: '中2' }]
             ]));
 
             const data = await occupancyService.getOccupancyData('teacher-line-id');
@@ -73,16 +101,33 @@ describe('occupancyService', () => {
             // Check members population
             expect(data.building1.members).toHaveLength(2); // Student A, Student C
             expect(data.building1.members[0].name).toBe('Student A');
+            // Check formatted entry time (just checking checking it exists)
+            expect(data.building1.members[0].entryTime).toBeDefined();
+
             expect(data.building2.members).toHaveLength(1); // Student B
         });
 
-        it('should NOT show members for Students (Guest)', async () => {
-            // Mock student service to return "Student" status
+        it('should show members for Students (在塾)', async () => {
+            // UPDATED: Students with '在塾' should now see members
             (StudentService.getStudentFromLineId as jest.Mock).mockResolvedValue({
                 status: '在塾'
             });
+            (StudentService.getStudentsByNames as jest.Mock).mockResolvedValue(new Map([
+                ['Student A', { grade: '中1' }]
+            ]));
 
             const data = await occupancyService.getOccupancyData('student-line-id');
+
+            // Should be visible
+            expect(data.building1.members.length).toBeGreaterThan(0);
+        });
+
+        it('should NOT show members for Guests/Others', async () => {
+            (StudentService.getStudentFromLineId as jest.Mock).mockResolvedValue({
+                status: '入塾検討中'
+            });
+
+            const data = await occupancyService.getOccupancyData('guest-line-id');
 
             expect(data.building1.members).toHaveLength(0);
         });
