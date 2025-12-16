@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
         }
 
         // 5. Send Reminder
-        const message = '【リマインド】\n現在時刻は14:30です。2号館がまだ「開館」になっていません。\nシステム上での開館操作、または鍵開けをお願いします。';
+        const message = '【リマインド】\n2号館がまだ「開館」になっていません。\n開館作業をしたタイミングで、ポータル上の開館表示をお願いします。';
         await lineService.pushMessage(principal.lineId, message);
 
         return NextResponse.json({ message: 'Reminder sent to Principal', principal: principal.name });
