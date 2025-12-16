@@ -1,141 +1,101 @@
 import { Student, StudentSchema } from '@/lib/schema';
 import { getGoogleSheets } from '@/lib/googleSheets';
+import { unstable_cache } from 'next/cache';
 
-export const getStudentFromLineId = async (lineId: string): Promise<Student | null> => {
-    const SPREADSHEET_ID = process.env.STUDENT_SPREADSHEET_ID;
-    if (!SPREADSHEET_ID) {
-        throw new Error('STUDENT_SPREADSHEET_ID is not defined');
-    }
+// Shared internal helper to fetch ALL students map
+// Caches for 1 hour
+const getStudentsMap = unstable_cache(
+    async (): Promise<Map<string, Student>> => {
+        const SPREADSHEET_ID = process.env.STUDENT_SPREADSHEET_ID;
+        if (!SPREADSHEET_ID) return new Map();
 
-    const sheets = await getGoogleSheets();
+        const sheets = await getGoogleSheets();
+        try {
+            const response = await sheets.spreadsheets.values.get({
+                spreadsheetId: SPREADSHEET_ID,
+                range: 'A:Z',
+            });
+            const rows = response.data.values;
+            if (!rows || rows.length === 0) return new Map();
 
-    try {
-        const response = await sheets.spreadsheets.values.get({
-            spreadsheetId: SPREADSHEET_ID,
-            range: 'A:Z',
-        });
+            const headers = rows[0];
+            const colMap = new Map<string, number>();
+            headers.forEach((h, i) => colMap.set(h, i));
 
-        const rows = response.data.values;
-        if (!rows || rows.length === 0) {
-            return null;
-        }
+            // Required columns
+            const idxLineId = colMap.get('生徒LINEID');
+            const idxName = colMap.get('名前');
+            const idxGrade = colMap.get('学年');
+            const idxStatus = colMap.get('Status');
 
-        const headers = rows[0];
+            if (idxLineId === undefined || idxName === undefined || idxGrade === undefined || idxStatus === undefined) {
+                console.error('[StudentService] Missing required columns');
+                return new Map();
+            }
 
-        // Dynamic column mapping
-        const colMap = new Map<string, number>();
-        headers.forEach((header, index) => {
-            colMap.set(header, index);
-        });
-
-        // Required columns defined in Schema logic or internal mapping
-        const COLS = {
-            LINE_ID: '生徒LINEID',
-            NAME: '名前',
-            GRADE: '学年',
-            STATUS: 'Status',
-        };
-
-        // Validate existence of required columns
-        const missingCols = Object.values(COLS).filter(col => !colMap.has(col));
-        if (missingCols.length > 0) {
-            console.error(`Missing required columns: ${missingCols.join(', ')}`);
-            return null;
-        }
-
-        const idxLineId = colMap.get(COLS.LINE_ID)!;
-        const idxName = colMap.get(COLS.NAME)!;
-        const idxGrade = colMap.get(COLS.GRADE)!;
-        const idxStatus = colMap.get(COLS.STATUS)!;
-
-        // Search for the student
-        for (let i = 1; i < rows.length; i++) {
-            const row = rows[i];
-            const currentLineId = row[idxLineId];
-
-            if (currentLineId === lineId) {
-                // Construct raw object
+            const map = new Map<string, Student>();
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
                 const rawData = {
-                    lineId: currentLineId,
-                    name: row[idxName] || '',
+                    lineId: row[idxLineId],
+                    name: row[idxName],
                     grade: row[idxGrade],
                     status: row[idxStatus],
                 };
 
-                // Validate using Zod
                 const result = StudentSchema.safeParse(rawData);
                 if (result.success) {
-                    return result.data;
+                    map.set(result.data.lineId, result.data); // Key by LINE ID
                 } else {
                     console.error('Student data validation failed:', result.error);
-                    // Decide: Return partial? Or null? Safest is null if critical data is bad.
-                    return null;
                 }
             }
-        }
+            return map;
 
-        return null;
-    } catch (error) {
-        console.error('Error fetching student from Line ID:', error);
-        return null;
-    }
+        } catch (e) {
+            console.error('[StudentService] Failed to fetch students map', e);
+            return new Map();
+        }
+    },
+    ['all-students-map-v1'],
+    { revalidate: 3600, tags: ['student-data'] }
+);
+
+export const getStudentFromLineId = async (lineId: string): Promise<Student | null> => {
+    // Determine if we should use the cached MAP or raw fetch.
+    // For single lookup, map is fine and faster if cached.
+    const map = await getStudentsMap();
+    return map.get(lineId) || null;
 };
 
 export const getStudentsByNames = async (names: string[]): Promise<Map<string, { grade: string }>> => {
     if (names.length === 0) return new Map();
+    const allStudents = await getStudentsMap();
 
-    const SPREADSHEET_ID = process.env.STUDENT_SPREADSHEET_ID;
-    if (!SPREADSHEET_ID) return new Map();
+    // We keyed by LINE ID in getStudentsMap. We need to search by Name.
+    // Since this is less frequent or batch, iterating is acceptable given map size (likely < 1000).
+    const resultMap = new Map<string, { grade: string }>();
+    const nameSet = new Set(names.map(n => n.trim()));
 
-    const sheets = await getGoogleSheets();
-
-    try {
-        const response = await sheets.spreadsheets.values.get({
-            spreadsheetId: SPREADSHEET_ID,
-            range: 'A:Z', // Fetch all to map names
-        });
-
-        const rows = response.data.values;
-        if (!rows || rows.length === 0) return new Map();
-
-        const headers = rows[0];
-        const colMap = new Map<string, number>();
-        headers.forEach((h, i) => colMap.set(h, i));
-
-        const idxName = colMap.get('名前');
-        const idxGrade = colMap.get('学年');
-
-        if (idxName === undefined || idxGrade === undefined) {
-            console.error('Missing Name or Grade column');
-            return new Map();
+    for (const student of allStudents.values()) {
+        if (nameSet.has(student.name.trim())) {
+            resultMap.set(student.name.trim(), { grade: student.grade });
         }
-
-        const studentMap = new Map<string, { grade: string }>();
-
-        // Create a lookup map from the spreadsheet
-        for (let i = 1; i < rows.length; i++) {
-            const row = rows[i];
-            const name = row[idxName];
-            const grade = row[idxGrade];
-            if (name && grade) {
-                // Name match needs to be robust (trim)
-                studentMap.set(name.trim(), { grade });
-            }
-        }
-
-        const resultMap = new Map<string, { grade: string }>();
-        names.forEach(name => {
-            const trimmed = name.trim();
-            const hit = studentMap.get(trimmed);
-            if (hit) {
-                resultMap.set(trimmed, hit);
-            }
-        });
-
-        return resultMap;
-
-    } catch (error) {
-        console.error('Error fetching students by names:', error);
-        return new Map();
     }
+    return resultMap;
 };
+
+// NEW: Get Principal line ID for notifications
+export const getPrincipal = unstable_cache(
+    async (): Promise<Student | null> => {
+        const students = await getStudentsMap();
+        for (const student of students.values()) {
+            if (student.status === '教室長') {
+                return student;
+            }
+        }
+        return null;
+    },
+    ['principal-data'],
+    { revalidate: 3600, tags: ['student-data'] }
+);

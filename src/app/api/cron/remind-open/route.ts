@@ -1,0 +1,52 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { occupancyService } from '@/services/occupancyService';
+import { getPrincipal } from '@/services/studentService';
+import { lineService } from '@/services/lineService';
+import { CONFIG } from '@/lib/config';
+
+// Prevent deployment cache issues
+export const dynamic = 'force-dynamic';
+
+export async function GET(req: NextRequest) {
+    // 1. Check if cron request is valid (Vercel cron header)
+    const authHeader = req.headers.get('authorization');
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+        // Allow local dev testing if needed, or stick to strict auth
+        // return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    try {
+        // 2. Check Day of Week (JST)
+        // Note: Deployment machine might be UTC.
+        const now = new Date();
+        const jstDate = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
+        const dayOfWeek = jstDate.getDay(); // 0 is Sunday, 5 is Friday
+
+        if (CONFIG.REMINDER.AUTO_OPEN.EXCLUDE_DAYS.includes(dayOfWeek)) {
+            return NextResponse.json({ message: 'Skipped (Excluded Day)' });
+        }
+
+        // 3. Check Occupancy Status
+        const status = await occupancyService.getOccupancyData(null);
+        if (status.building2.isOpen) {
+            return NextResponse.json({ message: 'Skipped (Building 2 Already Open)' });
+        }
+
+        // 4. Find Principal
+        const principal = await getPrincipal();
+        if (!principal || !principal.lineId) {
+            console.error('[Cron] Principal not found for reminder.');
+            return NextResponse.json({ error: 'Principal not found' }, { status: 404 });
+        }
+
+        // 5. Send Reminder
+        const message = '【リマインド】\n現在時刻は14:30です。2号館がまだ「開館」になっていません。\nシステム上での開館操作、または鍵開けをお願いします。';
+        await lineService.pushMessage(principal.lineId, message);
+
+        return NextResponse.json({ message: 'Reminder sent to Principal', principal: principal.name });
+
+    } catch (error) {
+        console.error('[Cron] Reminder failed:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+}

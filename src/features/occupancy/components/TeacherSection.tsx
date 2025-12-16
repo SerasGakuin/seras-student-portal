@@ -17,7 +17,7 @@ export const TeacherSection = ({ members }: TeacherSectionProps) => {
                 {members.map((m, i) => (
                     <div key={i} className={styles.memberItem}>
                         <span className={styles.gradeBadge}>{m.grade}</span>
-                        <span className={styles.memberName}>{m.name}</span>
+                        <span className={styles.memberName}>{m.name} さん</span>
                         {m.entryTime && (
                             <span className={styles.entryTime}>{m.entryTime}入室</span>
                         )}

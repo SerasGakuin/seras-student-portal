@@ -1,9 +1,15 @@
 import { getStudentFromLineId } from './studentService';
 import { getGoogleSheets } from '@/lib/googleSheets';
 
-// Mock the dependency
+// Mock dependencies
 jest.mock('@/lib/googleSheets', () => ({
     getGoogleSheets: jest.fn(),
+}));
+
+// NEW: Mock next/cache unstable_cache to execute function immediately
+jest.mock('next/cache', () => ({
+    unstable_cache: (fn: <T>(...args: unknown[]) => T) => fn,
+    revalidateTag: jest.fn(),
 }));
 
 describe('studentService', () => {

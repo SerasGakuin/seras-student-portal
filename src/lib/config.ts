@@ -10,7 +10,17 @@ export const CONFIG = {
                 OCCUPANCY: '在室人数',
                 OPEN_LOGS: 'open_logs',
             },
+            MAX_CAPACITY: {
+                BUILDING_1: 20, // Example capacity
+                BUILDING_2: 15,
+            },
         },
+    },
+    REMINDER: {
+        AUTO_OPEN: {
+            EXCLUDE_DAYS: [5], // Friday (0=Sun, 1=Mon... 5=Fri)
+            TARGET_TIME_JST: '14:30', // Contextual info, controlled by Cron Schedule
+        }
     },
     API: {
         OCCUPANCY: '/api/occupancy',
