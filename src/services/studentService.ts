@@ -44,6 +44,9 @@ const getStudentsMap = unstable_cache(
                     status: row[idxStatus]?.trim(),
                 };
 
+                // Skip empty rows without error logs
+                if (!rawData.lineId) continue;
+
                 const result = StudentSchema.safeParse(rawData);
                 if (result.success) {
                     studentRecord[result.data.lineId] = result.data; // Key by LINE ID
