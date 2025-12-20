@@ -24,7 +24,7 @@ export const CONFIG = {
     },
     PERMISSIONS: {
         // Who can see the list of students currently in the room
-        VIEW_OCCUPANCY_MEMBERS: ['教室長', '在塾(講師)', '在塾'],
+        VIEW_OCCUPANCY_MEMBERS: ['教室長', '在塾(講師)'], // 生徒を足すなら"在塾"を追加
         // Who can toggle Open/Close status (Building 1 & 2)
         OPERATE_BUILDING_STATUS: ['教室長'],
     },
