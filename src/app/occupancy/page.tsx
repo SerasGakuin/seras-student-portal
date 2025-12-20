@@ -10,6 +10,7 @@ import { BackLink } from '@/components/ui/BackLink';
 import { OccupancyData } from '@/types';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { useLiff } from '@/lib/liff';
+import { CONFIG } from '@/lib/config';
 
 // Configuration
 const CAPACITIES = {
@@ -32,7 +33,7 @@ export default function OccupancyPage() {
 
     // Get user details to pass to API for role-based data fetching
     const { student, profile, isLoading: isAuthLoading } = useLiff();
-    const isPrincipal = student?.status === '教室長';
+    const canOperateBuilding = student?.status && (CONFIG.PERMISSIONS.OPERATE_BUILDING_STATUS as string[]).includes(student.status);
 
     useEffect(() => {
         const fetchOccupancy = async () => {
@@ -55,7 +56,7 @@ export default function OccupancyPage() {
     }, [student?.lineId, isAuthLoading]);
 
     const handleToggle = async (buildingId: '1' | '2', currentIsOpen: boolean) => {
-        if (!isPrincipal || !profile?.displayName) return;
+        if (!canOperateBuilding || !profile?.displayName) return;
 
         const buildingName = buildingId === '1' ? '本館' : '2号館';
         if (!confirm(`${buildingName}を${currentIsOpen ? '閉めます' : '開けます'}か？`)) return;
@@ -92,7 +93,7 @@ export default function OccupancyPage() {
 
             <main>
                 {/* Principal Controls (Top Position) */}
-                {isPrincipal && (
+                {canOperateBuilding && (
                     <PrincipalControlPanel
                         data={data}
                         updatingBuildingId={updatingBuildingId}

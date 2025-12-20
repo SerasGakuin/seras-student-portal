@@ -22,6 +22,12 @@ export const CONFIG = {
             TARGET_TIME_JST: '14:30', // Contextual info, controlled by Cron Schedule
         }
     },
+    PERMISSIONS: {
+        // Who can see the list of students currently in the room
+        VIEW_OCCUPANCY_MEMBERS: ['教室長', '在塾(講師)', '在塾'],
+        // Who can toggle Open/Close status (Building 1 & 2)
+        OPERATE_BUILDING_STATUS: ['教室長'],
+    },
     API: {
         OCCUPANCY: '/api/occupancy',
         RESERVE_MEETING: '/api/reserveMeeting',

@@ -6,6 +6,7 @@ import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 import styles from './OccupancyCard.module.css';
 import { BuildingStatus } from '@/types';
 import { useLiff } from '@/lib/liff';
+import { CONFIG } from '@/lib/config';
 import { TeacherSection } from './TeacherSection';
 import { memo } from 'react';
 
@@ -29,10 +30,8 @@ export const OccupancyCard = memo(({ title, data, max, moleImage, comingSoon, is
     const isReady = !!(data && !isAuthLoading && !isLoading);
 
     // Determine Roles
-    // Principal (教室長): Can open/close
-    // Teacher (講師) or Student (在塾): Can view members
-    const isPrincipal = student?.status === '教室長';
-    const canViewMembers = student?.status === '在塾' || student?.status === '在塾(講師)' || isPrincipal;
+    // Using Centralized Permissions from CONFIG
+    const canViewMembers = !!(student?.status && (CONFIG.PERMISSIONS.VIEW_OCCUPANCY_MEMBERS as string[]).includes(student.status));
 
     if (moleImage) {
         return (
