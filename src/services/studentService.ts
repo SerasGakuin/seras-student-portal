@@ -58,8 +58,8 @@ const getStudentsMap = unstable_cache(
             return {};
         }
     },
-    ['all-students-map-v3'], // Bump version
-    { revalidate: 3600, tags: ['student-data'] }
+    ['all-students-map-v4'], // Bump version: v3 -> v4 (Fix stale data)
+    { revalidate: 30, tags: ['student-data'] }
 );
 
 export const getStudentFromLineId = async (lineId: string): Promise<Student | null> => {
