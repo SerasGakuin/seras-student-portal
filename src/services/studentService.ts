@@ -72,20 +72,47 @@ export const getStudentFromLineId = async (lineId: string): Promise<Student | nu
     return map[lineId] || null;
 };
 
+// Helper to normalize names (remove all whitespace variations)
+const normalizeName = (name: string) => name.replace(/[\s\u200B-\u200D\uFEFF]/g, '').trim();
+
 export const getStudentsByNames = async (names: string[]): Promise<Map<string, { grade: string }>> => {
     if (names.length === 0) return new Map();
     const allStudents = await getStudentsMap();
 
-    // We keyed by LINE ID in getStudentsMap. We need to search by Name.
-    // Since this is less frequent or batch, iterating is acceptable given map size (likely < 1000).
     const resultMap = new Map<string, { grade: string }>();
-    const nameSet = new Set(names.map(n => n.trim()));
+    const nameSet = new Set(names.map(n => normalizeName(n)));
 
     for (const student of Object.values(allStudents)) {
-        if (nameSet.has(student.name.trim())) {
-            resultMap.set(student.name.trim(), { grade: student.grade });
+        if (nameSet.has(normalizeName(student.name))) {
+            // Store by original name to allow flexible lookup, OR strictly by normalized name?
+            // To support the UI which passes original names, we should try to match back.
+            // But since the UI iterates over its own list and asks "Do you have info for X?",
+            // the Caller (OccupancyService) needs to use the same key.
+
+            // However, OccupancyService passes a list of names from Occupancy Sheet.
+            // If Occupancy Sheet has "Endo " and Master has "Endo", normalize matches them.
+            // But resultMap key must match what OccupancyService expects.
+
+            // Let's iterate the input `names` again to map them correctly.
         }
     }
+
+    // Better approach:
+    // 1. Create a map of NormalizedName -> StudentInfo from Master
+    const masterMap = new Map<string, Student>();
+    for (const s of Object.values(allStudents)) {
+        masterMap.set(normalizeName(s.name), s);
+    }
+
+    // 2. Iterate requested names, normalize them, look up in MasterMap
+    for (const originalName of names) {
+        const normalized = normalizeName(originalName);
+        const student = masterMap.get(normalized);
+        if (student) {
+            resultMap.set(originalName.trim(), { grade: student.grade });
+        }
+    }
+
     return resultMap;
 };
 
