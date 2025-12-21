@@ -61,7 +61,7 @@ const getStudentsMap = unstable_cache(
             return {};
         }
     },
-    ['all-students-map-v4'], // Bump version: v3 -> v4 (Fix stale data)
+    ['all-students-map-v5'], // Bump version: v4 -> v5 (Force refresh for normalization fix)
     { revalidate: 30, tags: ['student-data'] }
 );
 
