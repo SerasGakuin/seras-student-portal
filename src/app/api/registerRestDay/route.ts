@@ -35,7 +35,7 @@ export async function POST(request: Request) {
         // Send confirmation message via LINE
         await sendPushMessage(
             userId,
-            `【休む日】${student.name}さんの休む日は、${date}で予約完了しました！\n ひとこと、休む理由をここのチャットで教えてください：`
+            `【休む日】${student.name}さんの休む日は、${date}で予約完了しました！\n ひとこと、お休みする理由をここのチャットで教えてください：`
         );
 
         return NextResponse.json<ApiResponse>({

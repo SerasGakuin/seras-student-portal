@@ -44,7 +44,7 @@ export default function RestPage() {
 
             // Success handling (original behavior with alert)
             const name = getDisplayName(student, profile);
-            alert(`${name}さんの休む日は、${date}で予約完了しました！`);
+            alert(`${name}さんの休む日は、${date}で予約完了しました！\n ひとこと、お休みする理由をLINEのチャットで教えてください：`);
             router.push('/booking');
 
             // Clear form
