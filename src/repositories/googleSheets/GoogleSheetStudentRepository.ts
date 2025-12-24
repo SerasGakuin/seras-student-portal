@@ -39,11 +39,13 @@ export class GoogleSheetStudentRepository implements IStudentRepository {
                 const studentRecord: Record<string, Student> = {};
                 for (let i = 1; i < rows.length; i++) {
                     const row = rows[i];
+                    const normalizeString = (s: string) => s.trim().replace(/（/g, '(').replace(/）/g, ')');
+
                     const rawData = {
                         lineId: row[idxLineId]?.trim() || '',
                         name: row[idxName]?.trim() || '',
-                        grade: row[idxGrade]?.trim(),
-                        status: row[idxStatus]?.trim(),
+                        grade: normalizeString(row[idxGrade] || ''),
+                        status: normalizeString(row[idxStatus] || ''),
                     };
 
                     if (!rawData.lineId) continue;

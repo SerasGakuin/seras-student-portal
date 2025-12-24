@@ -1,6 +1,7 @@
 import { useState, Fragment } from 'react';
+import { api } from '@/lib/api';
 import { StudentStats } from '@/services/dashboardService';
-import { ChevronDown, ChevronUp, Clock, Calendar, Crown, Sunrise, Moon, CalendarDays, Timer, Zap } from 'lucide-react';
+import { ChevronDown, ChevronUp, Clock, Calendar, Crown, Sunrise, Moon, CalendarDays, Timer, Zap, Flame } from 'lucide-react';
 import { ActivityHeatmap, HeatmapDataPoint } from './ActivityHeatmap';
 import { TimeRangeChart } from './TimeRangeChart';
 import { StudentBadgesMap } from '@/services/badgeService';
@@ -34,11 +35,12 @@ interface RankingWidgetProps {
     periodDays: number;
     loading?: boolean;
     badges?: StudentBadgesMap;
+    viewerId?: string | null;
 }
 
-export const RankingWidget = ({ ranking, periodDays, loading, badges }: RankingWidgetProps) => {
+export const RankingWidget = ({ ranking, periodDays, loading, badges, viewerId }: RankingWidgetProps) => {
     const [expandedStudent, setExpandedStudent] = useState<string | null>(null);
-    const [expandedData, setExpandedData] = useState<HeatmapDataPoint[] | null>(null);
+    const [expandedData, setExpandedData] = useState<{ history: HeatmapDataPoint[]; maxConsecutiveDays: number } | null>(null);
     const [detailLoading, setDetailLoading] = useState(false);
 
     // Calculate max for bar chart background
@@ -56,11 +58,8 @@ export const RankingWidget = ({ ranking, periodDays, loading, badges }: RankingW
         setExpandedData(null); // Clear previous
 
         try {
-            const res = await fetch(`/api/dashboard/student-detail?name=${encodeURIComponent(studentName)}&days=28`);
-            if (res.ok) {
-                const data = await res.json();
-                setExpandedData(data);
-            }
+            const data = await api.dashboard.getStudentDetail(viewerId, studentName);
+            setExpandedData(data);
         } catch (e) {
             console.error(e);
         } finally {
@@ -215,6 +214,16 @@ export const RankingWidget = ({ ranking, periodDays, loading, badges }: RankingW
                                                                             に通塾
                                                                         </span>
                                                                     </div>
+                                                                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                                                                        <Flame size={15} style={{ color: 'var(--brand-color)', marginRight: '6px' }} />
+                                                                        <span style={{ color: 'var(--text-sub)', fontWeight: 700 }}>
+                                                                            最大
+                                                                            <span style={{ fontWeight: 800, color: 'var(--text-main)', fontSize: '0.95rem', margin: '0 4px' }}>
+                                                                                {expandedData?.maxConsecutiveDays || 0}日連続
+                                                                            </span>
+                                                                            通塾
+                                                                        </span>
+                                                                    </div>
                                                                 </div>
                                                             </div>
 
@@ -230,12 +239,12 @@ export const RankingWidget = ({ ranking, periodDays, loading, badges }: RankingW
                                                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '80px' }}>
                                                             {/* Left: Heatmap */}
                                                             <div style={{ flex: '0 0 auto' }}>
-                                                                <ActivityHeatmap history={expandedData || []} loading={detailLoading} />
+                                                                <ActivityHeatmap history={expandedData?.history || []} loading={detailLoading} />
                                                             </div>
 
                                                             {/* Right: Time Range Chart */}
                                                             <div style={{ flex: 1, minWidth: '300px' }}>
-                                                                <TimeRangeChart history={expandedData || []} loading={detailLoading} />
+                                                                <TimeRangeChart history={expandedData?.history || []} loading={detailLoading} />
                                                             </div>
                                                         </div>
                                                     </div>

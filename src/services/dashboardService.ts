@@ -412,13 +412,16 @@ export class DashboardService {
         // 2. Fetch Logs
         const logs = await occupancyRepo.findAllLogs();
 
-        // 3. Filter and Map
-        const relevantLogs = logs.filter(l => {
+        // 3. Filter logs for this student (for all history streak calculation)
+        const allStudentLogs = logs.filter(l => l.name === studentName);
+
+        // 4. Filter logs for the specified period (for history response)
+        const relevantLogs = allStudentLogs.filter(l => {
             const d = new Date(l.entryTime);
-            return l.name === studentName && d >= startDate && d <= endDate;
+            return d >= startDate && d <= endDate;
         });
 
-        // 4. Format for UI
+        // 5. Format for UI
         const details = relevantLogs.map(log => {
             const duration = this.calculateDurationMinutes(log);
             const entry = new Date(log.entryTime);
@@ -437,7 +440,66 @@ export class DashboardService {
         // Sort by date ASC
         details.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-        return details;
+        // 6. Calculate streaks from ALL history (not limited by days)
+        const allUniqueDates = [...new Set(allStudentLogs.map(l => {
+            const date = new Date(l.entryTime);
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        }))].sort(); // Ascending order for max consecutive calculation
+
+        // Calculate max consecutive days from all history
+        let maxConsecutive = 0;
+        let tempStreak = 0;
+        let previousDate: Date | null = null;
+
+        for (const dateStr of allUniqueDates) {
+            const currentDate = new Date(dateStr + 'T00:00:00');
+
+            if (previousDate) {
+                const diffDays = Math.round((currentDate.getTime() - previousDate.getTime()) / (1000 * 60 * 60 * 24));
+                if (diffDays === 1) {
+                    tempStreak++;
+                } else {
+                    tempStreak = 1;
+                }
+            } else {
+                tempStreak = 1;
+            }
+
+            maxConsecutive = Math.max(maxConsecutive, tempStreak);
+            previousDate = currentDate;
+        }
+
+        // 7. Calculate Current Streak (must be ongoing - ends today or yesterday)
+        const sortedDatesDesc = [...allUniqueDates].reverse(); // Descending order
+        let currentStreak = 0;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (sortedDatesDesc.length > 0) {
+            const latestDate = new Date(sortedDatesDesc[0] + 'T00:00:00');
+            const diffFromToday = Math.round((today.getTime() - latestDate.getTime()) / (1000 * 60 * 60 * 24));
+
+            // Only count if last visit was today or yesterday
+            if (diffFromToday <= 1) {
+                currentStreak = 1;
+                for (let i = 1; i < sortedDatesDesc.length; i++) {
+                    const prevDate = new Date(sortedDatesDesc[i - 1] + 'T00:00:00');
+                    const currDate = new Date(sortedDatesDesc[i] + 'T00:00:00');
+                    const diff = Math.round((prevDate.getTime() - currDate.getTime()) / (1000 * 60 * 60 * 24));
+                    if (diff === 1) {
+                        currentStreak++;
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+
+        return {
+            history: details,
+            maxConsecutiveDays: maxConsecutive,
+            currentStreak: currentStreak
+        };
     }
 
     private calculateDurationMinutes(log: EntryExitLog): number {

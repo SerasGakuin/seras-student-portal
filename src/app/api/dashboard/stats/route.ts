@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { DashboardService } from '@/services/dashboardService';
-import { loginStudent } from '@/services/authService';
-import { CONFIG } from '@/lib/config';
+import { authenticateRequest } from '@/lib/authUtils';
 
 // Force dynamic because we are reading "current time" although usage of cache inside service
 // might effectively make it static-ish. But let's use dynamic to allow revalidation.
@@ -9,21 +8,15 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
     try {
-        // 1. Auth Check (Identity)
-        const lineUserId = request.headers.get('x-line-user-id');
-        if (!lineUserId) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+        // Centralized Authentication
+        const auth = await authenticateRequest(request);
 
-        const student = await loginStudent(lineUserId);
-        if (!student) {
-            return NextResponse.json({ error: 'User not found' }, { status: 403 });
-        }
-
-        // 2. Permission Check (Role)
-        const allowedStatuses = CONFIG.PERMISSIONS.VIEW_DASHBOARD as readonly string[];
-        if (!allowedStatuses.includes(student.status)) {
-            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        if (!auth.isAuthenticated || !auth.permissions.canViewDashboard) {
+            return NextResponse.json({
+                status: 'error',
+                message: `Unauthorized: ${auth.error || 'Permission denied'}`,
+                // debug: auth // Removed for production safety, rely on logs
+            }, { status: 401 });
         }
 
         // 3. Logic
@@ -39,11 +32,14 @@ export async function GET(request: Request) {
         const service = new DashboardService();
         const stats = await service.getDashboardStats(from, to, grade);
 
-        return NextResponse.json(stats);
+        return NextResponse.json({
+            status: 'ok',
+            data: stats
+        });
     } catch (error) {
         console.error('API Error:', error);
         return NextResponse.json(
-            { error: 'Failed to fetch dashboard stats' },
+            { status: 'error', message: 'Failed to fetch dashboard stats' },
             { status: 500 }
         );
     }

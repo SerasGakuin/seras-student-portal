@@ -9,35 +9,40 @@
 src/
 ├── app/                    # Next.js App Router (ルーティング層)
 │   ├── api/                # API Route Handlers (HTTPエンドポイント)
-│   │   ├── auth/           # 認証関連 (login)
+│   │   ├── auth/           # 認証関連 (login, [...nextauth])
 │   │   ├── booking/        # 予約関連 (reserveMeeting/registerRestDay)
-│   │   ├── dashboard/      # [NEW] ダッシュボード統計 API
+│   │   ├── dashboard/      # ダッシュボード統計 API
+│   │   ├── ranking/        # 週間ランキング API
 │   │   └── occupancy/      # 混雑状況取得
 │   ├── booking/            # 予約画面ページ (Server Components)
-│   ├── dashboard/          # [NEW] 講師用ダッシュボードページ (Client Component)
+│   ├── dashboard/          # 講師用ダッシュボードページ (Client Component)
 │   └── occupancy/          # 混雑状況画面ページ
 │
 ├── components/             # 共有 UI コンポーネント
-│   └── ui/                 # 汎用部品 (Button, PageHeader, GlassCard, Skeleton [NEW] 等)
-│       # ここにはビジネスロジックを持たせない。純粋な表示用。
+│   ├── ui/                 # 汎用部品 (Button, PageHeader, GlassCard, Skeleton 等)
+│   └── providers/          # コンテキストプロバイダー (AuthProvider 等)
 │
 ├── features/               # 機能別モジュール (Domain Drivenに近い分割)
 │   ├── booking/            # 予約機能に関わる UI / Components
 │   │   └── components/     # TimeRangeSlider などドメイン固有の部品
-│   └── occupancy/          # 混雑状況機能に関わる UI / Components
-│       └── components/     # OccupancyCard, PrincipalControlPanel など
-│   └── dashboard/          # [NEW] ダッシュボード機能 UI
+│   ├── occupancy/          # 混雑状況機能に関わる UI / Components
+│   │   └── components/     # OccupancyCard, ChampionsCard, GuideCard など
+│   └── dashboard/          # ダッシュボード機能 UI
 │       └── components/     # KPICard, RankingWidget, CumulativeGrowthChart, FilterCommandBar など
 │
+├── hooks/                  # カスタムフック
+│   ├── useRole.ts          # ハイブリッド認証 (LINE + Google) ロール判定
+│   └── useGoogleAuth.ts    # Google OAuth 状態管理
+│
 ├── services/               # ビジネスロジック層 (Service Layer)
-│   # ここがアプリケーションの「脳」です。Next.js に依存しない純粋な TS 関数。
 │   ├── studentService.ts   # 生徒データの取得 (Repository経由)
 │   ├── calendarService.ts  # カレンダー連携・イベント生成
 │   ├── lineService.ts      # LINE Messaging API 連携
 │   ├── authService.ts      # 認証ロジック
-│   └── dashboardService.ts # [NEW] 統計集計・データ加工ロジック
+│   ├── dashboardService.ts # 統計集計・データ加工ロジック
+│   └── badgeService.ts     # 週間ランキング・バッジ計算ロジック
 │
-├── repositories/           # データアクセス層 (Repository Layer) [NEW]
+├── repositories/           # データアクセス層 (Repository Layer)
 │   ├── interfaces/         # インターフェース定義 (IStudentRepository)
 │   └── googleSheets/       # Google Sheets 実装 (GoogleSheetStudentRepository)
 │
@@ -46,6 +51,7 @@ src/
 │   ├── schema.ts           # Zod スキーマ (バリデーション定義)
 │   ├── config.ts           # 環境変数・定数管理
 │   ├── liff.tsx            # LINE LIFF SDK ラッパー
+│   ├── authConfig.ts       # NextAuth.js 設定 (Google OAuth)
 │   └── googleSheets.ts     # Google API クライアント初期化
 │
 ├── types/                  # 型定義 (TypeScript Interfaces)
@@ -55,6 +61,7 @@ src/
     ├── visualizer.py       # 可視化ロジック
     └── loader.py           # データロードユーティリティ
 ```
+
 
 ## 2. 設計思想 (Design Philosophy)
 
@@ -121,7 +128,8 @@ src/
 
 ## 5. 認証と権限 (Authentication & Authorization)
 
-本システムでは、ユーザーの状態を以下の5段階で識別しています。
+本システムでは、**クライアントサイド (Hook)** と **サーバーサイド (Utility)** の両方で統一された認証モデルを採用しています。
+`src/lib/authUtils.ts` によるサーバーサイド認証の一元化により、LINE認証とGoogle認証（ハイブリッド認証）をAPIレベルで透過的に扱います。
 
 ### ユーザーステート定義
 
@@ -171,8 +179,23 @@ sequenceDiagram
             
             Frontend-->>User: ポータル画面 (権限に応じたUI)
         end
-    end
 ```
+
+### サーバーサイド認証の統合 (`authUtils.ts`)
+
+APIルート (`/api/*`) では、セキュリティと保守性を高めるため、`src/lib/authUtils.ts` が提供する `authenticateRequest` 関数を使用して認証を一元管理しています。
+
+```typescript
+// 実装パターン
+const auth = await authenticateRequest(req);
+if (!auth.isAuthenticated || !auth.permissions.canViewDashboard) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+}
+```
+
+このユーティリティは以下の責務を持ちます：
+1.  **ハイブリッド認証の解決**: リクエストヘッダー (`x-line-user-id`) または Cookie (Google Session) を自動検出し、ユーザーを特定します。
+2.  **権限の正規化**: `CONFIG.PERMISSIONS` に基づき、ユーザーロールから具体的な権限 (`canViewDashboard` 等) を算出します。
 
 ### 権限管理の実装 (Role Management)
 スプレッドシートの `Status` カラムを利用して簡易的なロールベースアクセス制御 (RBAC) を実現しています。

@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { api } from '@/lib/api';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { useLiff } from '@/lib/liff';
+import { useRole } from '@/hooks/useRole';
 import { Trophy, Sunrise, Moon, CalendarDays, Timer, Zap, Crown } from 'lucide-react';
 import type { UnifiedWeeklyBadges, BadgeType } from '@/services/badgeService';
 
@@ -41,31 +43,48 @@ const BADGE_CONFIG: Record<BadgeType, { label: string; icon: React.ReactNode; de
 
 export const ChampionsCard = () => {
     const [ranking, setRanking] = useState<UnifiedWeeklyBadges | null>(null);
-    const { student, isLoading } = useLiff();
+    const { student, isLoading: isLiffLoading } = useLiff();
+    const { role, authMethod, isLoading: isRoleLoading } = useRole();
 
     useEffect(() => {
         const fetchRanking = async () => {
             try {
-                const res = await fetch('/api/ranking');
-                if (res.ok) {
-                    const data = await res.json();
-                    setRanking(data);
-                }
+                const data = await api.ranking.get(student?.lineId);
+                setRanking(data);
             } catch (e) {
                 console.error(e);
             }
         };
-        fetchRanking();
-    }, []);
 
-    if (!ranking || isLoading) return null;
+        if (!isLiffLoading && !isRoleLoading) {
+            fetchRanking();
+        }
+    }, [student?.lineId, isLiffLoading, isRoleLoading]);
+
+    if (!ranking || isLiffLoading || isRoleLoading) return null;
 
     // Determine Group
+    // Determine Group
     let groupKey: 'exam' | 'general' = 'general';
-    if (student) {
-        if (student.status.includes('講師') || student.status === '教室長') {
+
+    const isTeacherRole = (authMethod === 'google' && (role === 'teacher' || role === 'principal')) ||
+        (student && (student.status.includes('講師') || student.status === '教室長'));
+
+    if (isTeacherRole) {
+        // Teacher sees exam by default, but falls back to general if exam is empty and general has data
+        const hasExamData = ranking.exam && Object.keys(ranking.exam).length > 0;
+        const hasGeneralData = ranking.general && Object.keys(ranking.general).length > 0;
+
+        if (hasExamData) {
             groupKey = 'exam';
-        } else if (student.grade === '高3' || student.grade === '既卒') {
+        } else if (hasGeneralData) {
+            groupKey = 'general';
+        } else {
+            groupKey = 'exam'; // Default to exam if both empty
+        }
+    } else if (student) {
+        // LINE auth: check status and grade
+        if (student.grade === '高3' || student.grade === '既卒') {
             groupKey = 'exam';
         }
     }
@@ -103,7 +122,7 @@ export const ChampionsCard = () => {
                     <h2 style={{
                         fontSize: '1.2rem',
                         fontWeight: 900,
-                        color: 'var(--text-main)',
+                        color: 'var(--brand-color)',
                         letterSpacing: '0.02em'
                     }}>
                         WEEKLY RANKINGS

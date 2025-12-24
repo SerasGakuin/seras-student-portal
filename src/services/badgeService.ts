@@ -12,9 +12,17 @@ export interface Badge {
 
 export type StudentBadgesMap = Record<string, Badge[]>;
 
+// Maps student name to their rank (1-indexed)
+export type StudentRankingsMap = Record<string, number>;
+
 export interface UnifiedWeeklyBadges {
     exam: StudentBadgesMap;
     general: StudentBadgesMap;
+    totalExamStudents: number;
+    totalGeneralStudents: number;
+    // Full rankings based on total study time (all students, not just top 3)
+    examRankings: StudentRankingsMap;
+    generalRankings: StudentRankingsMap;
 }
 
 const occupancyRepo = new GoogleSheetOccupancyRepository();
@@ -61,14 +69,15 @@ export class BadgeService {
             return d >= prevStartDate && d <= prevEndDate;
         });
 
-        // 3. Group Students
+        // 3. Group Students (only active students with status '在塾')
         const normalizeName = (name: string) => name.replace(/[\s\u200B-\u200D\uFEFF]/g, '').trim();
 
         const examGroup: string[] = [];
         const generalGroup: string[] = [];
 
         Object.values(students).forEach(s => {
-            if (!s.grade) return;
+            // Only include active students (在塾)
+            if (!s.grade || s.status !== '在塾') return;
             // Exam: High School 3, Graduates
             if (s.grade === '高3' || s.grade === '既卒') {
                 examGroup.push(normalizeName(s.name));
@@ -146,7 +155,34 @@ export class BadgeService {
         this.awardBadgesForGroup(examGroup, stats, examBadges);
         this.awardBadgesForGroup(generalGroup, stats, generalBadges);
 
-        return { exam: examBadges, general: generalBadges };
+        // Calculate full rankings for all students based on total duration
+        const examRankings = this.calculateFullRankings(examGroup, stats);
+        const generalRankings = this.calculateFullRankings(generalGroup, stats);
+
+        return {
+            exam: examBadges,
+            general: generalBadges,
+            totalExamStudents: examGroup.length,
+            totalGeneralStudents: generalGroup.length,
+            examRankings,
+            generalRankings
+        };
+    }
+
+    private calculateFullRankings(groupNames: string[], stats: Map<string, StudentWeeklyStats>): StudentRankingsMap {
+        const rankings: StudentRankingsMap = {};
+
+        // Sort by total duration descending
+        const sorted = groupNames
+            .map(name => ({ name, stats: stats.get(name) }))
+            .filter(item => item.stats)
+            .sort((a, b) => (b.stats!.totalDuration) - (a.stats!.totalDuration));
+
+        sorted.forEach((item, index) => {
+            rankings[item.stats!.name] = index + 1; // 1-indexed rank
+        });
+
+        return rankings;
     }
 
     private awardBadgesForGroup(groupNames: string[], stats: Map<string, StudentWeeklyStats>, result: StudentBadgesMap) {

@@ -123,7 +123,7 @@ export const TimeRangeChart = ({ history = [], loading }: TimeRangeChartProps) =
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                 <h4 style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-sub)', fontWeight: 600 }}>
-                    滞在時間帯
+
                 </h4>
             </div>
 

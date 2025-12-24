@@ -1,4 +1,5 @@
 import { ApiResponse, Student, OccupancyData } from '@/types';
+import { UnifiedWeeklyBadges } from '@/services/badgeService';
 import { BookingRequest, RestDayRequest } from '@/lib/schema';
 import { CONFIG } from '@/lib/config';
 
@@ -16,6 +17,27 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
     }
 
     return data.data as T;
+}
+
+/**
+ * 認証付きリクエストを行うためのヘルパー
+ * Google Auth (Cookie) と LINE Auth (Header) の両方をサポート
+ */
+export async function fetchWithAuth<T>(url: string, lineUserId?: string | null, options?: RequestInit): Promise<T> {
+    const headers: Record<string, string> = {
+        // 'Content-Type': 'application/json', // Removed to avoid forcing preflight on simple GETs
+        ...((options?.headers as Record<string, string>) || {}),
+    };
+
+    if (lineUserId) {
+        headers['x-line-user-id'] = lineUserId;
+    }
+
+    return fetchJson<T>(url, {
+        ...options,
+        credentials: 'include', // Cookie送信 (Google Auth用)
+        headers,
+    });
 }
 
 export const api = {
@@ -46,22 +68,32 @@ export const api = {
     },
     occupancy: {
         get: async (lineUserId?: string): Promise<OccupancyData> => {
-            const headers: HeadersInit = {};
-            if (lineUserId) {
-                headers['x-line-user-id'] = lineUserId;
-            }
-            return fetchJson(CONFIG.API.OCCUPANCY, {
-                cache: 'no-store',
-                headers,
+            return fetchWithAuth(CONFIG.API.OCCUPANCY, lineUserId, {
+                cache: 'no-store'
             });
         },
-        setStatus: (building: '1' | '2', isOpen: boolean, actorName: string) => fetchJson(
-            '/api/occupancy/status',
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ building, isOpen, actorName }),
-            }
-        ),
+        setStatus: (lineUserId: string | null | undefined, building: '1' | '2', isOpen: boolean, actorName: string) =>
+            fetchWithAuth(
+                '/api/occupancy/status',
+                lineUserId,
+                {
+                    method: 'POST',
+                    body: JSON.stringify({ building, isOpen, actorName }),
+                }
+            ),
+    },
+    ranking: {
+        get: async (lineUserId?: string) => {
+            return fetchWithAuth<UnifiedWeeklyBadges>('/api/ranking', lineUserId);
+        }
+    },
+    dashboard: {
+        getStudentDetail: async (lineUserId: string | null | undefined, name: string, days: number = 28) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return fetchWithAuth<any>( // Type definition is complex, using any for now or define StudentDetailResponse
+                `/api/dashboard/student-detail?name=${encodeURIComponent(name)}&days=${days}`,
+                lineUserId
+            );
+        }
     },
 };

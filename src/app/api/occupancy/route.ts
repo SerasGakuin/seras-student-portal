@@ -1,11 +1,17 @@
 import { NextResponse } from 'next/server';
 import { ApiResponse, OccupancyData } from '@/types';
 import { occupancyService } from '@/services/occupancyService';
+import { authenticateRequest } from '@/lib/authUtils';
 
 export async function GET(req: Request) {
     try {
-        const lineUserId = req.headers.get('x-line-user-id');
-        const data = await occupancyService.getOccupancyData(lineUserId);
+        const auth = await authenticateRequest(req);
+
+        // Derive params from auth result
+        const lineUserId = auth.user?.authMethod === 'line' ? auth.user.id : null;
+        const isGoogleTeacher = auth.user?.authMethod === 'google';
+
+        const data = await occupancyService.getOccupancyData(lineUserId, isGoogleTeacher);
 
         return NextResponse.json<ApiResponse<OccupancyData>>({
             status: 'ok',
