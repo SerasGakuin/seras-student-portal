@@ -11,12 +11,14 @@ src/
 │   ├── api/                # API Route Handlers (HTTPエンドポイント)
 │   │   ├── auth/           # 認証関連 (login)
 │   │   ├── booking/        # 予約関連 (reserveMeeting/registerRestDay)
+│   │   ├── dashboard/      # [NEW] ダッシュボード統計 API
 │   │   └── occupancy/      # 混雑状況取得
 │   ├── booking/            # 予約画面ページ (Server Components)
+│   ├── dashboard/          # [NEW] 講師用ダッシュボードページ (Client Component)
 │   └── occupancy/          # 混雑状況画面ページ
 │
 ├── components/             # 共有 UI コンポーネント
-│   └── ui/                 # 汎用部品 (Button, PageHeader, GlassCard 等)
+│   └── ui/                 # 汎用部品 (Button, PageHeader, GlassCard, Skeleton [NEW] 等)
 │       # ここにはビジネスロジックを持たせない。純粋な表示用。
 │
 ├── features/               # 機能別モジュール (Domain Drivenに近い分割)
@@ -24,13 +26,16 @@ src/
 │   │   └── components/     # TimeRangeSlider などドメイン固有の部品
 │   └── occupancy/          # 混雑状況機能に関わる UI / Components
 │       └── components/     # OccupancyCard, PrincipalControlPanel など
+│   └── dashboard/          # [NEW] ダッシュボード機能 UI
+│       └── components/     # KPICard, RankingWidget, CumulativeGrowthChart, FilterCommandBar など
 │
 ├── services/               # ビジネスロジック層 (Service Layer)
 │   # ここがアプリケーションの「脳」です。Next.js に依存しない純粋な TS 関数。
 │   ├── studentService.ts   # 生徒データの取得 (Repository経由)
 │   ├── calendarService.ts  # カレンダー連携・イベント生成
 │   ├── lineService.ts      # LINE Messaging API 連携
-│   └── authService.ts      # 認証ロジック
+│   ├── authService.ts      # 認証ロジック
+│   └── dashboardService.ts # [NEW] 統計集計・データ加工ロジック
 │
 ├── repositories/           # データアクセス層 (Repository Layer) [NEW]
 │   ├── interfaces/         # インターフェース定義 (IStudentRepository)
@@ -64,7 +69,7 @@ src/
     *   **役割**: HTTPリクエストの受付、入力バリデーション (Zod)、レスポンスの返却。
     *   **ルール**: ロジックは書かず、サービス層 (`src/services`) に処理を委譲する。
 3.  **Service Layer (`src/services`)**:
-    *   **役割**: 具体的な業務処理（「予約可能か判定する」）。
+    *   **役割**: 具体的な業務処理（「予約可能か判定する」、「滞在時間を計算する」）。
     *   **現状**: データアクセスは **Repository Layer** に委譲し、ビジネス判断に集中する。
 4.  **Repository Layer (`src/repositories`)** [NEW]:
     *   **役割**: データの取得・保存（CRUD）を抽象化する。
@@ -74,10 +79,10 @@ src/
 
 ## 3. UI/UX 実装パターン (UI Patterns)
 
-### A. Granular Loading (きめ細やかな読み込み)
-従来の「ロード中は画面全体をスケルトンにする」手法は、UXを損なうため廃止しました。
+### A. Granular Loading & Skeleton UI (きめ細やかな読み込み)
+従来の「ロード中は画面全体を`LoadingOverlay`で覆う」手法は、UXを損なうため廃止しました。
 *   **個別更新**: 教室長が開館/閉館操作を行った際、操作された建物のカード**だけ**をスケルトン表示にします。
-*   `PrincipalControlPanel` による操作ロックと `OccupancyCard` の `isLoading` Props を連動させています。
+*   **ダッシュボード**: フィルタ変更時にレイアウトシフト（ガタつき）を起こさないよう、既存データを半透明で残しつつ、更新中であることを示します。`KPICard`には専用の`Skeleton`コンポーネントを使用し、スムーズな視覚体験を提供します。
 
 ### B. パフォーマンス最適化 (React.memo)
 リアルタイム性を確保するため、`OccupancyPage` は数秒ごとにポーリングを行いますが、以下の対策でチラつき（Flickr）を防止しています。
@@ -125,8 +130,8 @@ src/
 | **1. 未ログイン (Guest)** | LIFF SDK `liff.isLoggedIn()` が `false` | LINEアプリ外、またはログイン未完了の状態。 | • ログインボタンの表示のみ |
 | **2. 未登録 (Unregistered)** | LIFFログイン済み (`lineId`有) だが、バックエンド (`AuthService`) が生徒データを返さない (`null`) | LINEログインはできているが、スプレッドシートに `lineId` が登録されていない（または間違っている）。 | • 「生徒登録が見つかりません」画面の表示<br>• ログアウト |
 | **3. 生徒 (Student)** | `Status` = "在塾" 等 | 通常の生徒アカウント。 | • 在室状況の閲覧<br>• 面談予約<br>• 欠席登録 |
-| **4. 講師 (Teacher)** | `Status` = "在塾(講師)" | 講師アカウント。 | • **生徒リストの閲覧** (誰がどの校舎にいるか)<br>• 生徒と同じ予約機能 |
-| **5. 教室長 (Principal)** | `Status` = "教室長" | 管理者アカウント。 | • **自習室の開館/閉館操作**<br>• 生徒リストの閲覧<br>• 生徒と同じ予約機能 |
+| **4. 講師 (Teacher)** | `Status` = "在塾(講師)" | 講師アカウント。 | • **ダッシュボードの閲覧** (New)<br>• 生徒リストの閲覧 (誰がどの校舎にいるか)<br>• 生徒と同じ予約機能 |
+| **5. 教室長 (Principal)** | `Status` = "教室長" | 管理者アカウント。 | • **自習室の開館/閉館操作**<br>• ダッシュボードの閲覧<br>• 生徒リストの閲覧<br>• 生徒と同じ予約機能 |
 
 ### 判定ロジックフロー
 
@@ -171,7 +176,7 @@ sequenceDiagram
 
 ### 権限管理の実装 (Role Management)
 スプレッドシートの `Status` カラムを利用して簡易的なロールベースアクセス制御 (RBAC) を実現しています。
-*   **講師**: `OccupancyCard` 内に生徒リスト (`TeacherSection`) を表示。
+*   `useRole` フックを使用して、フロントエンド側で権限チェック (`canViewDashboard`, `isPrincipal`) を一元管理します。
 
 ## 6. 自動化プロセス (Automation)
 
@@ -187,5 +192,3 @@ Google Sheets API の Rate Limit 回避とレスポンス向上を目的に、`o
 *   **有効期限**: 30秒 (`revalidate: 30`)
 *   **スコープ**: 全ユーザー共通のシートデータ (`occupancy-raw-sheet-data`)
 *   **無効化**: 教室長による `updateBuildingStatus` 実行時に `revalidateTag` で即時無効化し、UIへの反映遅延を防いでいます。
-
-
