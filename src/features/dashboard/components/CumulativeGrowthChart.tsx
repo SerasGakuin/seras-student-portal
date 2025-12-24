@@ -7,6 +7,8 @@ interface CumulativeGrowthChartProps {
         [key: string]: number | string;
     }[];
     loading?: boolean;
+    selectedStudents: string[];
+    onSelectionChange: (students: string[]) => void;
 }
 
 // Sophisticated Palette (Vibrant yet Professional)
@@ -42,9 +44,8 @@ const getGradientColors = (count: number): string[] => {
     return colors;
 };
 
-export const CumulativeGrowthChart = ({ data, loading }: CumulativeGrowthChartProps) => {
+export const CumulativeGrowthChart = ({ data, loading, selectedStudents, onSelectionChange }: CumulativeGrowthChartProps) => {
     const [hoveredStudent, setHoveredStudent] = useState<string | null>(null);
-    const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
 
     if (!data || data.length === 0) {
         return <div style={{ padding: '40px', color: 'var(--text-sub)', textAlign: 'center' }}>データがありません</div>;
@@ -62,16 +63,14 @@ export const CumulativeGrowthChart = ({ data, loading }: CumulativeGrowthChartPr
     });
 
     const toggleSelection = (student: string) => {
-        setSelectedStudents(prev => {
-            if (prev.includes(student)) {
-                return prev.filter(s => s !== student);
-            } else {
-                return [...prev, student];
-            }
-        });
+        if (selectedStudents.includes(student)) {
+            onSelectionChange(selectedStudents.filter((s: string) => s !== student));
+        } else {
+            onSelectionChange([...selectedStudents, student]);
+        }
     };
 
-    const clearSelection = () => setSelectedStudents([]);
+    const clearSelection = () => onSelectionChange([]);
 
     // Custom Dot Render for Last Point (Today)
     const renderLastDot = (props: { cx?: number, cy?: number, index?: number }, studentKey: string, color: string) => {

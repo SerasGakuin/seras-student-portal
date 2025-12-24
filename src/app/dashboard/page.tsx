@@ -34,18 +34,25 @@ export default function DashboardPage() {
     });
     const [gradeFilter, setGradeFilter] = useState<FilterType>('ALL'); // Global Grade Filter
 
+    const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
+
     // Access Control
     const { canViewDashboard, isLoading: isRoleLoading } = useRole();
     const { profile } = useLiff();
     const router = useRouter();
 
-    // Initialize date range to last 30 days on client mount
+    // Initialize date range to last 30 days on client mount (EXCLUDING Today)
     useEffect(() => {
         const now = new Date();
-        const from = new Date();
-        from.setDate(now.getDate() - 29); // 30 days inclusive
+        const yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+        yesterday.setHours(23, 59, 59, 999);
+
+        const from = new Date(yesterday);
+        from.setDate(yesterday.getDate() - 29); // 30 days inclusive (Yesterday counting back)
         from.setHours(0, 0, 0, 0);
-        const to = new Date(); // now
+
+        const to = yesterday;
 
         setDateRange({ from, to });
     }, []);
@@ -58,6 +65,11 @@ export default function DashboardPage() {
             }
         }
     }, [isRoleLoading, canViewDashboard, router]);
+
+    // Clear chart selection when grade filter changes
+    useEffect(() => {
+        setSelectedStudents([]);
+    }, [gradeFilter]);
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -151,7 +163,12 @@ export default function DashboardPage() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>
                 {/* Cumulative Growth Chart */}
                 <GlassCard style={{ padding: '32px' }}>
-                    <CumulativeGrowthChart data={stats?.history || []} loading={isLoading} />
+                    <CumulativeGrowthChart
+                        data={stats?.history || []}
+                        loading={isLoading}
+                        selectedStudents={selectedStudents}
+                        onSelectionChange={setSelectedStudents}
+                    />
                 </GlassCard>
 
                 {/* Ranking */}

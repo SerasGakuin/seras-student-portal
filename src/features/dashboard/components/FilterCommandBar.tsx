@@ -13,16 +13,8 @@ interface FilterCommandBarProps {
 export const FilterCommandBar = ({ currentRange, currentGrade, availableMonths = [], onRangeChange, onGradeChange }: FilterCommandBarProps) => {
     const [isPeriodOpen, setIsPeriodOpen] = useState(false);
     const [isGradeOpen, setIsGradeOpen] = useState(false);
-    const [scrolled, setScrolled] = useState(false);
-
     const [selectedMonthStr, setSelectedMonthStr] = useState<string | null>(null);
 
-    // Track scroll for styling
-    useEffect(() => {
-        const handleScroll = () => setScrolled(window.scrollY > 20);
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
 
     const periodMenuRef = useRef<HTMLDivElement>(null);
     const gradeMenuRef = useRef<HTMLDivElement>(null);
@@ -83,34 +75,49 @@ export const FilterCommandBar = ({ currentRange, currentGrade, availableMonths =
             setSelectedMonthStr(null);
             switch (option) {
                 case 'last_7_days':
-                    from = new Date();
-                    from.setDate(now.getDate() - 6);
+                    to = new Date(now);
+                    to.setDate(now.getDate() - 1); // Yesterday
+                    to.setHours(23, 59, 59, 999);
+
+                    from = new Date(to);
+                    from.setDate(to.getDate() - 6); // 7 days inclusive: Yesterday - 6 days
                     from.setHours(0, 0, 0, 0);
-                    to = new Date();
                     break;
                 case 'last_14_days':
-                    from = new Date();
-                    from.setDate(now.getDate() - 13);
+                    to = new Date(now);
+                    to.setDate(now.getDate() - 1);
+                    to.setHours(23, 59, 59, 999);
+
+                    from = new Date(to);
+                    from.setDate(to.getDate() - 13);
                     from.setHours(0, 0, 0, 0);
-                    to = new Date();
                     break;
                 case 'last_30_days':
-                    from = new Date();
-                    from.setDate(now.getDate() - 29);
+                    to = new Date(now);
+                    to.setDate(now.getDate() - 1);
+                    to.setHours(23, 59, 59, 999);
+
+                    from = new Date(to);
+                    from.setDate(to.getDate() - 29);
                     from.setHours(0, 0, 0, 0);
-                    to = new Date();
                     break;
                 case 'last_90_days':
-                    from = new Date();
-                    from.setDate(now.getDate() - 89);
+                    to = new Date(now);
+                    to.setDate(now.getDate() - 1);
+                    to.setHours(23, 59, 59, 999);
+
+                    from = new Date(to);
+                    from.setDate(to.getDate() - 89);
                     from.setHours(0, 0, 0, 0);
-                    to = new Date();
                     break;
                 case 'last_180_days':
-                    from = new Date();
-                    from.setDate(now.getDate() - 179);
+                    to = new Date(now);
+                    to.setDate(now.getDate() - 1);
+                    to.setHours(23, 59, 59, 999);
+
+                    from = new Date(to);
+                    from.setDate(to.getDate() - 179);
                     from.setHours(0, 0, 0, 0);
-                    to = new Date();
                     break;
                 case 'all_time':
                     // "Whole period where data exists"
@@ -171,11 +178,12 @@ export const FilterCommandBar = ({ currentRange, currentGrade, availableMonths =
                     backdropFilter: 'blur(12px)',
                     padding: '12px 24px',
                     borderRadius: '24px',
-                    boxShadow: scrolled ? '0 10px 30px -5px rgba(0, 0, 0, 0.1)' : '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
                     border: '1px solid rgba(255,255,255,0.4)',
                     maxWidth: '1200px',
                     margin: '0 auto',
-                    gap: '24px'
+                    gap: '24px',
+                    transition: 'all 0.3s ease'
                 }}
             >
                 {/* Left: Period Selector */}
