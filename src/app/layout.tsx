@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { LiffProvider } from "@/lib/liff";
+import { AuthProvider } from "@/components/providers/AuthProvider";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const notoSansJP = Noto_Sans_JP({ subsets: ["latin"], weight: ["400", "500", "700", "900"], variable: "--font-noto-sans-jp" });
@@ -24,11 +25,13 @@ export default function RootLayout({
   return (
     <html lang="ja" suppressHydrationWarning>
       <body className={`${inter.variable} ${notoSansJP.variable}`}>
-        <LiffProvider>
-          {children}
-          <Analytics />
-          <SpeedInsights />
-        </LiffProvider>
+        <AuthProvider>
+          <LiffProvider>
+            {children}
+            <Analytics />
+            <SpeedInsights />
+          </LiffProvider>
+        </AuthProvider>
       </body>
     </html>
   );

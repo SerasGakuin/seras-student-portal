@@ -178,6 +178,35 @@ sequenceDiagram
 スプレッドシートの `Status` カラムを利用して簡易的なロールベースアクセス制御 (RBAC) を実現しています。
 *   `useRole` フックを使用して、フロントエンド側で権限チェック (`canViewDashboard`, `isPrincipal`) を一元管理します。
 
+### Google OAuth 認証 (ハイブリッド認証)
+
+LINE認証に加え、**Google OAuth** によるPC向け認証もサポートしています。
+
+| 認証方式 | 対象 | 用途 |
+| :--- | :--- | :--- |
+| **LINE LIFF** | 生徒・講師・教室長 | スマートフォンからのアクセス (LINEアプリ内) |
+| **Google OAuth** | 講師・教室長 (院内PC) | PCブラウザからダッシュボードへのアクセス |
+
+#### 実装詳細
+*   **ライブラリ**: `next-auth` (v4)
+*   **プロバイダー**: Google OAuth 2.0
+*   **許可リスト**: 環境変数 `ALLOWED_EMAILS` で許可されたメールアドレスのみサインイン可能
+*   **権限**: Google認証ユーザーは「講師」ロールとして扱われ、ダッシュボード閲覧権限を持つ
+*   **表示名**: Google認証ユーザーは「Seras学院」として表示される
+
+#### 認証フック (`useRole`)
+`useRole` フックはハイブリッド認証をサポートし、以下の情報を返します：
+```typescript
+interface RoleInfo {
+    role: 'student' | 'teacher' | 'principal' | 'guest';
+    canViewDashboard: boolean;
+    isLoading: boolean;
+    displayName: string | null;
+    authMethod: 'line' | 'google' | null;
+}
+```
+
+
 ## 6. 自動化プロセス (Automation)
 
 ### A. 自動閉館 (Auto-Close Cron)
