@@ -1,0 +1,225 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { useLiff } from '@/lib/liff';
+import { Trophy, Sunrise, Moon, CalendarDays, Timer, Zap, Crown } from 'lucide-react';
+import type { UnifiedWeeklyBadges, BadgeType } from '@/services/badgeService';
+
+const BADGE_CONFIG: Record<BadgeType, { label: string; icon: React.ReactNode; desc: string }> = {
+    'HEAVY_USER': {
+        label: 'トップランカー',
+        icon: <Crown size={18} />,
+        desc: '勉強時間の合計がトップクラス'
+    },
+    'EARLY_BIRD': {
+        label: '早起きマスター',
+        icon: <Sunrise size={18} />,
+        desc: '朝イチから来て勉強している'
+    },
+    'NIGHT_OWL': {
+        label: '深夜マスター',
+        icon: <Moon size={18} />,
+        desc: '閉館ギリギリまで残って勉強している'
+    },
+    'CONSISTENT': {
+        label: '皆勤賞候補',
+        icon: <CalendarDays size={18} />,
+        desc: 'ほぼ毎日、塾に来ている'
+    },
+    'MARATHON': {
+        label: '長時間マスター',
+        icon: <Timer size={18} />,
+        desc: '1回の滞在時間が長い'
+    },
+    'RISING_STAR': {
+        label: '急上昇',
+        icon: <Zap size={18} />,
+        desc: '前の週より勉強時間が大幅にアップ'
+    },
+};
+
+export const ChampionsCard = () => {
+    const [ranking, setRanking] = useState<UnifiedWeeklyBadges | null>(null);
+    const { student, isLoading } = useLiff();
+
+    useEffect(() => {
+        const fetchRanking = async () => {
+            try {
+                const res = await fetch('/api/ranking');
+                if (res.ok) {
+                    const data = await res.json();
+                    setRanking(data);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        };
+        fetchRanking();
+    }, []);
+
+    if (!ranking || isLoading) return null;
+
+    // Determine Group
+    let groupKey: 'exam' | 'general' = 'general';
+    if (student) {
+        if (student.status.includes('講師') || student.status === '教室長') {
+            groupKey = 'exam';
+        } else if (student.grade === '高3' || student.grade === '既卒') {
+            groupKey = 'exam';
+        }
+    }
+
+    const currentMap = ranking[groupKey] || {};
+
+    // Group by type
+    const groups: Partial<Record<BadgeType, { name: string; rank: number }[]>> = {};
+    Object.entries(currentMap).forEach(([name, badges]) => {
+        badges.forEach(b => {
+            if (!groups[b.type]) groups[b.type] = [];
+            groups[b.type]!.push({ name, rank: b.rank });
+        });
+    });
+
+    const order: BadgeType[] = ['HEAVY_USER', 'RISING_STAR', 'EARLY_BIRD', 'NIGHT_OWL', 'MARATHON', 'CONSISTENT'];
+    const hasAnyWinners = order.some(type => groups[type]?.length);
+
+    if (!hasAnyWinners) return null;
+
+    return (
+        <GlassCard style={{ padding: '20px', marginTop: '0px', marginBottom: '70px' }}>
+            {/* Header */}
+            <div style={{
+                padding: '10px',
+                borderBottom: '1px solid rgba(0, 0, 0, 0.03)'
+            }}>
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    marginBottom: '0px'
+                }}>
+                    <Trophy size={20} style={{ color: 'var(--brand-color)' }} />
+                    <h2 style={{
+                        fontSize: '1.2rem',
+                        fontWeight: 900,
+                        color: 'var(--text-main)',
+                        letterSpacing: '0.02em'
+                    }}>
+                        WEEKLY CHAMPIONS
+                    </h2>
+                </div>
+                <div style={{
+                    fontSize: '0.85rem',
+                    color: 'var(--text-sub)',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                }}>
+                    <span style={{
+                        padding: '2px 8px',
+                        margin: '4px 0',
+                        borderRadius: '4px',
+                        background: '#fff7ed',
+                        color: 'var(--brand-color)',
+                        fontSize: '0.7rem',
+                        fontWeight: 700
+                    }}>
+                        {groupKey === 'exam' ? '受験生部門' : '非受験生部門'}
+                    </span>
+                    毎朝8時更新！直近7日間のランキング
+                </div>
+            </div>
+
+            {/* List */}
+            <div style={{ padding: '0' }}>
+                {order.map(type => {
+                    const winners = groups[type];
+                    if (!winners || winners.length === 0) return null;
+                    winners.sort((a, b) => a.rank - b.rank);
+                    const config = BADGE_CONFIG[type];
+
+                    return (
+                        <div key={type} style={{
+                            padding: '20px',
+                            borderBottom: '1px solid rgba(0, 0, 0, 0.03)'
+                        }}>
+                            {/* Category Header */}
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '12px' }}>
+                                <div style={{
+                                    minWidth: '48px',
+                                    height: '48px',
+                                    borderRadius: '16px',
+                                    background: 'rgba(255, 255, 255, 0.8)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: 'var(--brand-color)',
+                                    boxShadow: 'var(--shadow-badge)'
+                                }}>
+                                    {config.icon}
+                                </div>
+                                <div style={{ paddingTop: '2px' }}>
+                                    <div style={{
+                                        fontWeight: 900,
+                                        fontSize: '1rem',
+                                        color: 'var(--text-main)',
+                                        marginBottom: '4px',
+                                        lineHeight: 1.4
+                                    }}>
+                                        {config.label}
+                                    </div>
+                                    <div style={{
+                                        fontSize: '0.85rem',
+                                        color: 'var(--text-sub)',
+                                        fontWeight: 500,
+                                        lineHeight: 1.6
+                                    }}>
+                                        {config.desc}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Winners */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingLeft: '64px' }}>
+                                {winners.slice(0, 3).map((w) => (
+                                    <div key={w.name} style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '10px'
+                                    }}>
+                                        {/* Rank Badge */}
+                                        <div style={{
+                                            minWidth: '20px',
+                                            height: '20px',
+                                            borderRadius: '50%',
+                                            background: w.rank === 1 ? 'var(--brand-color)' :
+                                                w.rank === 2 ? 'rgba(0, 0, 0, 0.08)' :
+                                                    'rgba(0, 0, 0, 0.05)',
+                                            color: w.rank === 1 ? '#fff' : 'var(--text-main)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 700
+                                        }}>
+                                            {w.rank}
+                                        </div>
+                                        <span style={{
+                                            fontWeight: 700,
+                                            fontSize: '1.2rem',
+                                            color: w.rank === 1 ? 'var(--brand-color)' : 'var(--text-main)'
+                                        }}>
+                                            {w.name} さん
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </GlassCard>
+    );
+};

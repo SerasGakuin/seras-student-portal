@@ -5,8 +5,10 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { DashboardSummary } from '@/services/dashboardService';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
+import { BackLink } from '@/components/ui/BackLink';
 
 import { KPICard } from '@/features/dashboard/components/KPICard';
+import { RankerListCard } from '@/features/dashboard/components/RankerListCard';
 import { RankingWidget } from '@/features/dashboard/components/RankingWidget';
 // Removed legacy DashboardControls
 import { FilterCommandBar } from '@/features/dashboard/components/FilterCommandBar';
@@ -27,7 +29,7 @@ export default function DashboardPage() {
     const [isLoading, setIsLoading] = useState(true);
 
     // Global Filter State
-    const [rangeOption, setRangeOption] = useState<DateRangeOption>('last_30_days');
+    const [rangeOption, setRangeOption] = useState<DateRangeOption>('last_7_days');
     const [dateRange, setDateRange] = useState<{ from: Date | undefined, to: Date | undefined }>({
         from: undefined,
         to: undefined
@@ -41,7 +43,7 @@ export default function DashboardPage() {
     const { profile } = useLiff();
     const router = useRouter();
 
-    // Initialize date range to last 30 days on client mount (EXCLUDING Today)
+    // Initialize date range to last 7 days on client mount (EXCLUDING Today)
     useEffect(() => {
         const now = new Date();
         const yesterday = new Date(now);
@@ -49,7 +51,7 @@ export default function DashboardPage() {
         yesterday.setHours(23, 59, 59, 999);
 
         const from = new Date(yesterday);
-        from.setDate(yesterday.getDate() - 29); // 30 days inclusive (Yesterday counting back)
+        from.setDate(yesterday.getDate() - 6); // 7 days inclusive (Yesterday counting back)
         from.setHours(0, 0, 0, 0);
 
         const to = yesterday;
@@ -105,6 +107,9 @@ export default function DashboardPage() {
         }
     }, [canViewDashboard, profile, dateRange, gradeFilter]);
 
+    // Fetch Badges Removed (Now in DashboardStats)
+
+
     const handleRangeChange = (option: DateRangeOption, from: Date, to: Date) => {
         setRangeOption(option);
         setDateRange({ from, to });
@@ -130,33 +135,53 @@ export default function DashboardPage() {
             />
 
             {/* KPI Section */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '40px' }}>
-                <KPICard
-                    label="総学習時間 (指定期間)"
-                    value={stats ? Math.floor(stats.totalDuration.value / 60) : 0}
-                    unit="時間"
-                    subValue={stats ? `${stats.totalDuration.value % 60}分` : ''}
-                    trend={stats?.totalDuration.trend && stats.totalDuration.trend > 0 ? 'up' : stats?.totalDuration.trend && stats.totalDuration.trend < 0 ? 'down' : 'neutral'}
-                    trendValue={stats ? `${Math.abs(stats.totalDuration.trend)}%` : ''}
-                    icon={<Clock size={24} />}
-                    loading={isLoading}
-                />
-                <KPICard
-                    label="延べ通塾人数"
-                    value={stats ? stats.totalVisits.value : 0}
-                    unit="人"
-                    trend={stats?.totalVisits.trend && stats.totalVisits.trend > 0 ? 'up' : stats?.totalVisits.trend && stats.totalVisits.trend < 0 ? 'down' : 'neutral'}
-                    trendValue={stats ? `${Math.abs(stats.totalVisits.trend)}%` : ''}
-                    icon={<Users size={24} />}
-                    loading={isLoading}
-                />
-                <KPICard
-                    label="トップ学習者"
-                    value={stats?.topStudent?.name || '-'}
-                    subValue={stats?.topStudent ? `${Math.floor((stats.topStudent.totalDurationMinutes || 0) / 60)}時間${(stats.topStudent.totalDurationMinutes || 0) % 60}分` : ''}
-                    icon={<Trophy size={24} />}
-                    loading={isLoading}
-                />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginBottom: '40px' }}>
+                {/* Row 1: Totals */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+                    <KPICard
+                        label="平均学習時間 (生徒1人・1日あたり)"
+                        value={stats ? Math.floor(stats.avgDurationPerVisit.value / 60) : 0}
+                        unit={'時間 ' + (stats ? `${stats.avgDurationPerVisit.value % 60}分` : '')}
+                        trend={stats?.avgDurationPerVisit.trend && stats.avgDurationPerVisit.trend > 0 ? 'up' : stats?.avgDurationPerVisit.trend && stats.avgDurationPerVisit.trend < 0 ? 'down' : 'neutral'}
+                        trendValue={stats ? `${Math.abs(stats.avgDurationPerVisit.trend)}%` : ''}
+                        icon={<Clock size={24} />}
+                        loading={isLoading}
+                    />
+                    <KPICard
+                        label="平均通塾回数 (生徒1人あたり)"
+                        value={stats ? stats.avgVisitsPerStudent.value : 0}
+                        unit={`回 / ${stats ? stats.periodDays : '-'}日`}
+                        trend={stats?.avgVisitsPerStudent.trend && stats.avgVisitsPerStudent.trend > 0 ? 'up' : stats?.avgVisitsPerStudent.trend && stats.avgVisitsPerStudent.trend < 0 ? 'down' : 'neutral'}
+                        trendValue={stats ? `${Math.abs(stats.avgVisitsPerStudent.trend)}%` : ''}
+                        icon={<Users size={24} />}
+                        loading={isLoading}
+                    />
+                </div>
+
+                {/* Row 2: Rankings (Top, Growth, Drop) */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', alignItems: 'stretch' }}>
+                    <RankerListCard
+                        title="トップランカー"
+                        icon="user"
+                        type="duration"
+                        data={stats?.ranking || []}
+                        loading={isLoading}
+                    />
+                    <RankerListCard
+                        title="急上昇 (前期間比)"
+                        icon="trend-up"
+                        type="growth"
+                        data={stats?.metricLists?.growers || []}
+                        loading={isLoading}
+                    />
+                    <RankerListCard
+                        title="減少 (前期間比)"
+                        icon="trend-down"
+                        type="drop" // OR "vanished" if we want to combine? Let's use droppers for now.
+                        data={stats?.metricLists?.droppers || []}
+                        loading={isLoading}
+                    />
+                </div>
             </div>
 
             {/* Chart & Ranking Section */}
@@ -173,9 +198,20 @@ export default function DashboardPage() {
 
                 {/* Ranking */}
                 <GlassCard style={{ padding: '32px' }}>
-                    <RankingWidget ranking={stats?.ranking || []} periodDays={stats?.periodDays || 0} loading={isLoading} />
+                    <RankingWidget
+                        ranking={stats?.ranking || []}
+                        periodDays={stats?.periodDays || 0}
+                        loading={isLoading}
+                        badges={stats?.badges}
+                    />
                 </GlassCard>
             </div>
-        </div>
+
+            <div style={{ marginTop: '40px' }}>
+                <BackLink href="/">
+                    ポータルに戻る
+                </BackLink>
+            </div>
+        </div >
     );
 }

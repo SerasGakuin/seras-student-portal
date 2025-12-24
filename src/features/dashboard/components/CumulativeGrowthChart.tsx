@@ -98,7 +98,7 @@ export const CumulativeGrowthChart = ({ data, loading, selectedStudents, onSelec
             {/* Header */}
             <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h2 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>
-                    日次学習時間 (累積)
+                    学習時間の累積
                 </h2>
             </div>
 
@@ -206,10 +206,10 @@ export const CumulativeGrowthChart = ({ data, loading, selectedStudents, onSelec
                         padding: '0 8px', // Align header with items
                         flexShrink: 0
                     }}>
-                        <div style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>順位</div>
+                        <div style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>生徒</div>
 
                         {selectedStudents.length === 0 ? (
-                            <div style={{ fontSize: '0.7rem', color: '#cbd5e1', fontWeight: 500, animation: 'fadeIn 0.3s' }}>
+                            <div style={{ fontSize: '0.7rem', color: '#a1a8b1ff', fontWeight: 500, animation: 'fadeIn 0.3s' }}>
                                 クリックして比較
                             </div>
                         ) : (

@@ -3,6 +3,7 @@ import { Student } from '@/types';
 import { GoogleSheetOccupancyRepository } from '@/repositories/googleSheets/GoogleSheetOccupancyRepository';
 import { GoogleSheetStudentRepository } from '@/repositories/googleSheets/GoogleSheetStudentRepository';
 import { EntryExitLog } from '@/repositories/interfaces/IOccupancyRepository';
+import { BadgeService, StudentBadgesMap } from '@/services/badgeService';
 
 // Stats Interfaces
 export interface StudentStats {
@@ -11,6 +12,7 @@ export interface StudentStats {
     totalDurationMinutes: number;
     visitCount: number;
     lastVisit: string | null;
+    growth?: number; // Delta vs previous period
 }
 
 export interface MetricWithTrend {
@@ -21,6 +23,8 @@ export interface MetricWithTrend {
 export interface DashboardSummary {
     totalDuration: MetricWithTrend;
     totalVisits: MetricWithTrend;
+    avgDurationPerVisit: MetricWithTrend;
+    avgVisitsPerStudent: MetricWithTrend;
     topStudent: StudentStats | null;
     ranking: StudentStats[];
     period: {
@@ -34,10 +38,17 @@ export interface DashboardSummary {
         date: string;
         [studentName: string]: number | string; // Cumulative minutes
     }[];
+    metricLists?: {
+        growers: StudentStats[];
+        droppers: StudentStats[];
+        vanished: StudentStats[];
+    };
+    badges?: StudentBadgesMap;
 }
 
 const occupancyRepo = new GoogleSheetOccupancyRepository();
 const studentRepo = new GoogleSheetStudentRepository();
+const badgeService = new BadgeService();
 
 export class DashboardService {
 
@@ -123,6 +134,8 @@ export class DashboardService {
         // User requested ALL students, not just top 15.
         const allStudents = currentStats.ranking.map(s => s.name);
         const history = this.calculateHistory(relevantLogs, startDate, endDate, allStudents);
+        const badgeResult = await badgeService.getWeeklyBadges();
+        const badges = { ...badgeResult.exam, ...badgeResult.general };
 
         return {
             totalDuration: {
@@ -133,6 +146,20 @@ export class DashboardService {
                 value: currentStats.totalVisits,
                 trend: visitsTrend
             },
+            avgDurationPerVisit: {
+                value: currentStats.totalVisits > 0 ? Math.floor(currentStats.totalDuration / currentStats.totalVisits) : 0,
+                trend: this.calculateTrend(
+                    currentStats.totalVisits > 0 ? currentStats.totalDuration / currentStats.totalVisits : 0,
+                    prevStats.totalVisits > 0 ? prevStats.totalDuration / prevStats.totalVisits : 0
+                )
+            },
+            avgVisitsPerStudent: {
+                value: currentStats.ranking.length > 0 ? Number((currentStats.totalVisits / currentStats.ranking.length).toFixed(1)) : 0,
+                trend: this.calculateTrend(
+                    currentStats.ranking.length > 0 ? currentStats.totalVisits / currentStats.ranking.length : 0,
+                    prevStats.ranking.length > 0 ? prevStats.totalVisits / prevStats.ranking.length : 0
+                )
+            },
             topStudent: currentStats.ranking.length > 0 ? currentStats.ranking[0] : null,
             ranking: currentStats.ranking,
             period: {
@@ -141,8 +168,59 @@ export class DashboardService {
             },
             availableMonths,
             periodDays,
-            history
+            history,
+            // New Metric Lists
+            metricLists: this.calculateLists(currentStats.ranking, prevStats.ranking),
+            badges
         };
+    }
+
+    private calculateLists(currentStats: StudentStats[], prevStats: StudentStats[]) {
+        const prevMap = new Map(prevStats.map(s => [s.name, s.totalDurationMinutes]));
+
+        const growers: StudentStats[] = [];
+        const droppers: StudentStats[] = [];
+        const vanished: StudentStats[] = [];
+
+        // 1. Check Current Students vs Previous
+        currentStats.forEach(curr => {
+            const prevDuration = prevMap.get(curr.name) || 0;
+            const delta = curr.totalDurationMinutes - prevDuration;
+
+            // Attach growth info (Hack: Mutating or creating new object? Let's spread)
+            const statWithGrowth = { ...curr, growth: delta };
+
+            if (delta > 0) growers.push(statWithGrowth);
+            if (delta < 0) droppers.push(statWithGrowth);
+
+            // Remove handled students from map to find vanished
+            prevMap.delete(curr.name);
+        });
+
+        // 2. Remaining in PrevMap are Vanished (Current Duration = 0)
+        // Only consider vanished if they had SIGNIFICANT time previously (> 60 mins) to avoid noise
+        prevMap.forEach((prevDuration, name) => {
+            if (prevDuration > 60) {
+                // Reconstruct a partial stat object for vanished students (Grade might be missing if we used local map, but we can fetch)
+                // For now, simpler to push to a separate list or just treat as dropper with -Prev duration
+                // User asked for "Vanished" specifically as "Came previously, but 0 now"
+                vanished.push({
+                    name,
+                    grade: '不明', // We'd need to look this up if critical, but likely acceptable for now or can use Repo lookup
+                    totalDurationMinutes: 0,
+                    visitCount: 0,
+                    lastVisit: null,
+                    growth: -prevDuration
+                });
+            }
+        });
+
+        // Sort
+        growers.sort((a, b) => (b.growth || 0) - (a.growth || 0));
+        droppers.sort((a, b) => (a.growth || 0) - (b.growth || 0)); // Ascending (most negative first)
+        vanished.sort((a, b) => (a.growth || 0) - (b.growth || 0)); // Most negative (biggest loss) first
+
+        return { growers, droppers, vanished };
     }
 
     private calculateTrend(current: number, prev: number): number {
@@ -319,6 +397,47 @@ export class DashboardService {
         }
 
         return { totalDuration, totalVisits, ranking };
+    }
+
+    async getStudentDetails(studentName: string, days: number = 28) {
+        // 1. Calculate Period
+        const now = new Date();
+        const endDate = new Date(now);
+        endDate.setHours(23, 59, 59, 999);
+
+        const startDate = new Date(now);
+        startDate.setDate(now.getDate() - days + 1); // +1 to include today in count if we want strictly N days, or just go back N days
+        startDate.setHours(0, 0, 0, 0);
+
+        // 2. Fetch Logs
+        const logs = await occupancyRepo.findAllLogs();
+
+        // 3. Filter and Map
+        const relevantLogs = logs.filter(l => {
+            const d = new Date(l.entryTime);
+            return l.name === studentName && d >= startDate && d <= endDate;
+        });
+
+        // 4. Format for UI
+        const details = relevantLogs.map(log => {
+            const duration = this.calculateDurationMinutes(log);
+            const entry = new Date(log.entryTime);
+
+            // Calculate Exit (needed for charts)
+            const exit = new Date(entry.getTime() + duration * 60 * 1000);
+
+            return {
+                date: entry.toISOString(),
+                durationMinutes: duration,
+                entryTime: entry.toISOString(),
+                exitTime: exit.toISOString()
+            };
+        });
+
+        // Sort by date ASC
+        details.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+        return details;
     }
 
     private calculateDurationMinutes(log: EntryExitLog): number {

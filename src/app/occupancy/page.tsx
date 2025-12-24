@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import { OccupancyCard } from '@/features/occupancy/components/OccupancyCard';
 import { PrincipalControlPanel } from '@/features/occupancy/components/PrincipalControlPanel';
 import { GuideCard } from '@/features/occupancy/components/GuideCard';
+import { ChampionsCard } from '@/features/occupancy/components/ChampionsCard';
 import styles from './page.module.css';
 import { BackLink } from '@/components/ui/BackLink';
 import { OccupancyData } from '@/types';
@@ -127,6 +128,8 @@ export default function OccupancyPage() {
                 <div className={styles.timestamp}>
                     {data ? `最終更新: ${new Date(data.timestamp).toLocaleTimeString("ja-JP", { hour: '2-digit', minute: '2-digit' })}` : 'データ読み込み中...'}
                 </div>
+
+                <ChampionsCard />
 
                 <div className={styles.sectionTitle}>GUIDE & RULES</div>
 
