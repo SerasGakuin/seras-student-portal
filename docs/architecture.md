@@ -27,10 +27,14 @@ src/
 │
 ├── services/               # ビジネスロジック層 (Service Layer)
 │   # ここがアプリケーションの「脳」です。Next.js に依存しない純粋な TS 関数。
-│   ├── studentService.ts   # 生徒データの取得・変換
+│   ├── studentService.ts   # 生徒データの取得 (Repository経由)
 │   ├── calendarService.ts  # カレンダー連携・イベント生成
 │   ├── lineService.ts      # LINE Messaging API 連携
 │   └── authService.ts      # 認証ロジック
+│
+├── repositories/           # データアクセス層 (Repository Layer) [NEW]
+│   ├── interfaces/         # インターフェース定義 (IStudentRepository)
+│   └── googleSheets/       # Google Sheets 実装 (GoogleSheetStudentRepository)
 │
 ├── lib/                    # インフラ/ユーティリティ層
 │   ├── api.ts              # フロントエンド用 API クライアント
@@ -60,9 +64,12 @@ src/
     *   **役割**: HTTPリクエストの受付、入力バリデーション (Zod)、レスポンスの返却。
     *   **ルール**: ロジックは書かず、サービス層 (`src/services`) に処理を委譲する。
 3.  **Service Layer (`src/services`)**:
-    *   **役割**: 具体的な業務処理（「予約可能か判定する」「スプレッドシートから生徒を探す」）。
-    *   **ルール**: Next.js の機能（`NextRequest`など）に依存させない。これにより、単体テスト (`Jest`) が容易になる。
-4.  **Infrastracture Layer (`src/lib`)**:
+    *   **役割**: 具体的な業務処理（「予約可能か判定する」）。
+    *   **現状**: データアクセスは **Repository Layer** に委譲し、ビジネス判断に集中する。
+4.  **Repository Layer (`src/repositories`)** [NEW]:
+    *   **役割**: データの取得・保存（CRUD）を抽象化する。
+    *   **構成**: `IStudentRepository` (Interface) と `GoogleSheetStudentRepository` (Implementation) に分離し、将来的なDB移行を容易にしている。
+5.  **Infrastracture Layer (`src/lib`)**:
     *   **役割**: 外部システム（Google, LINE）との通信詳細を隠蔽する。
 
 ## 3. UI/UX 実装パターン (UI Patterns)
