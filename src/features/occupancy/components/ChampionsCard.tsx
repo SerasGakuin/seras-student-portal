@@ -106,7 +106,7 @@ export const ChampionsCard = () => {
                         color: 'var(--text-main)',
                         letterSpacing: '0.02em'
                     }}>
-                        WEEKLY CHAMPIONS
+                        WEEKLY RANKINGS
                     </h2>
                 </div>
                 <div style={{
