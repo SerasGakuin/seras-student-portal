@@ -13,7 +13,8 @@
   /* --- Colors: Text --- */
   --text-main: #2d3436;
   /* --text-sub: #a4b0be; Previous low contrast value */
-  --text-sub: #64748b; /* Slate-500, Contrast > 4.5:1 */
+  --text-sub: #475569;
+  /* Slate-600, Contrast > 4.5:1 against #f2f4f8 */
   /* Restored user preference */
   --text-light: #ffffff;
 
@@ -68,7 +69,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, ::before, ::after {
+
+  *,
+  ::before,
+  ::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
