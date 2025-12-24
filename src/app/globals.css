@@ -12,7 +12,8 @@
 
   /* --- Colors: Text --- */
   --text-main: #2d3436;
-  --text-sub: #a4b0be;
+  /* --text-sub: #a4b0be; Previous low contrast value */
+  --text-sub: #64748b; /* Slate-500, Contrast > 4.5:1 */
   /* Restored user preference */
   --text-light: #ffffff;
 
@@ -64,6 +65,15 @@
   /* --- Transitions --- */
   --transition-normal: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-bounce: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ========================================

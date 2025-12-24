@@ -24,6 +24,7 @@ export default function BookingPage() {
     const router = useRouter();
     const { profile, student, isLoggedIn, isLoading: isLiffLoading } = useLiff();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [errors, setErrors] = useState<Record<string, string>>({});
 
     // Form State
     const [formData, setFormData] = useState<Omit<BookingRequest, 'userId'>>({
@@ -35,6 +36,14 @@ export default function BookingPage() {
 
     const handleFieldChange = (name: string, value: string) => {
         setFormData(prev => ({ ...prev, [name]: value }));
+        // Clear error when user changes value
+        if (errors[name]) {
+            setErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[name];
+                return newErrors;
+            });
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -42,12 +51,16 @@ export default function BookingPage() {
         if (!profile?.userId) return;
 
         // Validation
+        const newErrors: Record<string, string> = {};
         if (!formData.date) {
-            alert('日付を選択してください。');
-            return;
+            newErrors.date = '日付を選択してください。';
         }
         if (formData.arrivalTime >= formData.leaveTime) {
-            alert('退塾時間は来塾時間より後に設定してください。');
+            newErrors.arrivalTime = '退塾時間は来塾時間より後に設定してください。';
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
             return;
         }
 
@@ -113,7 +126,7 @@ export default function BookingPage() {
                         />
                     </FormGroup>
 
-                    <FormGroup label="日付">
+                    <FormGroup label="日付" error={errors.date}>
                         <DateButtonSelect
                             name="date"
                             value={formData.date}
@@ -121,7 +134,7 @@ export default function BookingPage() {
                         />
                     </FormGroup>
 
-                    <FormGroup label="時間">
+                    <FormGroup label="時間" error={errors.arrivalTime}>
                         <TimeRangeSlider
                             startTime={formData.arrivalTime}
                             endTime={formData.leaveTime}
