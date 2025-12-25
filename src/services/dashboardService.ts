@@ -13,6 +13,8 @@ export interface StudentStats {
     visitCount: number;
     lastVisit: string | null;
     growth?: number; // Delta vs previous period
+    docLink?: string; // Google Docs link
+    sheetLink?: string; // Google Sheets link
 }
 
 export interface MetricWithTrend {
@@ -375,7 +377,9 @@ export class DashboardService {
                 grade: student ? student.grade : '不明',
                 totalDurationMinutes: stat.totalDurationMinutes,
                 visitCount: stat.visitCount,
-                lastVisit: stat.lastVisit
+                lastVisit: stat.lastVisit,
+                docLink: student?.docLink || undefined,
+                sheetLink: student?.sheetLink || undefined
             };
         });
 

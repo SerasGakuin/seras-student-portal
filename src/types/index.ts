@@ -49,4 +49,6 @@ export interface Student {
     name: string;
     grade: Grade;
     status: StudentStatus;
+    docLink?: string;
+    sheetLink?: string;
 }

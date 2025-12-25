@@ -50,6 +50,8 @@ describe('studentService', () => {
             name: '山田 太郎',
             grade: '高1',
             status: '在塾',
+            docLink: '',
+            sheetLink: '',
         });
     });
 
@@ -67,6 +69,8 @@ describe('studentService', () => {
             name: '武田 信玄',
             grade: '既卒',
             status: '在塾',
+            docLink: '',
+            sheetLink: '',
         });
     });
 

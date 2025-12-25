@@ -20,6 +20,8 @@ export const StudentSchema = z.object({
     name: z.string().min(1),
     grade: GradeSchema,
     status: StudentStatusSchema,
+    docLink: z.string().url().optional().or(z.literal('')),
+    sheetLink: z.string().url().optional().or(z.literal('')),
 });
 
 export const BookingRequestSchema = z.object({

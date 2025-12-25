@@ -31,6 +31,10 @@ export class GoogleSheetStudentRepository implements IStudentRepository {
                 const idxGrade = colMap.get('学年');
                 const idxStatus = colMap.get('Status');
 
+                // Optional columns for Google Docs/Sheets links
+                const idxDocLink = colMap.get('ドキュメント');
+                const idxSheetLink = colMap.get('スプレッドシート');
+
                 if (idxLineId === undefined || idxName === undefined || idxGrade === undefined || idxStatus === undefined) {
                     console.error('[GoogleSheetStudentRepository] Missing required columns');
                     return {};
@@ -46,6 +50,8 @@ export class GoogleSheetStudentRepository implements IStudentRepository {
                         name: row[idxName]?.trim() || '',
                         grade: normalizeString(row[idxGrade] || ''),
                         status: normalizeString(row[idxStatus] || ''),
+                        docLink: idxDocLink !== undefined ? (row[idxDocLink]?.trim() || '') : '',
+                        sheetLink: idxSheetLink !== undefined ? (row[idxSheetLink]?.trim() || '') : '',
                     };
 
                     if (!rawData.lineId) continue;

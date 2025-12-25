@@ -147,6 +147,33 @@ export const RankingWidget = ({ ranking, periodDays, loading, badges, viewerId }
                                                             ))}
                                                         </div>
                                                     )}
+                                                    {/* Google Docs/Sheets Links */}
+                                                    <div style={{ display: 'flex', gap: '4px', marginLeft: '4px' }}>
+                                                        {student.docLink && (
+                                                            <a
+                                                                href={student.docLink}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                title="Googleドキュメント"
+                                                                style={{ display: 'flex', alignItems: 'center' }}
+                                                            >
+                                                                <img src="/icons/google-docs.svg" alt="Docs" width={18} height={18} />
+                                                            </a>
+                                                        )}
+                                                        {student.sheetLink && (
+                                                            <a
+                                                                href={student.sheetLink}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                title="Googleスプレッドシート"
+                                                                style={{ display: 'flex', alignItems: 'center' }}
+                                                            >
+                                                                <img src="/icons/google-sheets.svg" alt="Sheets" width={18} height={18} />
+                                                            </a>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </td>
                                             <td style={{ padding: '24px 16px', textAlign: 'center', fontSize: '0.9rem', color: 'var(--text-sub)' }}>
