@@ -136,19 +136,21 @@ export const RankingWidget = ({ ranking, periodDays, loading, badges, viewerId }
                                                 {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
                                             </td>
                                             <td style={{ padding: '24px 16px', fontWeight: 700 }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                    {student.name}
-                                                    {badges && badges[student.name] && (
-                                                        <div style={{ display: 'flex', gap: '4px' }}>
-                                                            {badges[student.name].map((b, i) => (
-                                                                <span key={i} title={`${getBadgeLabel(b.type)}: ${b.value || ''}`} style={{ cursor: 'help', fontSize: '1rem' }}>
-                                                                    {getBadgeIcon(b.type)}
-                                                                </span>
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                    {/* Google Docs/Sheets Links */}
-                                                    <div style={{ display: 'flex', gap: '4px', marginLeft: '4px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'space-between' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        {student.name}
+                                                        {badges && badges[student.name] && (
+                                                            <div style={{ display: 'flex', gap: '4px' }}>
+                                                                {badges[student.name].map((b, i) => (
+                                                                    <span key={i} title={`${getBadgeLabel(b.type)}: ${b.value || ''}`} style={{ cursor: 'help', fontSize: '1rem' }}>
+                                                                        {getBadgeIcon(b.type)}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    {/* Google Docs/Sheets Links - Right Aligned */}
+                                                    <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
                                                         {student.docLink && (
                                                             <a
                                                                 href={student.docLink}
@@ -158,7 +160,7 @@ export const RankingWidget = ({ ranking, periodDays, loading, badges, viewerId }
                                                                 title="Googleドキュメント"
                                                                 style={{ display: 'flex', alignItems: 'center' }}
                                                             >
-                                                                <img src="/icons/google-docs.svg" alt="Docs" width={18} height={18} />
+                                                                <img src="/icons/google-docs.svg" alt="Docs" width={24} height={24} />
                                                             </a>
                                                         )}
                                                         {student.sheetLink && (
@@ -170,7 +172,7 @@ export const RankingWidget = ({ ranking, periodDays, loading, badges, viewerId }
                                                                 title="Googleスプレッドシート"
                                                                 style={{ display: 'flex', alignItems: 'center' }}
                                                             >
-                                                                <img src="/icons/google-sheets.svg" alt="Sheets" width={18} height={18} />
+                                                                <img src="/icons/google-sheets.svg" alt="Sheets" width={24} height={24} />
                                                             </a>
                                                         )}
                                                     </div>
