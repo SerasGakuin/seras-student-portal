@@ -27,6 +27,8 @@ export const CONFIG = {
         VIEW_OCCUPANCY_MEMBERS: ['教室長', '在塾(講師)', '在塾'],
         // Who can toggle Open/Close status (Building 1 & 2)
         OPERATE_BUILDING_STATUS: ['教室長'],
+        // Who can view the Teacher Dashboard
+        VIEW_DASHBOARD: ['教室長', '在塾(講師)'],
     },
     API: {
         OCCUPANCY: '/api/occupancy',

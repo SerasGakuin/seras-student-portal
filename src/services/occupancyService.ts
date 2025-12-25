@@ -15,9 +15,10 @@ export const occupancyService = {
      * Fetch current occupancy data for both buildings with caching.
      * Cache duration: 30 seconds.
      * @param lineUserId Optional LINE User ID to check for Teacher/Principal permissions.
+     * @param isGoogleTeacher Whether the user is authenticated via Google OAuth as a teacher.
      */
-    getOccupancyData: async (lineUserId?: string | null): Promise<OccupancyData> => {
-        return getOccupancyDataWithOptimizedCache(lineUserId);
+    getOccupancyData: async (lineUserId?: string | null, isGoogleTeacher?: boolean): Promise<OccupancyData> => {
+        return getOccupancyDataWithOptimizedCache(lineUserId, isGoogleTeacher);
     },
 
     /**
@@ -146,7 +147,7 @@ const getRawSheetData = unstable_cache(
 );
 
 // 2. Wrapper to process data for specific user
-async function getOccupancyDataWithOptimizedCache(lineUserId?: string | null): Promise<OccupancyData> {
+async function getOccupancyDataWithOptimizedCache(lineUserId?: string | null, isGoogleTeacher?: boolean): Promise<OccupancyData> {
     const { statusRows, activeUserRows } = await getRawSheetData();
 
     // Default Status (Fallback to Open if missing)
@@ -186,9 +187,16 @@ async function getOccupancyDataWithOptimizedCache(lineUserId?: string | null): P
     const b1Count = b1MembersList.length;
     const b2Count = b2MembersList.length;
 
-    // Permissions
+    // Permissions: LINE teacher/principal OR Google teacher
     let showDetails = false;
-    if (lineUserId) {
+
+    // Google OAuth teacher gets full access
+    if (isGoogleTeacher) {
+        showDetails = true;
+    }
+
+    // LINE authenticated user check
+    if (!showDetails && lineUserId) {
         const student = await getStudentFromLineId(lineUserId);
         if (student && (student.status === '在塾' || student.status === '在塾(講師)' || student.status === '教室長')) {
             showDetails = true;

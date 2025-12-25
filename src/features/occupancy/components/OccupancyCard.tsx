@@ -6,6 +6,7 @@ import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 import styles from './OccupancyCard.module.css';
 import { BuildingStatus } from '@/types';
 import { useLiff } from '@/lib/liff';
+import { useRole } from '@/hooks/useRole';
 import { CONFIG } from '@/lib/config';
 import { TeacherSection } from './TeacherSection';
 import { memo } from 'react';
@@ -24,14 +25,16 @@ interface OccupancyCardProps {
 
 export const OccupancyCard = memo(({ title, data, max, moleImage, comingSoon, isLoading }: OccupancyCardProps) => {
     const { student, isLoading: isAuthLoading } = useLiff();
+    const { role, authMethod, isLoading: isRoleLoading } = useRole();
 
     // Determines if we are ready to render the final state
     // We wait for BOTH data and auth to prevent layout popping. Also check explicit isLoading prop.
-    const isReady = !!(data && !isAuthLoading && !isLoading);
+    const isReady = !!(data && !isAuthLoading && !isRoleLoading && !isLoading);
 
-    // Determine Roles
-    // Using Centralized Permissions from CONFIG
-    const canViewMembers = !!(student?.status && (CONFIG.PERMISSIONS.VIEW_OCCUPANCY_MEMBERS as string[]).includes(student.status));
+    // Determine Roles: LINE teacher/principal OR Google teacher
+    const canViewMembers =
+        (authMethod === 'google' && (role === 'teacher' || role === 'principal')) ||
+        !!(student?.status && (CONFIG.PERMISSIONS.VIEW_OCCUPANCY_MEMBERS as string[]).includes(student.status));
 
     if (moleImage) {
         return (

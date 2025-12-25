@@ -48,6 +48,14 @@ Seras学院生徒ポータルの開発環境構築手順です。
     
     # チャネルアクセストークン (Messaging API用)
     LINE_CHANNEL_ACCESS_TOKEN="long_access_token_string"
+
+    # --- Google OAuth (ダッシュボード認証用) ---
+    # Google Cloud Console で OAuth クライアントを作成
+    GOOGLE_CLIENT_ID="your_client_id.apps.googleusercontent.com"
+    GOOGLE_CLIENT_SECRET="GOCSPX-your_secret"
+    NEXTAUTH_SECRET="openssl rand -base64 32 で生成"
+    NEXTAUTH_URL="http://localhost:3000"
+    ALLOWED_EMAILS="seras.gakuin@gmail.com"
     ```
 
 4.  **開発サーバーの起動**

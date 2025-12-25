@@ -5,11 +5,14 @@ import { api } from '@/lib/api';
 import { OccupancyCard } from '@/features/occupancy/components/OccupancyCard';
 import { PrincipalControlPanel } from '@/features/occupancy/components/PrincipalControlPanel';
 import { GuideCard } from '@/features/occupancy/components/GuideCard';
+import { ChampionsCard } from '@/features/occupancy/components/ChampionsCard';
+import { MyStatsCard } from '@/features/occupancy/components/MyStatsCard';
 import styles from './page.module.css';
 import { BackLink } from '@/components/ui/BackLink';
 import { OccupancyData } from '@/types';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { useLiff } from '@/lib/liff';
+import { useRole } from '@/hooks/useRole';
 import { CONFIG } from '@/lib/config';
 
 // Configuration
@@ -33,7 +36,11 @@ export default function OccupancyPage() {
 
     // Get user details to pass to API for role-based data fetching
     const { student, profile, isLoading: isAuthLoading } = useLiff();
+    const { role, authMethod } = useRole();
     const canOperateBuilding = student?.status && (CONFIG.PERMISSIONS.OPERATE_BUILDING_STATUS as string[]).includes(student.status);
+
+    // ChampionsCard visible for: LINE students/teachers/principals OR Google teachers
+    const canViewChampions = student || (authMethod === 'google' && (role === 'teacher' || role === 'principal'));
 
     useEffect(() => {
         const fetchOccupancy = async () => {
@@ -69,7 +76,7 @@ export default function OccupancyPage() {
         // The ControlPanel will also disable interactions.
 
         try {
-            await api.occupancy.setStatus(buildingId, !currentIsOpen, profile.displayName);
+            await api.occupancy.setStatus(profile.userId, buildingId, !currentIsOpen, profile.displayName);
             // Re-fetch
             const newData = await api.occupancy.get(student?.lineId);
             setData(newData);
@@ -127,6 +134,12 @@ export default function OccupancyPage() {
                 <div className={styles.timestamp}>
                     {data ? `最終更新: ${new Date(data.timestamp).toLocaleTimeString("ja-JP", { hour: '2-digit', minute: '2-digit' })}` : 'データ読み込み中...'}
                 </div>
+
+                {/* My Stats Card - 生徒本人のみ表示 */}
+                <MyStatsCard />
+
+                {/* Champions Card - LINE認証ユーザー または Google講師に表示 */}
+                {canViewChampions && <ChampionsCard />}
 
                 <div className={styles.sectionTitle}>GUIDE & RULES</div>
 

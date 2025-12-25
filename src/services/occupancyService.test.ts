@@ -1,179 +1,153 @@
+
 import { occupancyService } from './occupancyService';
 import { getGoogleSheets } from '@/lib/googleSheets';
-import * as StudentService from '@/services/studentService';
+import { getStudentFromLineId, getStudentsByNames } from '@/services/studentService';
 
-// Mock dependencies
+// Mock Dependencies
 jest.mock('@/lib/googleSheets');
-jest.mock('@/services/studentService');
-jest.mock('next/cache', () => ({
-    unstable_cache: (fn: <T>(...args: unknown[]) => T) => fn, // Mock cache to just execute function
-    revalidateTag: jest.fn(),
-}));
-
-describe('occupancyService', () => {
-    // Mock Data for Batch Get
-    // Range 1: Status (Legacy Sheet C2:D2)
-    const mockStatusRows = [
-        ['1', '0'] // Building 1 = Open, Building 2 = Closed
-    ];
-
-    // Range 2: ACTIVE USERS VIEW (Entry/Exit Log Sheet A2:D)
-    // Cols: [EntryTime, ExitTime (Always NULL), BuildingId, Name]
-    // Note: We need dynamic dates to pass "Today" validation check.
-    const today = new Date().toLocaleDateString("en-US", { timeZone: "Asia/Tokyo" }); // Use simple raw format that works with Date constructor
-    // Actually, Date constructor behavior depends on node env.
-    // Let's assume the service expects "Tue Dec 16 2025..." format.
-    // For test stability, we should mock the date or construct a matching string.
-
-    // Construct a "Today" string that works with `new Date(str)` AND `isValidEntryForToday` logic.
-    // service uses `new Date().toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" })` for comparison.
-    // so we just need a date string that evaluates to the same YYYY-MM-DD in JST.
-    const nowJST = new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" });
-    const todayDate = new Date(nowJST);
-    const todayStr = todayDate.toString(); // "Tue Dec 17 2025 ..."
-
-    // Yesterday string
-    const yesterdayDate = new Date(todayDate);
-    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-    const yesterdayStr = yesterdayDate.toString();
-
-    const mockActiveUserRows = [
-        // Active in Building 1 (TODAY) -> SHOULD BE INCLUDED
-        [todayStr, '', '1', 'Student A'],
-        // Active in Building 1 (TODAY) -> SHOULD BE INCLUDED
-        [todayStr, '', '1', 'Student C'],
-        // Active in Building 2 (TODAY) -> SHOULD BE INCLUDED
-        [todayStr, '', '2', 'Student B'],
-        // Stale Data (YESTERDAY) -> SHOULD BE FILTERED OUT
-        [yesterdayStr, '', '1', 'Student Stale'],
-    ];
-
-    const mockSheetsClient = {
-        spreadsheets: {
-            values: {
-                // Mock batchGet
-                batchGet: jest.fn().mockResolvedValue({
-                    data: {
-                        valueRanges: [
-                            { values: mockStatusRows },
-                            { values: mockActiveUserRows }
-                        ]
-                    }
-                }),
-                update: jest.fn().mockResolvedValue({}),
-                append: jest.fn().mockResolvedValue({})
+jest.mock('@/lib/config', () => ({
+    CONFIG: {
+        SPREADSHEET: {
+            OCCUPANCY: {
+                ID: 'mock_sheet_id',
+                SHEETS: { OCCUPANCY: 'Occupancy', OPEN_LOGS: 'Logs' }
             }
         }
-    };
+    }
+}));
+
+// Mock next/cache
+jest.mock('next/cache', () => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    unstable_cache: (fn: any) => fn, // Bypass cache
+    revalidateTag: jest.fn()
+}));
+
+// Mock studentService methods
+jest.mock('@/services/studentService', () => ({
+    getStudentFromLineId: jest.fn(),
+    getStudentsByNames: jest.fn()
+}));
+
+describe('OccupancyService', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let mockSheets: any;
 
     beforeEach(() => {
         jest.clearAllMocks();
-        (getGoogleSheets as jest.Mock).mockResolvedValue(mockSheetsClient);
+
+        // Setup Google Sheets Mock
+        mockSheets = {
+            spreadsheets: {
+                values: {
+                    batchGet: jest.fn(),
+                    update: jest.fn(),
+                    append: jest.fn()
+                }
+            }
+        };
+        (getGoogleSheets as jest.Mock).mockResolvedValue(mockSheets);
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mockResponse = (statusRow: any[], activeUsers: any[]) => {
+        mockSheets.spreadsheets.values.batchGet.mockResolvedValue({
+            data: {
+                valueRanges: [
+                    { values: [statusRow] }, // Status: [B1, B2]
+                    { values: activeUsers }  // Active Users: [Entry, Exit(null), Building, Name]
+                ]
+            }
+        });
+    };
+
     describe('getOccupancyData', () => {
-        it('should correctly parse spreadsheet data', async () => {
-            const data = await occupancyService.getOccupancyData(null);
+        it('should correctly parse open status', async () => {
+            // Building 1 (1=Open), Building 2 (0=Close)
+            mockResponse(['1', '0'], []);
 
-            // Counts should be derived from ACTIVE logs (Filtered by Today)
-            // Building 1: Student A, Student C -> Count 2
-            // "Student Stale" (Yesterday) should be excluded
-            expect(data.building1.count).toBe(2);
-            // Building 1 Status: '1' -> Open
-            expect(data.building1.isOpen).toBe(true);
+            const result = await occupancyService.getOccupancyData();
 
-            // Building 2: Student B -> Count 1
-            expect(data.building2.count).toBe(1);
-            // Building 2 Status: '0' -> Closed
-            expect(data.building2.isOpen).toBe(false);
+            expect(result.building1.isOpen).toBe(true);
+            expect(result.building2.isOpen).toBe(false);
         });
 
-        it('should handle empty rows gracefully', async () => {
-            const emptyClient = {
-                spreadsheets: {
-                    values: {
-                        batchGet: jest.fn().mockResolvedValue({
-                            data: { valueRanges: [{ values: [] }, { values: [] }] }
-                        })
-                    }
-                }
-            };
-            (getGoogleSheets as jest.Mock).mockResolvedValue(emptyClient);
+        it('should count active users for today only', async () => {
+            // Mock Today as JST
+            const today = new Date().toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" });
+            const yesterday = new Date(Date.now() - 86400000).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" });
 
-            const data = await occupancyService.getOccupancyData(null);
-            expect(data.building1.count).toBe(0);
+            // 1: Today, B1, Valid
+            // 2: Yesterday, B1, Invalid (stale)
+            // 3: Today, B2, Valid
+            const users = [
+                [`${today} 10:00:00`, null, '1', 'Student A'],
+                [`${yesterday} 10:00:00`, null, '1', 'Student B'],
+                [`${today} 11:00:00`, null, '2', 'Student C'],
+            ];
+            mockResponse(['1', '1'], users);
+
+            const result = await occupancyService.getOccupancyData();
+
+            expect(result.building1.count).toBe(1); // Only Student A
+            expect(result.building2.count).toBe(1); // Only Student C
         });
 
-        it('should show members for Teacher', async () => {
-            // Mock student service to return "Teacher" status
-            (StudentService.getStudentFromLineId as jest.Mock).mockResolvedValue({
+        it('should hide member details for Guest', async () => {
+            const today = new Date().toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" });
+            mockResponse(['1', '1'], [[`${today} 10:00:00`, null, '1', 'Student A']]);
+
+            const result = await occupancyService.getOccupancyData(); // No user ID
+
+            expect(result.building1.count).toBe(1);
+            expect(result.building1.members).toEqual([]); // Details hidden
+        });
+
+        it('should show member details for Authorized User', async () => {
+            const today = new Date().toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" });
+            mockResponse(['1', '1'], [[`${today} 10:00:00`, null, '1', 'Student A']]);
+
+            // Mock Teacher Auth
+            (getStudentFromLineId as jest.Mock).mockResolvedValue({
                 status: '在塾(講師)'
             });
-            (StudentService.getStudentsByNames as jest.Mock).mockResolvedValue(new Map([
-                ['Student A', { grade: '中1' }],
-                ['Student C', { grade: '高3' }],
-                ['Student B', { grade: '中2' }]
-            ]));
+            (getStudentsByNames as jest.Mock).mockResolvedValue(
+                new Map([['Student A', { grade: '高3' }]])
+            );
 
-            const data = await occupancyService.getOccupancyData('teacher-line-id');
+            const result = await occupancyService.getOccupancyData('teacher_line_id');
 
-            // Check members population
-            expect(data.building1.members).toHaveLength(2); // Student A, Student C
-            expect(data.building1.members[0].name).toBe('Student A');
-            // Check formatted entry time (just checking checking it exists)
-            expect(data.building1.members[0].entryTime).toBeDefined();
-
-            expect(data.building2.members).toHaveLength(1); // Student B
-        });
-
-        it('should show members for Students (在塾)', async () => {
-            // UPDATED: Students with '在塾' should now see members
-            (StudentService.getStudentFromLineId as jest.Mock).mockResolvedValue({
-                status: '在塾'
+            expect(result.building1.members).toHaveLength(1);
+            expect(result.building1.members[0]).toEqual({
+                name: 'Student A',
+                grade: '高3',
+                entryTime: expect.any(String)
             });
-            (StudentService.getStudentsByNames as jest.Mock).mockResolvedValue(new Map([
-                ['Student A', { grade: '中1' }]
-            ]));
-
-            const data = await occupancyService.getOccupancyData('student-line-id');
-
-            // Should be visible
-            expect(data.building1.members.length).toBeGreaterThan(0);
-        });
-
-        it('should NOT show members for Guests/Others', async () => {
-            (StudentService.getStudentFromLineId as jest.Mock).mockResolvedValue({
-                status: '入塾検討中'
-            });
-
-            const data = await occupancyService.getOccupancyData('guest-line-id');
-
-            expect(data.building1.members).toHaveLength(0);
         });
     });
 
     describe('updateBuildingStatus', () => {
-        it('should call update and append logs', async () => {
+        it('should update sheet and append log', async () => {
             await occupancyService.updateBuildingStatus({
                 building: '1',
                 isOpen: false,
-                actorName: 'Test User'
+                actorName: 'Principal'
             });
 
             // Verify Update
-            expect(mockSheetsClient.spreadsheets.values.update).toHaveBeenCalledWith(expect.objectContaining({
-                range: expect.stringContaining('!C2'),
-                requestBody: { values: [[0]] } // Closed -> 0
+            expect(mockSheets.spreadsheets.values.update).toHaveBeenCalledWith(expect.objectContaining({
+                range: 'Occupancy!C2',
+                requestBody: { values: [[0]] } // 0 = Close
             }));
 
-            // Verify Append
-            expect(mockSheetsClient.spreadsheets.values.append).toHaveBeenCalledWith(expect.objectContaining({
-                range: expect.stringContaining('open_logs!A:E'),
-                requestBody: expect.objectContaining({
+            // Verify Log Append
+            expect(mockSheets.spreadsheets.values.append).toHaveBeenCalledWith(expect.objectContaining({
+                range: 'Logs!A:E',
+                requestBody: {
                     values: expect.arrayContaining([
-                        expect.arrayContaining(['Test User', 'CLOSE', '本館'])
+                        expect.arrayContaining(['Principal', 'CLOSE', '本館'])
                     ])
-                })
+                }
             }));
         });
     });

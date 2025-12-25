@@ -71,7 +71,24 @@ LINEユーザーが生徒として登録済みか確認
 
 *   **Service Used**: `CalendarService`, `LineService`
 
-### 4. Cron Jobs
+### 4. ランキング (Ranking)
+
+#### GET /api/ranking
+週間ランキング（バッジ情報）を取得する。
+
+*   **Query Parameters**:
+    *   `date` (optional): 基準日 (YYYY-MM-DD)。省略時は現在日時。
+*   **Service Used**: `BadgeService`
+*   **Response**:
+    ```ts
+    interface RankingResponse {
+      exam: Record<string, { type: BadgeType; rank: number }[]>;
+      general: Record<string, { type: BadgeType; rank: number }[]>;
+    }
+    ```
+*   **データ範囲**: 基準日の前日から遡って7日間のローリングウィンドウ
+
+### 5. Cron Jobs
 
 #### GET /api/cron/auto-close
 **System Internal**. 毎日23:00にVercel Cronによって実行される。
@@ -83,3 +100,4 @@ LINEユーザーが生徒として登録済みか確認
 *   **Response**:
     *   `{ status: 'ok', data: { closed: true }, message: '...' }` (変更あり)
     *   `{ status: 'ok', data: { closed: false }, message: '...' }` (変更なし)
+
