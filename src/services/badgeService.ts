@@ -31,42 +31,47 @@ const studentRepo = new GoogleSheetStudentRepository();
 export class BadgeService {
 
     async getWeeklyBadges(targetDate: Date = new Date()): Promise<UnifiedWeeklyBadges> {
-        // Rolling 7-day window: Yesterday and the 6 days before it
-        // Updated daily at 6am (cache/cron handled separately)
+        // Rolling 7-day window based on JST
+        // Convert targetDate (server time) to JST-shifted Date
+        // "JST-shifted Date" means a Date object where GetHours() returns JST hours.
+        // e.g. Real JST 09:00 -> Date object showing 09:00 (which is actually 09:00 UTC internally if created via string parsing without offset)
+        const toJst = (d: Date) => new Date(d.toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
 
-        // End date: Yesterday at 23:59:59
-        const endDate = new Date(targetDate);
-        endDate.setDate(endDate.getDate() - 1);
-        endDate.setHours(23, 59, 59, 999);
+        const targetJst = toJst(targetDate);
+
+        // End date: Yesterday at 23:59:59 (JST)
+        const endDateJst = new Date(targetJst);
+        endDateJst.setDate(endDateJst.getDate() - 1);
+        endDateJst.setHours(23, 59, 59, 999);
 
         // Start date: 7 days total (yesterday + 6 days before)
-        const startDate = new Date(endDate);
-        startDate.setDate(endDate.getDate() - 6);
-        startDate.setHours(0, 0, 0, 0);
+        const startDateJst = new Date(endDateJst);
+        startDateJst.setDate(endDateJst.getDate() - 6);
+        startDateJst.setHours(0, 0, 0, 0);
 
-        // Previous period for Rising Star comparison (7 days before startDate)
-        const prevEndDate = new Date(startDate);
-        prevEndDate.setDate(startDate.getDate() - 1);
-        prevEndDate.setHours(23, 59, 59, 999);
+        // Previous period for Rising Star comparison
+        const prevEndDateJst = new Date(startDateJst);
+        prevEndDateJst.setDate(startDateJst.getDate() - 1);
+        prevEndDateJst.setHours(23, 59, 59, 999);
 
-        const prevStartDate = new Date(prevEndDate);
-        prevStartDate.setDate(prevEndDate.getDate() - 6);
-        prevStartDate.setHours(0, 0, 0, 0);
+        const prevStartDateJst = new Date(prevEndDateJst);
+        prevStartDateJst.setDate(prevEndDateJst.getDate() - 6);
+        prevStartDateJst.setHours(0, 0, 0, 0);
 
-        console.log(`[BadgeService] Calculating for period: ${startDate.toISOString()} - ${endDate.toISOString()}`);
+        console.log(`[BadgeService - JST] Period: ${startDateJst.toLocaleString()} - ${endDateJst.toLocaleString()}`);
 
         const logs = await occupancyRepo.findAllLogs();
         const students = await studentRepo.findAll();
 
-        // 2. Filter Logs
+        // 2. Filter Logs using JST-shifted Dates
         const weekLogs = logs.filter(l => {
-            const d = new Date(l.entryTime);
-            return d >= startDate && d <= endDate;
+            const entryJst = toJst(new Date(l.entryTime));
+            return entryJst >= startDateJst && entryJst <= endDateJst;
         });
 
         const prevWeekLogs = logs.filter(l => {
-            const d = new Date(l.entryTime);
-            return d >= prevStartDate && d <= prevEndDate;
+            const entryJst = toJst(new Date(l.entryTime));
+            return entryJst >= prevStartDateJst && entryJst <= prevEndDateJst;
         });
 
         // 3. Group Students (only active students with status '在塾')
@@ -76,9 +81,7 @@ export class BadgeService {
         const generalGroup: string[] = [];
 
         Object.values(students).forEach(s => {
-            // Only include active students (在塾)
             if (!s.grade || s.status !== '在塾') return;
-            // Exam: High School 3, Graduates
             if (s.grade === '高3' || s.grade === '既卒') {
                 examGroup.push(normalizeName(s.name));
             } else {
@@ -93,8 +96,8 @@ export class BadgeService {
                 name: s.name,
                 totalDuration: 0,
                 prevTotalDuration: 0,
-                morningDuration: 0, // Before 9:00
-                nightDuration: 0,   // After 20:00
+                morningDuration: 0,
+                nightDuration: 0,
                 visitDays: new Set(),
                 visitCount: 0
             });
@@ -109,52 +112,48 @@ export class BadgeService {
             s.totalDuration += duration;
             s.visitCount++;
 
+            // Use JST Date for everything
             const entry = new Date(log.entryTime);
-            const dateStr = entry.toLocaleDateString();
+            const entryJst = toJst(entry);
+
+            // 4-1. Visit Days (CONSISTENT badge) - Use JST Date String
+            // entryJst is already shifted to JST time values.
+            // Using logic: `entryJst.getFullYear() + '/' + ...` ensures JST date.
+            const dateStr = `${entryJst.getFullYear()}/${entryJst.getMonth() + 1}/${entryJst.getDate()}`;
             s.visitDays.add(dateStr);
 
-            // Convert entry to JST Date object (preserves hour value regardless of server timezone)
-            // e.g. "06:00 JST" -> Server sees "06:00" in its local GetHours()
-            const jstDate = new Date(entry.toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
+            // 4-2. Morning Duration (EARLY_BIRD) [04:00 - 09:00 JST]
+            const morningCutoff = new Date(entryJst);
+            morningCutoff.setHours(9, 0, 0, 0);
+            const morningStart = new Date(entryJst);
+            morningStart.setHours(4, 0, 0, 0);
 
-            // Set bounds using the JST-shifted date
-            const morningCutoff = new Date(jstDate);
-            morningCutoff.setHours(9, 0, 0, 0); // 9:00 (JST effective)
+            if (entryJst < morningCutoff && entryJst >= morningStart) {
+                // Calculate JST Exit
+                const exitTime = new Date(entry.getTime() + duration * 60000); // Raw Exit
+                const exitJst = toJst(exitTime); // Shifted Exit
 
-            const morningStart = new Date(jstDate);
-            morningStart.setHours(4, 0, 0, 0); // 4:00 (JST effective)
-
-            // Only count if entry matches [4:00, 9:00) range in JST
-            if (jstDate < morningCutoff && jstDate >= morningStart) {
-
-                // Logic: how much of the duration falls within the morning window?
-                // We need to compare end time in JST as well.
-                const exitTime = new Date(entry.getTime() + duration * 60000);
-                const jstExit = new Date(exitTime.toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
-
-                const end = jstExit < morningCutoff ? jstExit : morningCutoff;
-                const morningMins = (end.getTime() - jstDate.getTime()) / 60000;
+                const end = exitJst < morningCutoff ? exitJst : morningCutoff;
+                const morningMins = (end.getTime() - entryJst.getTime()) / 60000;
 
                 if (morningMins > 0) s.morningDuration += morningMins;
             }
 
-            // Night Duration (After 20:00)
-            const nightCutoff = new Date(jstDate);
-            nightCutoff.setHours(20, 0, 0, 0); // 20:00 JST
+            // 4-3. Night Duration (NIGHT_OWL) [After 20:00 JST]
+            const nightCutoff = new Date(entryJst);
+            nightCutoff.setHours(20, 0, 0, 0);
 
-            // Need exit time in JST
             const exitTime = new Date(entry.getTime() + duration * 60000);
-            const jstExit = new Date(exitTime.toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
+            const exitJst = toJst(exitTime);
 
-            if (jstExit > nightCutoff) {
-                // If entry is also after 20:00, use entry. Else use 20:00.
-                const start = jstDate > nightCutoff ? jstDate : nightCutoff;
-                const nightMins = (jstExit.getTime() - start.getTime()) / 60000;
+            if (exitJst > nightCutoff) {
+                const start = entryJst > nightCutoff ? entryJst : nightCutoff;
+                const nightMins = (exitJst.getTime() - start.getTime()) / 60000;
                 if (nightMins > 0) s.nightDuration += nightMins;
             }
         });
 
-        // Process Previous Week (for Growth)
+        // Process Previous Week (for Growth / RISING_STAR)
         prevWeekLogs.forEach(log => {
             const key = normalizeName(log.name);
             if (!stats.has(key)) return;
@@ -169,7 +168,6 @@ export class BadgeService {
         this.awardBadgesForGroup(examGroup, stats, examBadges);
         this.awardBadgesForGroup(generalGroup, stats, generalBadges);
 
-        // Calculate full rankings for all students based on total duration
         const examRankings = this.calculateFullRankings(examGroup, stats);
         const generalRankings = this.calculateFullRankings(generalGroup, stats);
 
