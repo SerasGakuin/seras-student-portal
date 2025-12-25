@@ -117,11 +117,13 @@ export class BadgeService {
             // If entry is before 9:00.
             const morningCutoff = new Date(entry);
             morningCutoff.setHours(9, 0, 0, 0);
-            if (entry < morningCutoff) {
+            const morningStart = new Date(entry);
+            morningStart.setHours(4, 0, 0, 0); // Start from 4:00 AM
+
+            // Only count if entry is after 4:00 AM (exclude midnight stayers)
+            if (entry < morningCutoff && entry >= morningStart) {
                 // If exit is also before 9:00, full duration.
                 // If exit is after 9:00, duration until 9:00.
-                // For simplicity, let's use Entry Time logic or overlap?
-                // User said "Duration before 9am".
                 const exit = new Date(entry.getTime() + duration * 60000);
                 const end = exit < morningCutoff ? exit : morningCutoff;
                 const morningMins = (end.getTime() - entry.getTime()) / 60000;
