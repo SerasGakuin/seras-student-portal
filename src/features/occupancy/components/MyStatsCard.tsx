@@ -49,23 +49,15 @@ export const MyStatsCard = () => {
             setIsLoading(true);
             try {
                 // Fetch parallel: 7 days for stats, 28 days for visualizations
-                const [detail7Res, detail28Res, rankingData] = await Promise.all([
-                    fetch(`/api/dashboard/student-detail?name=${encodeURIComponent(student.name)}&days=7`),
-                    fetch(`/api/dashboard/student-detail?name=${encodeURIComponent(student.name)}&days=28`),
+                const [detail7Data, detail28Data, rankingDataRes] = await Promise.all([
+                    api.dashboard.getStudentDetail(student.lineId, student.name, 7),
+                    api.dashboard.getStudentDetail(student.lineId, student.name, 28),
                     api.ranking.get(student?.lineId)
                 ]);
 
-                if (detail7Res.ok) {
-                    const data = await detail7Res.json();
-                    setDetailData7Days(data);
-                }
-                if (detail28Res.ok) {
-                    const data = await detail28Res.json();
-                    setDetailData28Days(data);
-                }
-
-                // rankingData is already the data object
-                setRankingData(rankingData);
+                if (detail7Data) setDetailData7Days(detail7Data);
+                if (detail28Data) setDetailData28Days(detail28Data);
+                setRankingData(rankingDataRes);
             } catch (e) {
                 console.error('Failed to fetch stats:', e);
             } finally {
