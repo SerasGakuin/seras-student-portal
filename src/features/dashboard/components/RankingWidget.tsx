@@ -288,59 +288,34 @@ export const RankingWidget = ({ ranking, periodDays, loading, badges, viewerId }
                 </div>
             )}
 
-            {/* Badge Legend */}
+            {/* Badge Legend - Footnote style */}
             <div style={{
-                marginTop: '40px',
-                padding: '24px',
-                background: 'rgba(0,0,0,0.02)',
-                borderRadius: '12px'
+                marginTop: '24px',
+                paddingTop: '16px',
+                borderTop: '1px solid rgba(0,0,0,0.05)',
+                fontSize: '0.75rem',
+                color: 'var(--text-sub)'
             }}>
-                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '16px', color: 'var(--text-sub)' }}>
-                    バッジ解説
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <Crown size={18} color="var(--brand-color)" />
-                        <div>
-                            <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>トップランカー</span>
-                            <span style={{ fontSize: '0.85rem', color: 'var(--text-sub)', marginLeft: '8px' }}>総学習時間TOP3</span>
-                        </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <Sunrise size={18} color="var(--brand-color)" />
-                        <div>
-                            <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>早起きマスター</span>
-                            <span style={{ fontSize: '0.85rem', color: 'var(--text-sub)', marginLeft: '8px' }}>朝4〜9時の学習TOP3</span>
-                        </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <Moon size={18} color="var(--brand-color)" />
-                        <div>
-                            <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>深夜マスター</span>
-                            <span style={{ fontSize: '0.85rem', color: 'var(--text-sub)', marginLeft: '8px' }}>夜20時以降の学習TOP3</span>
-                        </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <CalendarDays size={18} color="var(--brand-color)" />
-                        <div>
-                            <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>皆勤賞候補</span>
-                            <span style={{ fontSize: '0.85rem', color: 'var(--text-sub)', marginLeft: '8px' }}>通塾日数TOP3</span>
-                        </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <Timer size={18} color="var(--brand-color)" />
-                        <div>
-                            <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>長時間マスター</span>
-                            <span style={{ fontSize: '0.85rem', color: 'var(--text-sub)', marginLeft: '8px' }}>1日あたりの平均滞在TOP3</span>
-                        </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <Zap size={18} color="var(--brand-color)" />
-                        <div>
-                            <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>急上昇</span>
-                            <span style={{ fontSize: '0.85rem', color: 'var(--text-sub)', marginLeft: '8px' }}>先週比で学習時間増加TOP3</span>
-                        </div>
-                    </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
+                    <span style={{ opacity: 0.7 }}>バッジ:</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <Crown size={12} color="var(--brand-color)" /> トップランカー(総学習時間)
+                    </span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <Sunrise size={12} color="var(--brand-color)" /> 早起きマスター(朝4〜9時)
+                    </span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <Moon size={12} color="var(--brand-color)" /> 深夜マスター(20時以降)
+                    </span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <CalendarDays size={12} color="var(--brand-color)" /> 皆勤賞候補(通塾日数)
+                    </span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <Timer size={12} color="var(--brand-color)" /> 長時間マスター(日平均滞在)
+                    </span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <Zap size={12} color="var(--brand-color)" /> 急上昇(先週比増加)
+                    </span>
                 </div>
             </div>
         </div>
