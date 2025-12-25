@@ -50,36 +50,69 @@ const occupancyRepo = new GoogleSheetOccupancyRepository();
 const studentRepo = new GoogleSheetStudentRepository();
 const badgeService = new BadgeService();
 
+/**
+ * Helper: Convert any Date to a "JST-shifted" Date object.
+ * The returned Date's getHours(), getDate(), etc. will return JST values
+ * even when running on a UTC server.
+ */
+function toJst(d: Date): Date {
+    return new Date(d.toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
+}
+
+/**
+ * Helper: Get a JST date string (YYYY/M/D) from a raw Date
+ */
+function toJstDateString(d: Date): string {
+    const jst = toJst(d);
+    return `${jst.getFullYear()}/${jst.getMonth() + 1}/${jst.getDate()}`;
+}
+
+/**
+ * Helper: Get a JST month string (YYYY年MM月) from a raw Date
+ */
+function toJstMonthString(d: Date): string {
+    const jst = toJst(d);
+    const yyyy = jst.getFullYear();
+    const mm = String(jst.getMonth() + 1).padStart(2, '0');
+    return `${yyyy}年${mm}月`;
+}
+
 export class DashboardService {
 
     /**
      * Get aggregated Dashboard Stats for a specific period
-     * Default: Current Month
+     * Default: Current Month (in JST)
      */
     async getDashboardStats(from?: Date, to?: Date, gradeFilter?: string): Promise<DashboardSummary> {
-        // Default to current month if not specified
-        const now = new Date();
-        const startDate = from || new Date(now.getFullYear(), now.getMonth(), 1);
-        const endDate = to || new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        // Default to current month if not specified (JST-aware)
+        const nowJst = toJst(new Date());
 
-        // Calculate Period Days (Start of day to End of day normalization for accurate count)
-        const s = new Date(startDate); s.setHours(0, 0, 0, 0);
-        const e = new Date(endDate); e.setHours(23, 59, 59, 999); // Ensure we cover the full last day
-        // Add 1 to include the start day itself if difference is taken
-        const periodDays = Math.ceil((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24));
+        // startDate: First day of JST month
+        const startDate = from
+            ? toJst(from)
+            : new Date(nowJst.getFullYear(), nowJst.getMonth(), 1);
+        startDate.setHours(0, 0, 0, 0);
+
+        // endDate: Last day of JST month (or provided date)
+        const endDate = to
+            ? toJst(to)
+            : new Date(nowJst.getFullYear(), nowJst.getMonth() + 1, 0, 23, 59, 59, 999);
+        endDate.setHours(23, 59, 59, 999);
+
+        // Calculate Period Days
+        const periodDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
 
         // Calculate Previous Period (for trend)
         const durationTime = endDate.getTime() - startDate.getTime();
         const prevStartDate = new Date(startDate.getTime() - durationTime);
-        // prevEndDate is implicitly new Date(startDate.getTime() - 1) for the aggregateStats call
+        const prevEndDate = new Date(startDate.getTime() - 1);
+        prevEndDate.setHours(23, 59, 59, 999);
 
-        // Fetch ALL logs (Repository is cached, so cheap to re-filter in memory for now)
-        // Optimization: In future, repo should accept date range.
+        // Fetch ALL logs (Repository is cached)
         const logs = await occupancyRepo.findAllLogs();
-        const studentRecord = await studentRepo.findAll(); // Fetch once
+        const studentRecord = await studentRepo.findAll();
 
         // --- FILTERING START ---
-        // 1. Determine eligible students based on Grade Filter
         let eligibleStudentNames: Set<string> | null = null;
 
         if (gradeFilter && gradeFilter !== 'ALL') {
@@ -89,16 +122,12 @@ export class DashboardService {
 
                 let isMatch = false;
                 if (gradeFilter === 'HS') {
-                    // HS = High School + High School Grads (often grouped) or just '高'
-                    // Based on previous UI logic: HS includes '高' and '既卒'
                     isMatch = s.grade.includes('高') || s.grade.includes('既卒');
                 } else if (gradeFilter === 'JHS') {
                     isMatch = s.grade.includes('中');
                 } else if (gradeFilter === 'EXAM') {
-                    // EXAM = High School 3 + Graduates
                     isMatch = s.grade === '高3' || s.grade === '既卒';
                 } else {
-                    // Exact match (e.g., '高3', '中1')
                     isMatch = s.grade === gradeFilter;
                 }
 
@@ -108,30 +137,26 @@ export class DashboardService {
             });
         }
 
-        // 2. Filter Logs based on eligible students
-        // If eligibleStudentNames is null, we take all students (ALL)
         const relevantLogs = eligibleStudentNames
             ? logs.filter(l => l.name && eligibleStudentNames!.has(l.name))
             : logs;
 
         // --- FILTERING END ---
 
-        // 3. Current Period Stats
+        // Current Period Stats
         const currentStats = await this.aggregateStats(relevantLogs, startDate, endDate, studentRecord);
 
-        // 4. Previous Period Stats (for Trend) where we apply SAME student filter
-        // Note: aggregation internally filters by date range, but we pass pre-filtered logs by student
-        const prevStats = await this.aggregateStats(relevantLogs, prevStartDate, new Date(startDate.getTime() - 1), studentRecord);
+        // Previous Period Stats (for Trend)
+        const prevStats = await this.aggregateStats(relevantLogs, prevStartDate, prevEndDate, studentRecord);
 
         // Calculate Trends
         const durationTrend = this.calculateTrend(currentStats.totalDuration, prevStats.totalDuration);
         const visitsTrend = this.calculateTrend(currentStats.totalVisits, prevStats.totalVisits);
 
-        // 5. Available Months (Global Scan)
+        // Available Months (Global Scan)
         const availableMonths = this.getAvailableMonths(logs);
 
-        // 6. History Calculation (Daily Cumulative for Graph)
-        // User requested ALL students, not just top 15.
+        // History Calculation (Daily Cumulative for Graph)
         const allStudents = currentStats.ranking.map(s => s.name);
         const history = this.calculateHistory(relevantLogs, startDate, endDate, allStudents);
         const badgeResult = await badgeService.getWeeklyBadges();
@@ -169,7 +194,6 @@ export class DashboardService {
             availableMonths,
             periodDays,
             history,
-            // New Metric Lists
             metricLists: this.calculateLists(currentStats.ranking, prevStats.ranking),
             badges
         };
@@ -182,31 +206,22 @@ export class DashboardService {
         const droppers: StudentStats[] = [];
         const vanished: StudentStats[] = [];
 
-        // 1. Check Current Students vs Previous
         currentStats.forEach(curr => {
             const prevDuration = prevMap.get(curr.name) || 0;
             const delta = curr.totalDurationMinutes - prevDuration;
-
-            // Attach growth info (Hack: Mutating or creating new object? Let's spread)
             const statWithGrowth = { ...curr, growth: delta };
 
             if (delta > 0) growers.push(statWithGrowth);
             if (delta < 0) droppers.push(statWithGrowth);
 
-            // Remove handled students from map to find vanished
             prevMap.delete(curr.name);
         });
 
-        // 2. Remaining in PrevMap are Vanished (Current Duration = 0)
-        // Only consider vanished if they had SIGNIFICANT time previously (> 60 mins) to avoid noise
         prevMap.forEach((prevDuration, name) => {
             if (prevDuration > 60) {
-                // Reconstruct a partial stat object for vanished students (Grade might be missing if we used local map, but we can fetch)
-                // For now, simpler to push to a separate list or just treat as dropper with -Prev duration
-                // User asked for "Vanished" specifically as "Came previously, but 0 now"
                 vanished.push({
                     name,
-                    grade: '不明', // We'd need to look this up if critical, but likely acceptable for now or can use Repo lookup
+                    grade: '不明',
                     totalDurationMinutes: 0,
                     visitCount: 0,
                     lastVisit: null,
@@ -215,16 +230,15 @@ export class DashboardService {
             }
         });
 
-        // Sort
         growers.sort((a, b) => (b.growth || 0) - (a.growth || 0));
-        droppers.sort((a, b) => (a.growth || 0) - (b.growth || 0)); // Ascending (most negative first)
-        vanished.sort((a, b) => (a.growth || 0) - (b.growth || 0)); // Most negative (biggest loss) first
+        droppers.sort((a, b) => (a.growth || 0) - (b.growth || 0));
+        vanished.sort((a, b) => (a.growth || 0) - (b.growth || 0));
 
         return { growers, droppers, vanished };
     }
 
     private calculateTrend(current: number, prev: number): number {
-        if (prev === 0) return current > 0 ? 100 : 0; // If prev 0, and current > 0, assume 100% growth (or distinct generic value)
+        if (prev === 0) return current > 0 ? 100 : 0;
         return Number(((current - prev) / prev * 100).toFixed(1));
     }
 
@@ -233,67 +247,57 @@ export class DashboardService {
         logs.forEach(log => {
             const d = new Date(log.entryTime);
             if (!isNaN(d.getTime())) {
-                const yyyy = d.getFullYear();
-                const mm = String(d.getMonth() + 1).padStart(2, '0');
-                months.add(`${yyyy}年${mm}月`); // Format for UI: "2025年12月"
+                months.add(toJstMonthString(d));
             }
         });
-        // Sort DESC
         return Array.from(months).sort().reverse();
     }
 
     private calculateHistory(logs: EntryExitLog[], from: Date, to: Date, targetStudents: string[]) {
-        // Create map of DateString -> { student: cumulative }
         const dailyMap = new Map<string, Record<string, number>>();
         const studentsSet = new Set(targetStudents);
 
-        // Initialize timeline
+        // Initialize timeline (in JST)
         const timeline: string[] = [];
         const cursor = new Date(from);
         cursor.setHours(0, 0, 0, 0);
 
-        const end = new Date(to);
-        // Cap end date at Today (now) to avoid future flat lines
-        const now = new Date();
-        now.setHours(23, 59, 59, 999);
-
-        const effectiveEnd = end > now ? now : end;
+        const effectiveEnd = new Date(to);
+        const nowJst = toJst(new Date());
+        nowJst.setHours(23, 59, 59, 999);
+        if (effectiveEnd > nowJst) {
+            effectiveEnd.setTime(nowJst.getTime());
+        }
 
         while (cursor <= effectiveEnd) {
-            const dateStr = `${cursor.getFullYear()}/${(cursor.getMonth() + 1)}/${cursor.getDate()}`;
+            const dateStr = `${cursor.getFullYear()}/${cursor.getMonth() + 1}/${cursor.getDate()}`;
             timeline.push(dateStr);
             dailyMap.set(dateStr, {});
             cursor.setDate(cursor.getDate() + 1);
         }
 
-        // Aggregate daily study time
-        // Need to iterate logs and assign to day
-        // Optimization: Filter logs to range first (already done implicitly by logic below?)
+        // Filter and aggregate logs
         const rangeLogs = logs.filter(l => {
-            const d = new Date(l.entryTime);
-            return d >= from && d <= to && l.name && studentsSet.has(l.name);
+            const entryJst = toJst(new Date(l.entryTime));
+            return entryJst >= from && entryJst <= to && l.name && studentsSet.has(l.name);
         });
 
-        // 1. Calculate Daily Totals
-        const dailyTotals: Record<string, Record<string, number>> = {}; // date -> name -> minutes
+        const dailyTotals: Record<string, Record<string, number>> = {};
         rangeLogs.forEach(log => {
-            const d = new Date(log.entryTime);
-            // Normalize to YYYY/M/D
-            const dateStr = `${d.getFullYear()}/${(d.getMonth() + 1)}/${d.getDate()}`;
+            const dateStr = toJstDateString(new Date(log.entryTime));
             if (!dailyTotals[dateStr]) dailyTotals[dateStr] = {};
 
             if (!dailyTotals[dateStr][log.name]) dailyTotals[dateStr][log.name] = 0;
             dailyTotals[dateStr][log.name] += this.calculateDurationMinutes(log);
         });
 
-        // 2. Cumulative Sum over Timeline
+        // Cumulative Sum over Timeline
         const result: { date: string;[key: string]: number | string }[] = [];
         const runningTotals: Record<string, number> = {};
 
         targetStudents.forEach(s => runningTotals[s] = 0);
 
-        // Add "Start" point (Origin) where everyone is at 0
-        // This ensures the graph starts from a zero baseline before the first actual date
+        // Add "Start" point
         const startData: { date: string;[key: string]: number | string } = { date: 'Start' };
         targetStudents.forEach(s => startData[s] = 0);
         result.push(startData);
@@ -305,7 +309,7 @@ export class DashboardService {
             targetStudents.forEach(student => {
                 const daily = daysLog[student] || 0;
                 runningTotals[student] += daily;
-                dayData[student] = Math.floor(runningTotals[student] / 60); // Store as Hours
+                dayData[student] = Math.floor(runningTotals[student] / 60);
             });
             result.push(dayData);
         }
@@ -320,17 +324,13 @@ export class DashboardService {
         studentMap: Record<string, Student>
     ): Promise<{ totalDuration: number; totalVisits: number; ranking: StudentStats[] }> {
 
-        // Filter Logs
+        // Filter Logs using JST comparison
         const periodLogs = logs.filter(log => {
-            const entry = new Date(log.entryTime);
-            return entry >= from && entry <= to;
+            const entryJst = toJst(new Date(log.entryTime));
+            return entryJst >= from && entryJst <= to;
         });
 
-        // Map name -> Stats
         const statsMap = new Map<string, StudentStats>();
-
-        // Create Grade Map for quick lookup (Optimized)
-        // Note: logs only have Name. We match Name -> Student to get Grade.
         const nameToStudent = new Map(Object.values(studentMap).map((s: Student) => [s.name, s]));
         const visitedDaysMap = new Map<string, Set<string>>();
 
@@ -354,10 +354,8 @@ export class DashboardService {
             const stat = statsMap.get(name)!;
             stat.totalDurationMinutes += duration;
 
-            // Unique Day Logic: Count 1 visit per day per student
-            const d = new Date(log.entryTime);
-            // Use local date string to identify unique calendar days
-            const dateStr = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+            // Unique Day Logic using JST date string
+            const dateStr = toJstDateString(new Date(log.entryTime));
 
             const visitedSet = visitedDaysMap.get(name)!;
             if (!visitedSet.has(dateStr)) {
@@ -365,13 +363,11 @@ export class DashboardService {
                 visitedSet.add(dateStr);
             }
 
-            // Update last visit
             if (!stat.lastVisit || new Date(log.entryTime) > new Date(stat.lastVisit)) {
                 stat.lastVisit = log.entryTime;
             }
         }
 
-        // Finalize Ranking Array and Fill Grades
         const ranking: StudentStats[] = Array.from(statsMap.values()).map(stat => {
             const student = nameToStudent.get(stat.name);
             return {
@@ -383,50 +379,43 @@ export class DashboardService {
             };
         });
 
-        // Sort by Duration Desc
         ranking.sort((a, b) => b.totalDurationMinutes - a.totalDurationMinutes);
 
-        // Calculate Totals
         const totalDuration = ranking.reduce((sum, s) => sum + s.totalDurationMinutes, 0);
         const totalVisits = ranking.reduce((sum, s) => sum + s.visitCount, 0);
 
-        console.log(`[DEBUG] From: ${from.toISOString()}, To: ${to.toISOString()}`);
-        console.log(`[DEBUG] Total Logs: ${logs.length}, Period Logs: ${periodLogs.length}`);
+        console.log(`[DEBUG-JST] From: ${from.toLocaleString()}, To: ${to.toLocaleString()}`);
+        console.log(`[DEBUG-JST] Total Logs: ${logs.length}, Period Logs: ${periodLogs.length}`);
         if (ranking.length > 0) {
-            console.log(`[DEBUG] Top Student: ${ranking[0].name}, Duration: ${ranking[0].totalDurationMinutes}, Visits: ${ranking[0].visitCount}`);
+            console.log(`[DEBUG-JST] Top Student: ${ranking[0].name}, Duration: ${ranking[0].totalDurationMinutes}, Visits: ${ranking[0].visitCount}`);
         }
 
         return { totalDuration, totalVisits, ranking };
     }
 
     async getStudentDetails(studentName: string, days: number = 28) {
-        // 1. Calculate Period
-        const now = new Date();
-        const endDate = new Date(now);
+        // Period calculation using JST
+        const nowJst = toJst(new Date());
+        const endDate = new Date(nowJst);
         endDate.setHours(23, 59, 59, 999);
 
-        const startDate = new Date(now);
-        startDate.setDate(now.getDate() - days + 1); // +1 to include today in count if we want strictly N days, or just go back N days
+        const startDate = new Date(nowJst);
+        startDate.setDate(nowJst.getDate() - days + 1);
         startDate.setHours(0, 0, 0, 0);
 
-        // 2. Fetch Logs
         const logs = await occupancyRepo.findAllLogs();
 
-        // 3. Filter logs for this student (for all history streak calculation)
         const allStudentLogs = logs.filter(l => l.name === studentName);
 
-        // 4. Filter logs for the specified period (for history response)
+        // Filter logs for the specified period using JST comparison
         const relevantLogs = allStudentLogs.filter(l => {
-            const d = new Date(l.entryTime);
-            return d >= startDate && d <= endDate;
+            const entryJst = toJst(new Date(l.entryTime));
+            return entryJst >= startDate && entryJst <= endDate;
         });
 
-        // 5. Format for UI
         const details = relevantLogs.map(log => {
             const duration = this.calculateDurationMinutes(log);
             const entry = new Date(log.entryTime);
-
-            // Calculate Exit (needed for charts)
             const exit = new Date(entry.getTime() + duration * 60 * 1000);
 
             return {
@@ -437,16 +426,14 @@ export class DashboardService {
             };
         });
 
-        // Sort by date ASC
         details.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-        // 6. Calculate streaks from ALL history (not limited by days)
+        // Calculate streaks using JST dates
         const allUniqueDates = [...new Set(allStudentLogs.map(l => {
-            const date = new Date(l.entryTime);
-            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-        }))].sort(); // Ascending order for max consecutive calculation
+            const jst = toJst(new Date(l.entryTime));
+            return `${jst.getFullYear()}-${String(jst.getMonth() + 1).padStart(2, '0')}-${String(jst.getDate()).padStart(2, '0')}`;
+        }))].sort();
 
-        // Calculate max consecutive days from all history
         let maxConsecutive = 0;
         let tempStreak = 0;
         let previousDate: Date | null = null;
@@ -469,17 +456,16 @@ export class DashboardService {
             previousDate = currentDate;
         }
 
-        // 7. Calculate Current Streak (must be ongoing - ends today or yesterday)
-        const sortedDatesDesc = [...allUniqueDates].reverse(); // Descending order
+        // Current Streak (must include today or yesterday in JST)
+        const sortedDatesDesc = [...allUniqueDates].reverse();
         let currentStreak = 0;
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const todayJst = toJst(new Date());
+        todayJst.setHours(0, 0, 0, 0);
 
         if (sortedDatesDesc.length > 0) {
             const latestDate = new Date(sortedDatesDesc[0] + 'T00:00:00');
-            const diffFromToday = Math.round((today.getTime() - latestDate.getTime()) / (1000 * 60 * 60 * 24));
+            const diffFromToday = Math.round((todayJst.getTime() - latestDate.getTime()) / (1000 * 60 * 60 * 24));
 
-            // Only count if last visit was today or yesterday
             if (diffFromToday <= 1) {
                 currentStreak = 1;
                 for (let i = 1; i < sortedDatesDesc.length; i++) {
@@ -504,12 +490,11 @@ export class DashboardService {
 
     private calculateDurationMinutes(log: EntryExitLog): number {
         const entry = new Date(log.entryTime);
-        if (isNaN(entry.getTime())) return 0; // Invalid entry time
+        if (isNaN(entry.getTime())) return 0;
 
         let exit: Date;
         const now = new Date();
 
-        // Check if exitTime exists AND is valid
         let isValidExit = false;
         if (log.exitTime) {
             const parsed = new Date(log.exitTime);
@@ -520,13 +505,11 @@ export class DashboardService {
         }
 
         if (!isValidExit) {
-            // Imputation Strategy
             const diffHours = (now.getTime() - entry.getTime()) / (1000 * 60 * 60);
 
             if (diffHours < 12) {
                 exit = now;
             } else {
-                // Cap at 4 hours or 22:00
                 const closeTime = new Date(entry);
                 closeTime.setHours(22, 0, 0, 0);
                 const fourHoursLater = new Date(entry.getTime() + 4 * 60 * 60 * 1000);
@@ -539,7 +522,7 @@ export class DashboardService {
             }
         }
 
-        // @ts-expect-error: Date arithmetic returns number, but TS might infer otherwise or check strict types
+        // @ts-expect-error: Date arithmetic
         const diffMinutes = (exit.getTime() - entry.getTime()) / (1000 * 60);
         return Math.max(0, Math.floor(diffMinutes));
     }
