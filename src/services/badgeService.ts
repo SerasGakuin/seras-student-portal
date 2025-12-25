@@ -113,31 +113,43 @@ export class BadgeService {
             const dateStr = entry.toLocaleDateString();
             s.visitDays.add(dateStr);
 
-            // Morning Duration (Before 9:00)
-            // If entry is before 9:00.
-            const morningCutoff = new Date(entry);
-            morningCutoff.setHours(9, 0, 0, 0);
-            const morningStart = new Date(entry);
-            morningStart.setHours(4, 0, 0, 0); // Start from 4:00 AM
+            // Convert entry to JST Date object (preserves hour value regardless of server timezone)
+            // e.g. "06:00 JST" -> Server sees "06:00" in its local GetHours()
+            const jstDate = new Date(entry.toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
 
-            // Only count if entry is after 4:00 AM (exclude midnight stayers)
-            if (entry < morningCutoff && entry >= morningStart) {
-                // If exit is also before 9:00, full duration.
-                // If exit is after 9:00, duration until 9:00.
-                const exit = new Date(entry.getTime() + duration * 60000);
-                const end = exit < morningCutoff ? exit : morningCutoff;
-                const morningMins = (end.getTime() - entry.getTime()) / 60000;
+            // Set bounds using the JST-shifted date
+            const morningCutoff = new Date(jstDate);
+            morningCutoff.setHours(9, 0, 0, 0); // 9:00 (JST effective)
+
+            const morningStart = new Date(jstDate);
+            morningStart.setHours(4, 0, 0, 0); // 4:00 (JST effective)
+
+            // Only count if entry matches [4:00, 9:00) range in JST
+            if (jstDate < morningCutoff && jstDate >= morningStart) {
+
+                // Logic: how much of the duration falls within the morning window?
+                // We need to compare end time in JST as well.
+                const exitTime = new Date(entry.getTime() + duration * 60000);
+                const jstExit = new Date(exitTime.toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
+
+                const end = jstExit < morningCutoff ? jstExit : morningCutoff;
+                const morningMins = (end.getTime() - jstDate.getTime()) / 60000;
+
                 if (morningMins > 0) s.morningDuration += morningMins;
             }
 
             // Night Duration (After 20:00)
-            const nightStart = new Date(entry);
-            nightStart.setHours(20, 0, 0, 0);
-            const exit = new Date(entry.getTime() + duration * 60000);
+            const nightCutoff = new Date(jstDate);
+            nightCutoff.setHours(20, 0, 0, 0); // 20:00 JST
 
-            if (exit > nightStart) {
-                const start = entry > nightStart ? entry : nightStart;
-                const nightMins = (exit.getTime() - start.getTime()) / 60000;
+            // Need exit time in JST
+            const exitTime = new Date(entry.getTime() + duration * 60000);
+            const jstExit = new Date(exitTime.toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
+
+            if (jstExit > nightCutoff) {
+                // If entry is also after 20:00, use entry. Else use 20:00.
+                const start = jstDate > nightCutoff ? jstDate : nightCutoff;
+                const nightMins = (jstExit.getTime() - start.getTime()) / 60000;
                 if (nightMins > 0) s.nightDuration += nightMins;
             }
         });
