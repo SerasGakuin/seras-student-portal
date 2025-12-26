@@ -95,7 +95,7 @@ export const ChampionsCard = () => {
 
     return (
         <GlassCard style={{
-            padding: '0',
+            padding: '9px',
             marginTop: '0px',
             marginBottom: '70px',
             overflow: 'hidden'
