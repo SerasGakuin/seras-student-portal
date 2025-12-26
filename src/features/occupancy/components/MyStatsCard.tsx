@@ -121,7 +121,7 @@ export const MyStatsCard = () => {
             badges: myBadges,
             rankPosition,
             totalStudents: totalStudents || 0,
-            groupLabel: groupKey === 'exam' ? '受験生部門' : '非受験生部門'
+            groupLabel: groupKey === 'exam' ? '受験生の部' : '一般の部'
         };
     }, [rankingData, student?.name, groupKey]);
 
