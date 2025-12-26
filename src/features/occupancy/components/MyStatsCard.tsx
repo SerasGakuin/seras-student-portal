@@ -149,80 +149,80 @@ export const MyStatsCard = () => {
     const avgMins = stats.avgMinutesPerVisit % 60;
 
     return (
-        <GlassCard style={{ padding: '20px', marginBottom: '70px' }}>
+        <GlassCard style={{ padding: '9px', marginBottom: '70px', overflow: 'hidden' }}>
             {/* Header */}
             <div style={{
-                padding: '10px',
-                borderBottom: '1px solid rgba(0, 0, 0, 0.03)'
+                padding: '20px',
+                borderBottom: '1px solid rgba(0,0,0,0.05)'
             }}>
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px',
-                    marginBottom: '0px'
+                    gap: '10px',
+                    marginBottom: '12px'
                 }}>
                     <User size={20} style={{ color: 'var(--brand-color)' }} />
                     <h2 style={{
                         fontSize: '1.2rem',
                         fontWeight: 900,
-                        color: 'var(--brand-color)',
-                        letterSpacing: '0.02em'
+                        color: 'var(--text-main)',
+                        margin: 0
                     }}>
-                        MY STATS: {student?.name} さん
+                        My Stats
                     </h2>
-                </div>
-                <div style={{
-                    fontSize: '0.85rem',
-                    color: 'var(--text-sub)',
-                    fontWeight: 700,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                }}>
                     <span style={{
-                        padding: '2px 8px',
-                        margin: '4px 0',
-                        borderRadius: '4px',
-                        background: '#fff7ed',
-                        color: 'var(--brand-color)',
-                        fontSize: '0.7rem',
-                        fontWeight: 700
+                        fontSize: '0.75rem',
+                        color: 'var(--text-sub)',
+                        fontWeight: 500,
+                        marginLeft: 'auto'
                     }}>
                         {rankingInfo?.groupLabel || '非受験生部門'}
                     </span>
-                    直近7日間のあなたの記録
                 </div>
+                <p style={{
+                    fontSize: '0.85rem',
+                    color: 'var(--text-sub)',
+                    fontWeight: 500,
+                    margin: 0,
+                    lineHeight: 1.5
+                }}>
+                    <strong style={{ color: 'var(--brand-color)', fontWeight: 700 }}>{student?.name}</strong> さんの直近7日間の記録です
+                </p>
             </div>
 
             {/* Badges Section */}
-            {rankingInfo && rankingInfo.badges.length > 0 && (
+            <div style={{
+                padding: '16px 20px',
+                borderBottom: '1px solid rgba(0,0,0,0.05)'
+            }}>
                 <div style={{
-                    padding: '20px',
-                    borderBottom: '1px solid rgba(0, 0, 0, 0.03)'
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '12px'
                 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
+                    <div style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '10px',
+                        background: 'linear-gradient(135deg, #fff5eb 0%, #ffede0 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'var(--brand-color)',
+                        flexShrink: 0
+                    }}>
+                        <Trophy size={18} />
+                    </div>
+                    <div>
                         <div style={{
-                            minWidth: '48px',
-                            height: '48px',
-                            borderRadius: '16px',
-                            background: 'rgba(255, 255, 255, 0.8)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: 'var(--brand-color)',
-                            boxShadow: 'var(--shadow-badge)'
+                            fontWeight: 800,
+                            fontSize: '1rem',
+                            color: 'var(--text-main)',
+                            marginBottom: '8px'
                         }}>
-                            <Trophy size={18} />
+                            獲得バッジ
                         </div>
-                        <div>
-                            <div style={{
-                                fontWeight: 900,
-                                fontSize: '1rem',
-                                color: 'var(--text-main)',
-                                marginBottom: '4px'
-                            }}>
-                                獲得バッジ
-                            </div>
+                        {rankingInfo && rankingInfo.badges.length > 0 ? (
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                                 {rankingInfo.badges.map((badge, i) => (
                                     <span
@@ -230,12 +230,12 @@ export const MyStatsCard = () => {
                                         style={{
                                             display: 'inline-flex',
                                             alignItems: 'center',
-                                            gap: '4px',
-                                            padding: '4px 10px',
-                                            borderRadius: '12px',
-                                            background: 'rgba(255, 247, 237, 0.8)',
+                                            gap: '6px',
+                                            padding: '6px 12px',
+                                            borderRadius: '20px',
+                                            background: 'linear-gradient(135deg, #fff5eb 0%, #ffede0 100%)',
                                             color: 'var(--brand-color)',
-                                            fontSize: '0.8rem',
+                                            fontSize: '0.85rem',
                                             fontWeight: 700
                                         }}
                                     >
@@ -244,115 +244,179 @@ export const MyStatsCard = () => {
                                     </span>
                                 ))}
                             </div>
-                        </div>
+                        ) : (
+                            <div style={{
+                                fontSize: '0.85rem',
+                                color: 'var(--text-sub)',
+                                fontWeight: 500
+                            }}>
+                                まだ獲得していません<br />各部門3位以内を目指そう！
+                            </div>
+                        )}
                     </div>
                 </div>
-            )}
+            </div>
 
             {/* Stats Section */}
             <div style={{
                 padding: '20px',
-                borderBottom: '1px solid rgba(0, 0, 0, 0.03)'
+                borderBottom: '1px solid rgba(0,0,0,0.05)'
             }}>
                 <div style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '24px',
-                    justifyContent: 'center'
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    gap: '12px'
                 }}>
                     {/* Total Time */}
-                    <div style={{ textAlign: 'center', minWidth: '100px' }}>
-                        <Clock size={18} style={{ color: 'var(--brand-color)', marginBottom: '8px' }} />
-                        <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                            {hours}<span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-sub)' }}>h</span>
-                            {' '}{mins}<span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-sub)' }}>m</span>
+                    <div style={{
+                        padding: '16px',
+                        background: 'rgba(255,255,255,0.7)',
+                        borderRadius: '16px',
+                        border: '1px solid rgba(0,0,0,0.04)'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                            <Clock size={16} style={{ color: 'var(--brand-color)' }} />
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-sub)', fontWeight: 600 }}>合計学習時間</span>
                         </div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-sub)', fontWeight: 600 }}>合計学習時間</div>
+                        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                            {hours}<span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-sub)' }}>h </span>
+                            {mins}<span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-sub)' }}>m</span>
+                        </div>
                     </div>
 
                     {/* Visit Count */}
-                    <div style={{ textAlign: 'center', minWidth: '80px' }}>
-                        <Calendar size={18} style={{ color: 'var(--brand-color)', marginBottom: '8px' }} />
-                        <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                            {stats.visitCount}<span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-sub)' }}>/7日</span>
+                    <div style={{
+                        padding: '16px',
+                        background: 'rgba(255,255,255,0.7)',
+                        borderRadius: '16px',
+                        border: '1px solid rgba(0,0,0,0.04)'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                            <Calendar size={16} style={{ color: 'var(--brand-color)' }} />
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-sub)', fontWeight: 600 }}>通塾日数</span>
                         </div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-sub)', fontWeight: 600 }}>通塾日数</div>
+                        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                            {stats.visitCount}<span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-sub)' }}> / 7日</span>
+                        </div>
                     </div>
 
-                    {/* Average per Visit */}
-                    <div style={{ textAlign: 'center', minWidth: '100px' }}>
-                        <Timer size={18} style={{ color: 'var(--brand-color)', marginBottom: '8px' }} />
-                        <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                            {avgHours}<span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-sub)' }}>h</span>
-                            {' '}{avgMins}<span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-sub)' }}>m</span>
-                        </div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-sub)', fontWeight: 600 }}>平均滞在</div>
-                    </div>
-
-                    {/* Current Streak */}
-                    {streakStats.currentStreak >= 2 && (
-                        <div style={{ textAlign: 'center', minWidth: '80px' }}>
-                            <Flame size={18} style={{ color: '#ea580c', marginBottom: '8px' }} />
-                            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#ea580c' }}>
-                                {streakStats.currentStreak}<span style={{ fontSize: '0.85rem', fontWeight: 600 }}>日</span>
+                    {/* Streak (Current > Max) */}
+                    {streakStats.currentStreak >= 2 ? (
+                        <div style={{
+                            padding: '16px',
+                            background: 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)',
+                            borderRadius: '16px',
+                            border: '1px solid rgba(234,88,12,0.1)'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                <Flame size={16} style={{ color: '#ea580c' }} />
+                                <span style={{ fontSize: '0.75rem', color: '#c2410c', fontWeight: 600 }}>連続通塾中 🔥</span>
                             </div>
-                            <div style={{ fontSize: '0.75rem', color: '#c2410c', fontWeight: 700 }}>🔥 連続中</div>
+                            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ea580c' }}>
+                                {streakStats.currentStreak}<span style={{ fontSize: '0.9rem', fontWeight: 600 }}>日</span>
+                            </div>
+                        </div>
+                    ) : (
+                        <div style={{
+                            padding: '16px',
+                            background: 'rgba(255,255,255,0.7)',
+                            borderRadius: '16px',
+                            border: '1px solid rgba(0,0,0,0.04)'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                <Flame size={16} style={{ color: 'var(--text-sub)' }} />
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-sub)', fontWeight: 600 }}>最長連続</span>
+                            </div>
+                            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                                {streakStats.maxConsecutiveDays}<span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-sub)' }}>日</span>
+                            </div>
                         </div>
                     )}
 
                     {/* Ranking */}
-                    {rankingInfo && rankingInfo.rankPosition && (
-                        <div style={{ textAlign: 'center', minWidth: '80px' }}>
-                            <Crown size={18} style={{ color: 'var(--brand-color)', marginBottom: '8px' }} />
-                            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                                {rankingInfo.rankPosition}<span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-sub)' }}>位</span>
+                    {rankingInfo && rankingInfo.rankPosition ? (
+                        <div style={{
+                            padding: '16px',
+                            background: 'rgba(255,255,255,0.7)',
+                            borderRadius: '16px',
+                            border: '1px solid rgba(0,0,0,0.04)'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                <Crown size={16} style={{ color: 'var(--brand-color)' }} />
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-sub)', fontWeight: 600 }}>ランキング</span>
                             </div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-sub)', fontWeight: 600 }}>
-                                /{rankingInfo.totalStudents}人中
+                            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                                {rankingInfo.rankPosition}<span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-sub)' }}>位</span>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-sub)' }}> / {rankingInfo.totalStudents}人</span>
+                            </div>
+                        </div>
+                    ) : (
+                        <div style={{
+                            padding: '16px',
+                            background: 'rgba(255,255,255,0.7)',
+                            borderRadius: '16px',
+                            border: '1px solid rgba(0,0,0,0.04)'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                <Crown size={16} style={{ color: 'var(--text-sub)' }} />
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-sub)', fontWeight: 600 }}>ランキング</span>
+                            </div>
+                            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-sub)' }}>
+                                --<span style={{ fontSize: '0.9rem', fontWeight: 600 }}>位</span>
                             </div>
                         </div>
                     )}
                 </div>
             </div>
 
-            {/* Heatmap Section */}
-            <div style={{
-                padding: '24px',
-                borderBottom: '1px solid rgba(0, 0, 0, 0.03)',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center'
-            }}>
+            {/* Charts Section */}
+            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {/* Heatmap Card */}
                 <div style={{
-                    fontSize: '0.85rem',
-                    fontWeight: 700,
-                    color: 'var(--text-sub)',
-                    marginBottom: '16px',
-                    textAlign: 'center'
+                    padding: '20px',
+                    background: 'rgba(255,255,255,0.7)',
+                    borderRadius: '16px',
+                    border: '1px solid rgba(0,0,0,0.04)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center'
                 }}>
-                    活動ヒートマップ
+                    <div style={{
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                        color: 'var(--text-main)',
+                        marginBottom: '16px',
+                        textAlign: 'left',
+                        width: '100%'
+                    }}>
+                        通塾ヒートマップ
+                    </div>
+                    <ActivityHeatmap history={detailData28Days?.history || []} />
                 </div>
-                <ActivityHeatmap history={detailData28Days?.history || []} />
-            </div>
 
-            {/* Time Range Chart Section */}
-            <div style={{
-                padding: '24px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center'
-            }}>
+                {/* Time Range Chart Card */}
                 <div style={{
-                    fontSize: '0.85rem',
-                    fontWeight: 700,
-                    color: 'var(--text-sub)',
-                    marginBottom: '16px',
-                    textAlign: 'center'
+                    padding: '20px',
+                    background: 'rgba(255,255,255,0.7)',
+                    borderRadius: '16px',
+                    border: '1px solid rgba(0,0,0,0.04)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center'
                 }}>
-                    通塾時間帯
-                </div>
-                <div style={{ width: '100%', maxWidth: '500px', height: '200px' }}>
-                    <TimeRangeChart history={detailData28Days?.history || []} />
+                    <div style={{
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                        color: 'var(--text-main)',
+                        marginBottom: '16px',
+                        textAlign: 'left',
+                        width: '100%'
+                    }}>
+                        通塾時間帯
+                    </div>
+                    <div style={{ width: '80%', maxWidth: '400px', height: '200px' }}>
+                        <TimeRangeChart history={detailData28Days?.history || []} />
+                    </div>
                 </div>
             </div>
 
@@ -366,7 +430,7 @@ export const MyStatsCard = () => {
                     fontWeight: 700,
                     color: '#c2410c'
                 }}>
-                    🔥 {streakStats.currentStreak}日連続で頑張っています！明日も来て記録を伸ばそう！
+                    🔥 {streakStats.currentStreak}日連続で頑張っています！<br />明日も来て記録を伸ばしましょう！
                 </div>
             ) : streakStats.maxConsecutiveDays > 0 ? (
                 <div style={{
@@ -377,7 +441,7 @@ export const MyStatsCard = () => {
                     fontWeight: 600,
                     color: 'var(--text-sub)'
                 }}>
-                    過去最長 {streakStats.maxConsecutiveDays}日連続通塾を達成。また挑戦しよう！
+                    これまで最大 {streakStats.maxConsecutiveDays}日連続通塾を達成しています。<br />また挑戦しましょう！
                 </div>
             ) : null}
         </GlassCard>
