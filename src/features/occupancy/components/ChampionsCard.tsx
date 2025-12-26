@@ -43,14 +43,24 @@ const BADGE_CONFIG: Record<BadgeType, { label: string; icon: React.ReactNode; de
 
 export const ChampionsCard = () => {
     const [ranking, setRanking] = useState<UnifiedWeeklyBadges | null>(null);
+    const [activeTab, setActiveTab] = useState<'exam' | 'general'>('exam');
     const { student, isLoading: isLiffLoading } = useLiff();
-    const { role, authMethod, isLoading: isRoleLoading } = useRole();
+    const { isLoading: isRoleLoading } = useRole();
 
     useEffect(() => {
         const fetchRanking = async () => {
             try {
                 const data = await api.ranking.get(student?.lineId);
                 setRanking(data);
+
+                // Set initial tab based on user's group
+                if (student) {
+                    if (student.grade === '高3' || student.grade === '既卒') {
+                        setActiveTab('exam');
+                    } else {
+                        setActiveTab('general');
+                    }
+                }
             } catch (e) {
                 console.error(e);
             }
@@ -59,37 +69,11 @@ export const ChampionsCard = () => {
         if (!isLiffLoading && !isRoleLoading) {
             fetchRanking();
         }
-    }, [student?.lineId, isLiffLoading, isRoleLoading]);
+    }, [student?.lineId, student?.grade, isLiffLoading, isRoleLoading]);
 
     if (!ranking || isLiffLoading || isRoleLoading) return null;
 
-    // Determine Group
-    // Determine Group
-    let groupKey: 'exam' | 'general' = 'general';
-
-    const isTeacherRole = (authMethod === 'google' && (role === 'teacher' || role === 'principal')) ||
-        (student && (student.status.includes('講師') || student.status === '教室長'));
-
-    if (isTeacherRole) {
-        // Teacher sees exam by default, but falls back to general if exam is empty and general has data
-        const hasExamData = ranking.exam && Object.keys(ranking.exam).length > 0;
-        const hasGeneralData = ranking.general && Object.keys(ranking.general).length > 0;
-
-        if (hasExamData) {
-            groupKey = 'exam';
-        } else if (hasGeneralData) {
-            groupKey = 'general';
-        } else {
-            groupKey = 'exam'; // Default to exam if both empty
-        }
-    } else if (student) {
-        // LINE auth: check status and grade
-        if (student.grade === '高3' || student.grade === '既卒') {
-            groupKey = 'exam';
-        }
-    }
-
-    const currentMap = ranking[groupKey] || {};
+    const currentMap = ranking[activeTab] || {};
 
     // Group by type
     const groups: Partial<Record<BadgeType, { name: string; rank: number }[]>> = {};
@@ -103,7 +87,11 @@ export const ChampionsCard = () => {
     const order: BadgeType[] = ['HEAVY_USER', 'RISING_STAR', 'EARLY_BIRD', 'NIGHT_OWL', 'MARATHON', 'CONSISTENT'];
     const hasAnyWinners = order.some(type => groups[type]?.length);
 
-    if (!hasAnyWinners) return null;
+    // Check if each tab has data
+    const hasExamData = ranking.exam && Object.keys(ranking.exam).length > 0;
+    const hasGeneralData = ranking.general && Object.keys(ranking.general).length > 0;
+
+    if (!hasExamData && !hasGeneralData) return null;
 
     return (
         <GlassCard style={{ padding: '20px', marginTop: '0px', marginBottom: '70px' }}>
@@ -116,7 +104,7 @@ export const ChampionsCard = () => {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
-                    marginBottom: '0px'
+                    marginBottom: '8px'
                 }}>
                     <Trophy size={20} style={{ color: 'var(--brand-color)' }} />
                     <h2 style={{
@@ -128,25 +116,56 @@ export const ChampionsCard = () => {
                         WEEKLY RANKINGS
                     </h2>
                 </div>
+
+                {/* Tab Switcher */}
                 <div style={{
-                    fontSize: '0.85rem',
-                    color: 'var(--text-sub)',
-                    fontWeight: 700,
                     display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
+                    gap: '8px',
+                    marginBottom: '8px'
                 }}>
-                    <span style={{
-                        padding: '2px 8px',
-                        margin: '4px 0',
-                        borderRadius: '4px',
-                        background: '#fff7ed',
-                        color: 'var(--brand-color)',
-                        fontSize: '0.7rem',
-                        fontWeight: 700
-                    }}>
-                        {groupKey === 'exam' ? '受験生部門' : '非受験生部門'}
-                    </span>
+                    <button
+                        onClick={() => setActiveTab('exam')}
+                        style={{
+                            padding: '6px 14px',
+                            borderRadius: '20px',
+                            border: 'none',
+                            background: activeTab === 'exam' ? 'var(--brand-color)' : 'rgba(0,0,0,0.05)',
+                            color: activeTab === 'exam' ? '#fff' : 'var(--text-sub)',
+                            fontSize: '0.8rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            opacity: hasExamData ? 1 : 0.5
+                        }}
+                        disabled={!hasExamData}
+                    >
+                        受験生部門
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('general')}
+                        style={{
+                            padding: '6px 14px',
+                            borderRadius: '20px',
+                            border: 'none',
+                            background: activeTab === 'general' ? 'var(--brand-color)' : 'rgba(0,0,0,0.05)',
+                            color: activeTab === 'general' ? '#fff' : 'var(--text-sub)',
+                            fontSize: '0.8rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            opacity: hasGeneralData ? 1 : 0.5
+                        }}
+                        disabled={!hasGeneralData}
+                    >
+                        非受験生部門
+                    </button>
+                </div>
+
+                <div style={{
+                    fontSize: '0.8rem',
+                    color: 'var(--text-sub)',
+                    fontWeight: 500
+                }}>
                     毎朝8時更新！直近7日間のランキング
                 </div>
             </div>
