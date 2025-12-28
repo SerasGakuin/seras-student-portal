@@ -116,10 +116,10 @@ export const ActivityHeatmap = ({ history = [], loading }: ActivityHeatmapProps)
             {/* Minimal Header (Legend Only) */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <div style={{ width: 8, height: 8, background: '#f5f5f4', borderRadius: 2 }} title="0分" />
+                    <div style={{ width: 8, height: 8, background: '#f8fafc', borderRadius: 2 }} title="0分" />
                     <div style={{ width: 8, height: 8, background: '#fff7ed', borderRadius: 2 }} title="1時間未満" />
                     <div style={{ width: 8, height: 8, background: '#fed7aa', borderRadius: 2 }} title="2時間未満" />
-                    <div style={{ width: 8, height: 8, background: '#fb923c', borderRadius: 2 }} title="3時間未満" />
+                    <div style={{ width: 8, height: 8, background: '#fdba74', borderRadius: 2 }} title="3時間未満" />
                     <div style={{ width: 8, height: 8, background: 'var(--brand-color)', borderRadius: 2 }} title="3時間以上" />
                 </div>
             </div>
