@@ -279,18 +279,30 @@ export class DashboardService {
         }
 
         // Filter and aggregate logs
+        // Filter and aggregate logs
         const rangeLogs = logs.filter(l => {
             const entryJst = toJst(new Date(l.entryTime));
             return entryJst >= from && entryJst <= to && l.name && studentsSet.has(l.name);
         });
 
-        const dailyTotals: Record<string, Record<string, number>> = {};
+        // Group by Date -> Student -> Logs
+        const dailyStudentLogs: Record<string, Record<string, EntryExitLog[]>> = {};
+
         rangeLogs.forEach(log => {
             const dateStr = toJstDateString(new Date(log.entryTime));
-            if (!dailyTotals[dateStr]) dailyTotals[dateStr] = {};
+            if (!dailyStudentLogs[dateStr]) dailyStudentLogs[dateStr] = {};
+            if (!dailyStudentLogs[dateStr][log.name!]) dailyStudentLogs[dateStr][log.name!] = [];
+            dailyStudentLogs[dateStr][log.name!].push(log);
+        });
 
-            if (!dailyTotals[dateStr][log.name]) dailyTotals[dateStr][log.name] = 0;
-            dailyTotals[dateStr][log.name] += this.calculateDurationMinutes(log);
+        const dailyTotals: Record<string, Record<string, number>> = {};
+
+        // Calculate effective duration per student per day
+        Object.entries(dailyStudentLogs).forEach(([dateStr, studentMap]) => {
+            dailyTotals[dateStr] = {};
+            Object.entries(studentMap).forEach(([studentName, studentLogs]) => {
+                dailyTotals[dateStr][studentName] = this.calculateEffectiveDuration(studentLogs);
+            });
         });
 
         // Cumulative Sum over Timeline
@@ -332,61 +344,56 @@ export class DashboardService {
             return entryJst >= from && entryJst <= to;
         });
 
-        const statsMap = new Map<string, StudentStats>();
         const nameToStudent = new Map(Object.values(studentMap).map((s: Student) => [s.name, s]));
-        const visitedDaysMap = new Map<string, Set<string>>();
 
-        for (const log of periodLogs) {
-            const name = log.name;
-            if (!name) continue;
-
-            const duration = this.calculateDurationMinutes(log);
-
-            if (!statsMap.has(name)) {
-                statsMap.set(name, {
-                    name,
-                    grade: null,
-                    totalDurationMinutes: 0,
-                    visitCount: 0,
-                    lastVisit: null
-                });
-                visitedDaysMap.set(name, new Set());
+        // Group logs by student
+        const studentLogsMap = new Map<string, EntryExitLog[]>();
+        periodLogs.forEach(log => {
+            if (!log.name) return;
+            if (!studentLogsMap.has(log.name)) {
+                studentLogsMap.set(log.name, []);
             }
-
-            const stat = statsMap.get(name)!;
-            stat.totalDurationMinutes += duration;
-
-            // Unique Day Logic using JST date string
-            const dateStr = toJstDateString(new Date(log.entryTime));
-
-            const visitedSet = visitedDaysMap.get(name)!;
-            if (!visitedSet.has(dateStr)) {
-                stat.visitCount += 1;
-                visitedSet.add(dateStr);
-            }
-
-            if (!stat.lastVisit || new Date(log.entryTime) > new Date(stat.lastVisit)) {
-                stat.lastVisit = log.entryTime;
-            }
-        }
-
-        const ranking: StudentStats[] = Array.from(statsMap.values()).map(stat => {
-            const student = nameToStudent.get(stat.name);
-            return {
-                name: stat.name,
-                grade: student ? student.grade : '不明',
-                totalDurationMinutes: stat.totalDurationMinutes,
-                visitCount: stat.visitCount,
-                lastVisit: stat.lastVisit,
-                docLink: student?.docLink || undefined,
-                sheetLink: student?.sheetLink || undefined
-            };
+            studentLogsMap.get(log.name)!.push(log);
         });
 
-        ranking.sort((a, b) => b.totalDurationMinutes - a.totalDurationMinutes);
+        const ranking: StudentStats[] = [];
+        let totalDuration = 0;
+        let totalVisits = 0;
 
-        const totalDuration = ranking.reduce((sum, s) => sum + s.totalDurationMinutes, 0);
-        const totalVisits = ranking.reduce((sum, s) => sum + s.visitCount, 0);
+        for (const [name, studentLogs] of studentLogsMap.entries()) {
+            // 1. Calculate Effective Duration (Merge Overlaps)
+            const duration = this.calculateEffectiveDuration(studentLogs);
+
+            // 2. Calculate Visits (Unique Days)
+            const visitedDays = new Set<string>();
+            let lastVisit: string | null = null;
+
+            studentLogs.forEach(log => {
+                const dateStr = toJstDateString(new Date(log.entryTime));
+                visitedDays.add(dateStr);
+                if (!lastVisit || new Date(log.entryTime) > new Date(lastVisit)) {
+                    lastVisit = log.entryTime;
+                }
+            });
+
+            const visitCount = visitedDays.size;
+            const student = nameToStudent.get(name);
+
+            ranking.push({
+                name,
+                grade: student ? student.grade : '不明',
+                totalDurationMinutes: duration,
+                visitCount,
+                lastVisit,
+                docLink: student?.docLink || undefined,
+                sheetLink: student?.sheetLink || undefined
+            });
+
+            totalDuration += duration;
+            totalVisits += visitCount;
+        }
+
+        ranking.sort((a, b) => b.totalDurationMinutes - a.totalDurationMinutes);
 
         console.log(`[DEBUG-JST] From: ${from.toLocaleString()}, To: ${to.toLocaleString()}`);
         console.log(`[DEBUG-JST] Total Logs: ${logs.length}, Period Logs: ${periodLogs.length}`);
@@ -494,40 +501,83 @@ export class DashboardService {
 
     private calculateDurationMinutes(log: EntryExitLog): number {
         const entry = new Date(log.entryTime);
-        if (isNaN(entry.getTime())) return 0;
+        const exit = this.getEffectiveExitTime(log);
+        const diffMinutes = (exit.getTime() - entry.getTime()) / (1000 * 60);
+        return Math.max(0, Math.floor(diffMinutes));
+    }
 
-        let exit: Date;
-        const now = new Date();
+    /**
+     * Determine the effective exit time for a log, applying auto-close logic if missing.
+     */
+    private getEffectiveExitTime(log: EntryExitLog): Date {
+        const entry = new Date(log.entryTime);
+        if (isNaN(entry.getTime())) return entry; // Fallback, though handled by caller
 
-        let isValidExit = false;
         if (log.exitTime) {
             const parsed = new Date(log.exitTime);
             if (!isNaN(parsed.getTime())) {
-                exit = parsed;
-                isValidExit = true;
+                return parsed;
             }
         }
 
-        if (!isValidExit) {
-            const diffHours = (now.getTime() - entry.getTime()) / (1000 * 60 * 60);
+        const now = new Date();
+        const diffHours = (now.getTime() - entry.getTime()) / (1000 * 60 * 60);
 
-            if (diffHours < 12) {
-                exit = now;
+        if (diffHours < 12) {
+            return now;
+        } else {
+            const closeTime = new Date(entry);
+            closeTime.setHours(22, 0, 0, 0);
+            const fourHoursLater = new Date(entry.getTime() + 4 * 60 * 60 * 1000);
+
+            if (fourHoursLater < closeTime) {
+                return fourHoursLater;
             } else {
-                const closeTime = new Date(entry);
-                closeTime.setHours(22, 0, 0, 0);
-                const fourHoursLater = new Date(entry.getTime() + 4 * 60 * 60 * 1000);
+                return closeTime;
+            }
+        }
+    }
 
-                if (fourHoursLater < closeTime) {
-                    exit = fourHoursLater;
-                } else {
-                    exit = closeTime;
+    /**
+     * Calculate effective duration in minutes by merging overlapping intervals.
+     */
+    private calculateEffectiveDuration(logs: EntryExitLog[]): number {
+        if (logs.length === 0) return 0;
+
+        const intervals = logs.map(log => {
+            const start = new Date(log.entryTime).getTime();
+            const end = this.getEffectiveExitTime(log).getTime();
+            return { start, end };
+        }).filter(i => !isNaN(i.start) && !isNaN(i.end) && i.end > i.start);
+
+        if (intervals.length === 0) return 0;
+
+        // Sort by start time
+        intervals.sort((a, b) => a.start - b.start);
+
+        let totalDurationMs = 0;
+        let currentStart = intervals[0].start;
+        let currentEnd = intervals[0].end;
+
+        for (let i = 1; i < intervals.length; i++) {
+            const interval = intervals[i];
+
+            if (interval.start < currentEnd) {
+                // Overlap: extend end if needed
+                if (interval.end > currentEnd) {
+                    currentEnd = interval.end;
                 }
+            } else {
+                // No overlap: close current and start new
+                totalDurationMs += (currentEnd - currentStart);
+                currentStart = interval.start;
+                currentEnd = interval.end;
             }
         }
 
-        // @ts-expect-error: Date arithmetic
-        const diffMinutes = (exit.getTime() - entry.getTime()) / (1000 * 60);
-        return Math.max(0, Math.floor(diffMinutes));
+        // Add last interval
+        totalDurationMs += (currentEnd - currentStart);
+
+        return Math.floor(totalDurationMs / (1000 * 60));
     }
 }
