@@ -129,6 +129,9 @@ export class DashboardService {
                     isMatch = s.grade.includes('中');
                 } else if (gradeFilter === 'EXAM') {
                     isMatch = s.grade === '高3' || s.grade === '既卒';
+                } else if (gradeFilter === 'NON_EXAM') {
+                    // Non-examinees are everyone EXCEPT '高3' and '既卒'
+                    isMatch = s.grade !== '高3' && s.grade !== '既卒';
                 } else {
                     isMatch = s.grade === gradeFilter;
                 }

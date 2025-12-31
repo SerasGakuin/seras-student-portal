@@ -2,7 +2,7 @@ import { ChevronDown, Calendar as CalendarIcon, Clock as HistoryIcon } from 'luc
 import { useRef } from 'react';
 
 export type DateRangeOption = 'this_week' | 'last_week' | 'this_month' | 'last_month' | 'last_7_days' | 'last_14_days' | 'last_30_days' | 'last_90_days' | 'last_180_days' | 'all_time' | 'custom' | 'month_select';
-export type FilterType = 'ALL' | 'HS' | 'JHS' | 'EXAM' | '高3' | '高2' | '高1' | '中3' | '中2' | '中1' | '既卒';
+export type FilterType = 'ALL' | 'HS' | 'JHS' | 'EXAM' | 'NON_EXAM' | '高3' | '高2' | '高1' | '中3' | '中2' | '中1' | '既卒';
 
 interface DashboardControlsProps {
     currentRange: DateRangeOption;

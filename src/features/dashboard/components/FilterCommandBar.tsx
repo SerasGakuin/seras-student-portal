@@ -256,7 +256,7 @@ export const FilterCommandBar = ({ currentRange, currentGrade, availableMonths =
                         <div className={styles.textContainer}>
                             <div className={styles.label}>対象学年</div>
                             <div className={styles.value}>
-                                {currentGrade === 'ALL' ? '全学年' : currentGrade === 'HS' ? '高校生' : currentGrade === 'JHS' ? '中学生' : currentGrade === 'EXAM' ? '受験生' : currentGrade}
+                                {currentGrade === 'ALL' ? '全学年' : currentGrade === 'HS' ? '高校生' : currentGrade === 'JHS' ? '中学生' : currentGrade === 'EXAM' ? '受験生' : currentGrade === 'NON_EXAM' ? '非受験生' : currentGrade}
                                 <ChevronDown size={14} color="#94a3b8" />
                             </div>
                         </div>
@@ -291,6 +291,19 @@ export const FilterCommandBar = ({ currentRange, currentGrade, availableMonths =
                                 }}
                             >
                                 受験生 (高3・既卒)
+                            </div>
+
+                            <div
+                                onClick={() => { onGradeChange('NON_EXAM'); setIsGradeOpen(false); }}
+                                style={{
+                                    padding: '8px 12px', borderRadius: '8px', cursor: 'pointer',
+                                    background: currentGrade === 'NON_EXAM' ? '#fff7ed' : 'transparent',
+                                    color: currentGrade === 'NON_EXAM' ? '#f97316' : '#334155',
+                                    fontWeight: currentGrade === 'NON_EXAM' ? 600 : 500,
+                                    fontSize: '0.9rem'
+                                }}
+                            >
+                                非受験生 (中1~高2)
                             </div>
 
                             <div style={{ height: '1px', background: '#f1f5f9', margin: '8px 4px' }} />
