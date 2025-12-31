@@ -25,10 +25,23 @@ export interface UnifiedWeeklyBadges {
     generalRankings: StudentRankingsMap;
 }
 
-const occupancyRepo = new GoogleSheetOccupancyRepository();
-const studentRepo = new GoogleSheetStudentRepository();
+// DI: Allow injecting repository
+// DI: Allow injecting repository
+import { IOccupancyRepository } from '@/repositories/interfaces/IOccupancyRepository';
+import { IStudentRepository } from '@/repositories/interfaces/IStudentRepository';
 
 export class BadgeService {
+
+    private occupancyRepo: IOccupancyRepository;
+    private studentRepo: IStudentRepository;
+
+    constructor(
+        occupancyRepo?: IOccupancyRepository,
+        studentRepo?: IStudentRepository
+    ) {
+        this.occupancyRepo = occupancyRepo || new GoogleSheetOccupancyRepository();
+        this.studentRepo = studentRepo || new GoogleSheetStudentRepository();
+    }
 
     async getWeeklyBadges(targetDate: Date = new Date()): Promise<UnifiedWeeklyBadges> {
         // Rolling 7-day window based on JST
@@ -60,8 +73,8 @@ export class BadgeService {
 
         console.log(`[BadgeService - JST] Period: ${startDateJst.toLocaleString()} - ${endDateJst.toLocaleString()}`);
 
-        const logs = await occupancyRepo.findAllLogs();
-        const students = await studentRepo.findAll();
+        const logs = await this.occupancyRepo.findAllLogs();
+        const students = await this.studentRepo.findAll();
 
         // 2. Filter Logs using JST-shifted Dates
         const weekLogs = logs.filter(l => {
@@ -103,62 +116,76 @@ export class BadgeService {
             });
         });
 
+        // Group logs by student for correct duration calculation
+        const studentLogsMap = new Map<string, EntryExitLog[]>();
         weekLogs.forEach(log => {
             const key = normalizeName(log.name);
             if (!stats.has(key)) return;
+
+            if (!studentLogsMap.has(key)) {
+                studentLogsMap.set(key, []);
+            }
+            studentLogsMap.get(key)!.push(log);
+        });
+
+        // Calculate Stats based on grouped logs
+        studentLogsMap.forEach((studentLogs, key) => {
             const s = stats.get(key)!;
-            const duration = this.calculateDuration(log);
 
-            s.totalDuration += duration;
-            s.visitCount++;
+            // 1. Total Duration (Corrected for overlaps)
+            s.totalDuration = this.calculateEffectiveDuration(studentLogs);
+            s.visitCount = studentLogs.length; // Raw visit count (entry count)
 
-            // Use JST Date for everything
-            const entry = new Date(log.entryTime);
-            const entryJst = toJst(entry);
+            // 2. Process individual logs for time-specific badges (approximated)
+            studentLogs.forEach(log => {
+                const duration = this.calculateNaiveDuration(log);
+                const entry = new Date(log.entryTime);
+                const entryJst = toJst(entry);
 
-            // 4-1. Visit Days (CONSISTENT badge) - Use JST Date String
-            // entryJst is already shifted to JST time values.
-            // Using logic: `entryJst.getFullYear() + '/' + ...` ensures JST date.
-            const dateStr = `${entryJst.getFullYear()}/${entryJst.getMonth() + 1}/${entryJst.getDate()}`;
-            s.visitDays.add(dateStr);
+                // 4-1. Visit Days
+                const dateStr = `${entryJst.getFullYear()}/${entryJst.getMonth() + 1}/${entryJst.getDate()}`;
+                s.visitDays.add(dateStr);
 
-            // 4-2. Morning Duration (EARLY_BIRD) [04:00 - 09:00 JST]
-            const morningCutoff = new Date(entryJst);
-            morningCutoff.setHours(9, 0, 0, 0);
-            const morningStart = new Date(entryJst);
-            morningStart.setHours(4, 0, 0, 0);
+                // 4-2. Morning
+                const morningCutoff = new Date(entryJst);
+                morningCutoff.setHours(9, 0, 0, 0);
+                const morningStart = new Date(entryJst);
+                morningStart.setHours(4, 0, 0, 0);
 
-            if (entryJst < morningCutoff && entryJst >= morningStart) {
-                // Calculate JST Exit
-                const exitTime = new Date(entry.getTime() + duration * 60000); // Raw Exit
-                const exitJst = toJst(exitTime); // Shifted Exit
+                if (entryJst < morningCutoff && entryJst >= morningStart) {
+                    const exitTime = new Date(entry.getTime() + duration * 60000);
+                    const exitJst = toJst(exitTime);
+                    const end = exitJst < morningCutoff ? exitJst : morningCutoff;
+                    const morningMins = (end.getTime() - entryJst.getTime()) / 60000;
+                    if (morningMins > 0) s.morningDuration += morningMins;
+                }
 
-                const end = exitJst < morningCutoff ? exitJst : morningCutoff;
-                const morningMins = (end.getTime() - entryJst.getTime()) / 60000;
+                // 4-3. Night
+                const nightCutoff = new Date(entryJst);
+                nightCutoff.setHours(20, 0, 0, 0);
+                const exitTime = new Date(entry.getTime() + duration * 60000);
+                const exitJst = toJst(exitTime);
 
-                if (morningMins > 0) s.morningDuration += morningMins;
-            }
-
-            // 4-3. Night Duration (NIGHT_OWL) [After 20:00 JST]
-            const nightCutoff = new Date(entryJst);
-            nightCutoff.setHours(20, 0, 0, 0);
-
-            const exitTime = new Date(entry.getTime() + duration * 60000);
-            const exitJst = toJst(exitTime);
-
-            if (exitJst > nightCutoff) {
-                const start = entryJst > nightCutoff ? entryJst : nightCutoff;
-                const nightMins = (exitJst.getTime() - start.getTime()) / 60000;
-                if (nightMins > 0) s.nightDuration += nightMins;
-            }
+                if (exitJst > nightCutoff) {
+                    const start = entryJst > nightCutoff ? entryJst : nightCutoff;
+                    const nightMins = (exitJst.getTime() - start.getTime()) / 60000;
+                    if (nightMins > 0) s.nightDuration += nightMins;
+                }
+            });
         });
 
         // Process Previous Week (for Growth / RISING_STAR)
+        const prevLogsMap = new Map<string, EntryExitLog[]>();
         prevWeekLogs.forEach(log => {
             const key = normalizeName(log.name);
             if (!stats.has(key)) return;
+            if (!prevLogsMap.has(key)) prevLogsMap.set(key, []);
+            prevLogsMap.get(key)!.push(log);
+        });
+
+        prevLogsMap.forEach((logs, key) => {
             const s = stats.get(key)!;
-            s.prevTotalDuration += this.calculateDuration(log);
+            s.prevTotalDuration = this.calculateEffectiveDuration(logs);
         });
 
         // 5. Rank and Award Badges
@@ -250,23 +277,88 @@ export class BadgeService {
     }
 
     // Copied from DashboardService (DRY violation but simple enough for now, prefer Utils in future)
-    private calculateDuration(log: EntryExitLog): number {
-        const entry = new Date(log.entryTime);
-        if (isNaN(entry.getTime())) return 0;
+    // --- Improved Duration Calculation Logic (Ported from DashboardService) ---
 
-        let exit: Date;
+    /**
+     * Determine the effective exit time for a log, applying auto-close logic if missing.
+     */
+    private getEffectiveExitTime(log: EntryExitLog): Date {
+        const entry = new Date(log.entryTime);
+        if (isNaN(entry.getTime())) return entry;
 
         if (log.exitTime) {
-            exit = new Date(log.exitTime);
-        } else {
-            // Imputation logic needed if we run this for TODAY, but for Last Week, everything should be closed?
-            // If data is missing exit, assume 22:00 or max 4h
-            const closeTime = new Date(entry);
-            closeTime.setHours(22, 0, 0, 0);
-            exit = new Date(entry.getTime() + 4 * 60 * 60 * 1000);
-            if (exit > closeTime) exit = closeTime;
+            const parsed = new Date(log.exitTime);
+            if (!isNaN(parsed.getTime())) {
+                return parsed;
+            }
         }
 
+        const now = new Date();
+        const diffHours = (now.getTime() - entry.getTime()) / (1000 * 60 * 60);
+
+        if (diffHours < 12) {
+            return now;
+        } else {
+            const closeTime = new Date(entry);
+            closeTime.setHours(22, 0, 0, 0);
+            const fourHoursLater = new Date(entry.getTime() + 4 * 60 * 60 * 1000);
+
+            if (fourHoursLater < closeTime) {
+                return fourHoursLater;
+            } else {
+                return closeTime;
+            }
+        }
+    }
+
+    /**
+     * Calculate effective duration in minutes by merging overlapping intervals.
+     */
+    private calculateEffectiveDuration(logs: EntryExitLog[]): number {
+        if (logs.length === 0) return 0;
+
+        const intervals = logs.map(log => {
+            const start = new Date(log.entryTime).getTime();
+            const end = this.getEffectiveExitTime(log).getTime();
+            return { start, end };
+        }).filter(i => !isNaN(i.start) && !isNaN(i.end) && i.end > i.start);
+
+        if (intervals.length === 0) return 0;
+
+        // Sort by start time
+        intervals.sort((a, b) => a.start - b.start);
+
+        let totalDurationMs = 0;
+        let currentStart = intervals[0].start;
+        let currentEnd = intervals[0].end;
+
+        for (let i = 1; i < intervals.length; i++) {
+            const interval = intervals[i];
+
+            if (interval.start < currentEnd) {
+                // Overlap: extend end if needed
+                if (interval.end > currentEnd) {
+                    currentEnd = interval.end;
+                }
+            } else {
+                // No overlap: close current and start new
+                totalDurationMs += (currentEnd - currentStart);
+                currentStart = interval.start;
+                currentEnd = interval.end;
+            }
+        }
+
+        // Add last interval
+        totalDurationMs += (currentEnd - currentStart);
+
+        return Math.floor(totalDurationMs / (1000 * 60));
+    }
+
+    // Naive calc kept ONLY for Morning/Night specific attribution which is harder to de-overlap without complex logic
+    // For HEAVY_USER (Total), we MUST use calculateEffectiveDuration.
+    private calculateNaiveDuration(log: EntryExitLog): number {
+        const entry = new Date(log.entryTime);
+        const exit = this.getEffectiveExitTime(log);
         const diff = (exit.getTime() - entry.getTime()) / 60000;
         return Math.max(0, Math.floor(diff));
     }

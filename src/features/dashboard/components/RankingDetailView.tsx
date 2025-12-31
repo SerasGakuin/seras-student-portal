@@ -16,6 +16,21 @@ export const BADGE_CONFIG: Record<BadgeType, { label: string; icon: React.ReactN
     'RISING_STAR': { label: '急上昇', icon: <Zap size={16} /> },
 };
 
+export const getBadgeStyle = (isExaminee: boolean) => {
+    if (isExaminee) {
+        return {
+            background: '#fff7ed', // Orange-50
+            color: '#ea580c',      // Orange-600
+            border: '1px solid rgba(234,88,12,0.1)'
+        };
+    }
+    return {
+        background: '#f1f5f9', // Slate-100 (Silver-ish)
+        color: '#475569',      // Slate-600
+        border: '1px solid rgba(71,85,105,0.15)'
+    };
+};
+
 export interface RankingDetailViewProps {
     studentName: string;
     description: React.ReactNode;
@@ -59,6 +74,8 @@ export const RankingDetailView = ({
 
     const hours = Math.floor(stats.totalMinutes / 60);
     const mins = stats.totalMinutes % 60;
+    const isExaminee = rankingInfo?.groupLabel === '受験生の部';
+    const badgeStyle = getBadgeStyle(isExaminee);
 
     // Mobile Flat Design
     if (variant === 'mobile') {
@@ -76,11 +93,11 @@ export const RankingDetailView = ({
                                     gap: '4px',
                                     padding: '4px 8px',
                                     borderRadius: '12px',
-                                    background: '#fff7ed',
-                                    color: '#ea580c',
+                                    background: badgeStyle.background,
+                                    color: badgeStyle.color,
                                     fontSize: '0.75rem',
                                     fontWeight: 600,
-                                    border: '1px solid rgba(234,88,12,0.1)'
+                                    border: badgeStyle.border
                                 }}
                             >
                                 {BADGE_CONFIG[badge.type]?.icon}
@@ -162,11 +179,11 @@ export const RankingDetailView = ({
                                         gap: '4px',
                                         padding: '4px 8px',
                                         borderRadius: '12px',
-                                        background: '#fff7ed',
-                                        color: '#ea580c',
+                                        background: badgeStyle.background,
+                                        color: badgeStyle.color,
                                         fontSize: '0.75rem',
                                         fontWeight: 600,
-                                        border: '1px solid rgba(234,88,12,0.1)'
+                                        border: badgeStyle.border
                                     }}
                                 >
                                     {BADGE_CONFIG[badge.type]?.icon}

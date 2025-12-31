@@ -3,7 +3,7 @@ import { api } from '@/lib/api';
 import { StudentStats } from '@/services/dashboardService';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import type { StudentBadgesMap } from '@/services/badgeService';
-import { RankingDetailView, BADGE_CONFIG } from '@/features/dashboard/components/RankingDetailView';
+import { RankingDetailView, BADGE_CONFIG, getBadgeStyle } from '@/features/dashboard/components/RankingDetailView';
 import { HeatmapDataPoint } from './ActivityHeatmap';
 import styles from './RankingWidget.module.css';
 
@@ -93,6 +93,8 @@ export const RankingWidget = ({ ranking, periodDays, loading, badges, viewerId }
                                     const mins = student.totalDurationMinutes % 60;
                                     const isTop3 = index < 3;
                                     const isExpanded = expandedStudent === student.name;
+                                    const isExaminee = student.grade === '高3' || student.grade === '既卒';
+                                    const badgeStyle = getBadgeStyle(isExaminee);
 
                                     // Safe calculation for rate
                                     const rate = periodDays > 0 ? Math.round((student.visitCount / periodDays) * 100) : 0;
@@ -119,6 +121,29 @@ export const RankingWidget = ({ ranking, periodDays, loading, badges, viewerId }
                                                 <td style={{ padding: '24px 16px', fontWeight: 700 }}>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                         {student.name}
+                                                        <div style={{ display: 'flex', gap: '4px' }}>
+                                                            {badges?.[student.name]?.map((badge, i) => (
+                                                                <span
+                                                                    key={i}
+                                                                    title={BADGE_CONFIG[badge.type]?.label}
+                                                                    style={{
+                                                                        display: 'inline-flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center',
+                                                                        width: '20px',
+                                                                        height: '20px',
+                                                                        borderRadius: '50%',
+                                                                        background: badgeStyle.background,
+                                                                        color: badgeStyle.color,
+                                                                        border: badgeStyle.border
+                                                                    }}
+                                                                >
+                                                                    <span style={{ transform: 'scale(0.8)' }}>
+                                                                        {BADGE_CONFIG[badge.type]?.icon}
+                                                                    </span>
+                                                                </span>
+                                                            ))}
+                                                        </div>
                                                     </div>
                                                 </td>
                                                 <td style={{ padding: '24px 16px', textAlign: 'center', fontSize: '0.9rem', color: 'var(--text-sub)' }}>
@@ -192,6 +217,8 @@ export const RankingWidget = ({ ranking, periodDays, loading, badges, viewerId }
                             const isTop3 = index < 3;
                             const isExpanded = expandedStudent === student.name;
                             const barPercent = Math.min((student.totalDurationMinutes / maxDuration) * 100, 100);
+                            const isExaminee = student.grade === '高3' || student.grade === '既卒';
+                            const badgeStyle = getBadgeStyle(isExaminee);
 
                             return (
                                 <div
@@ -218,9 +245,9 @@ export const RankingWidget = ({ ranking, periodDays, loading, badges, viewerId }
                                                                 width: '20px',
                                                                 height: '20px',
                                                                 borderRadius: '50%',
-                                                                background: '#fff7ed',
-                                                                color: '#ea580c',
-                                                                border: '1px solid rgba(234,88,12,0.1)'
+                                                                background: badgeStyle.background,
+                                                                color: badgeStyle.color,
+                                                                border: badgeStyle.border
                                                             }}
                                                         >
                                                             <span style={{ transform: 'scale(0.8)' }}>
