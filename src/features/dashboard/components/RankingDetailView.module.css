@@ -1,0 +1,74 @@
+.detailContainer {
+    padding: 20px;
+}
+
+/* Stats grid layout */
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+/* Visualizations grid layout */
+.visualizationsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+    gap: 12px;
+}
+
+@media (max-width: 768px) {
+    .detailContainer {
+        padding: 8px;
+    }
+
+    .statsGrid {
+        gap: 4px;
+        margin-bottom: 16px;
+    }
+}
+
+/* Base styles for flat mobile variant */
+.mobileFlatContainer {
+    padding: 0;
+    margin-top: 8px;
+}
+
+.mobileFlatGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px 24px;
+    margin-bottom: 24px;
+}
+
+.mobileFlatItem {
+    display: flex;
+    flex-direction: column;
+}
+
+.mobileFlatLabel {
+    font-size: 0.75rem;
+    color: var(--text-sub);
+    font-weight: 600;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.mobileFlatValue {
+    font-size: 1.1rem;
+    color: var(--text-main);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    padding-left: 2px;
+}
+
+.mobileFlatBadges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px dashed #e2e8f0;
+}

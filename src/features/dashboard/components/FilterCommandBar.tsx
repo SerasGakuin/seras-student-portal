@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Calendar, Users, ChevronDown, Check, Clock, Globe } from 'lucide-react';
 import { DateRangeOption, FilterType } from './DashboardControls';
+import styles from './FilterCommandBar.module.css';
 
 interface FilterCommandBarProps {
     currentRange: DateRangeOption;
@@ -158,64 +159,20 @@ export const FilterCommandBar = ({ currentRange, currentGrade, availableMonths =
 
 
     return (
-        <div
-            style={{
-                position: 'sticky',
-                top: 0,
-                zIndex: 50,
-                marginBottom: '32px',
-                marginTop: '-20px',
-                padding: '16px 0',
-                transition: 'all 0.3s ease',
-            }}
-        >
-            <div
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'flex-start',
-                    background: 'rgba(255, 255, 255, 0.9)',
-                    backdropFilter: 'blur(12px)',
-                    padding: '12px 24px',
-                    borderRadius: '24px',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
-                    border: '1px solid rgba(255,255,255,0.4)',
-                    maxWidth: '1200px',
-                    margin: '0 auto',
-                    gap: '24px',
-                    transition: 'all 0.3s ease'
-                }}
-            >
+        <div className={styles.stickyWrapper}>
+            <div className={styles.bar}>
                 {/* Left: Period Selector */}
                 <div style={{ position: 'relative' }} ref={periodMenuRef}>
                     <button
                         onClick={() => setIsPeriodOpen(!isPeriodOpen)}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '12px',
-                            background: 'transparent',
-                            border: 'none',
-                            cursor: 'pointer',
-                            padding: '8px',
-                            borderRadius: '12px',
-                            transition: 'background 0.2s',
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0,0,0,0.03)'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                        className={styles.button}
                     >
-                        <div style={{
-                            width: '40px', height: '40px',
-                            borderRadius: '12px',
-                            background: '#eff6ff',
-                            color: '#3b82f6',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center'
-                        }}>
+                        <div className={`${styles.iconBox} ${styles.blueIcon}`}>
                             <Calendar size={20} />
                         </div>
-                        <div style={{ textAlign: 'left' }}>
-                            <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, letterSpacing: '0.05em' }}>対象期間</div>
-                            <div style={{ fontSize: '0.95rem', color: '#1e293b', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <div className={styles.textContainer}>
+                            <div className={styles.label}>対象期間</div>
+                            <div className={styles.value}>
                                 {getPeriodLabel()}
                                 <ChevronDown size={14} color="#94a3b8" />
                             </div>
@@ -224,19 +181,7 @@ export const FilterCommandBar = ({ currentRange, currentGrade, availableMonths =
 
                     {/* Dropdown Menu */}
                     {isPeriodOpen && (
-                        <div style={{
-                            position: 'absolute',
-                            top: '120%',
-                            left: 0,
-                            width: '260px',
-                            background: '#fff',
-                            borderRadius: '16px',
-                            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                            border: '1px solid #f1f5f9',
-                            padding: '8px',
-                            overflow: 'hidden',
-                            animation: 'slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
-                        }}>
+                        <div className={styles.dropdown} style={{ width: '260px' }}>
                             <div style={{ padding: '8px 12px', fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>期間プリセット</div>
                             {[
                                 { val: 'last_7_days', label: '直近7日間' },
@@ -303,32 +248,14 @@ export const FilterCommandBar = ({ currentRange, currentGrade, availableMonths =
                 <div style={{ position: 'relative' }} ref={gradeMenuRef}>
                     <button
                         onClick={() => setIsGradeOpen(!isGradeOpen)}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '12px',
-                            background: 'transparent',
-                            border: 'none',
-                            cursor: 'pointer',
-                            padding: '8px',
-                            borderRadius: '12px',
-                            transition: 'background 0.2s',
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0,0,0,0.03)'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                        className={styles.button}
                     >
-                        <div style={{
-                            width: '40px', height: '40px',
-                            borderRadius: '12px',
-                            background: '#fff7ed',
-                            color: '#f97316',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center'
-                        }}>
+                        <div className={`${styles.iconBox} ${styles.orangeIcon}`}>
                             <Users size={20} />
                         </div>
-                        <div style={{ textAlign: 'left' }}>
-                            <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, letterSpacing: '0.05em' }}>対象学年</div>
-                            <div style={{ fontSize: '0.95rem', color: '#1e293b', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '4px' }}>
+                        <div className={styles.textContainer}>
+                            <div className={styles.label}>対象学年</div>
+                            <div className={styles.value}>
                                 {currentGrade === 'ALL' ? '全学年' : currentGrade === 'HS' ? '高校生' : currentGrade === 'JHS' ? '中学生' : currentGrade === 'EXAM' ? '受験生' : currentGrade}
                                 <ChevronDown size={14} color="#94a3b8" />
                             </div>
@@ -337,20 +264,7 @@ export const FilterCommandBar = ({ currentRange, currentGrade, availableMonths =
 
                     {/* Dropdown Menu */}
                     {isGradeOpen && (
-                        <div style={{
-                            position: 'absolute',
-                            top: '120%',
-                            left: 0,
-                            width: '200px',
-                            background: '#fff',
-                            borderRadius: '16px',
-                            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                            border: '1px solid #f1f5f9',
-                            padding: '8px',
-                            animation: 'slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-                            maxHeight: '400px',
-                            overflowY: 'auto'
-                        }}>
+                        <div className={styles.dropdown} style={{ width: '200px', maxHeight: '400px', overflowY: 'auto' }}>
                             <div
                                 onClick={() => { onGradeChange('ALL'); setIsGradeOpen(false); }}
                                 style={{
@@ -428,3 +342,4 @@ export const FilterCommandBar = ({ currentRange, currentGrade, availableMonths =
         </div>
     );
 };
+

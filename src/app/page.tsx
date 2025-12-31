@@ -9,7 +9,7 @@ import { useGoogleAuth } from '@/hooks/useGoogleAuth';
 import { GlassCard } from '@/components/ui/GlassCard';
 
 export default function PortalHome() {
-  const { canViewDashboard, isLoading } = useRole();
+  const { canViewDashboard, isLoading, role } = useRole();
   const { isAuthenticated: isGoogleAuthenticated, signInWithGoogle, signOutFromGoogle } = useGoogleAuth();
 
   return (
@@ -69,7 +69,7 @@ export default function PortalHome() {
         </div>
 
         {/* Google Login Section for PC Users (Teachers) */}
-        {!isLoading && !canViewDashboard && (
+        {!isLoading && role === 'guest' && (
           <GlassCard style={{ marginTop: '40px', padding: '24px', textAlign: 'center' }}>
             <div style={{ fontSize: '0.9rem', color: 'var(--text-sub)', marginBottom: '16px' }}>
               講師・教室長の方は、Googleアカウントでログインしてください

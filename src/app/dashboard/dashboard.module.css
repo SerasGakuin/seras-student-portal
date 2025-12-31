@@ -1,0 +1,70 @@
+.container {
+    max-width: 1200px;
+    padding-bottom: 80px;
+    position: relative;
+    margin: 0 auto;
+    /* Overriding potentially global container padding if needed, or just setting it explicitly */
+    width: 100%;
+    padding: 0 40px;
+    /* PC side padding */
+}
+
+/* KPI Section Wrapper */
+.kpiSection {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    margin-bottom: 40px;
+}
+
+/* Grid for KPI Cards */
+.kpiGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+}
+
+/* Grid for Ranking Lists */
+.listsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+    align-items: stretch;
+}
+
+/* Main Content Grid (Charts) */
+.mainGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+}
+
+/* Responsive Padding for GlassCards */
+.cardPadding {
+    padding: 32px;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 0 0px;
+        /* Mobile side padding */
+    }
+
+    .kpiSection {
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .kpiGrid,
+    .listsGrid,
+    .mainGrid {
+        gap: 16px;
+        grid-template-columns: 1fr;
+        /* Force single column and prevent overflow */
+    }
+
+    .cardPadding {
+        padding: 10px 10px;
+        /* Reduce padding significantly on mobile */
+    }
+}

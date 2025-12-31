@@ -1,0 +1,81 @@
+/* Container adapts height on mobile */
+.container {
+    width: 100%;
+    height: 720px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.header {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.contentWrapper {
+    display: flex;
+    flex: 1;
+    gap: 20px;
+    opacity: 1;
+    transition: opacity 0.2s;
+    min-height: 0;
+}
+
+.contentWrapperLoading {
+    composes: contentWrapper;
+    opacity: 0.3;
+}
+
+.chartArea {
+    flex: 1;
+    min-width: 0;
+}
+
+.sidebar {
+    width: 200px;
+    padding: 0 8px;
+    border-left: 1px solid #f1f5f9;
+    font-family: var(--font-geist-sans, sans-serif);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Mobile Layout */
+@media (max-width: 768px) {
+    .container {
+        height: auto;
+        /* Allow growing */
+        min-height: 600px;
+    }
+
+    .contentWrapper {
+        flex-direction: column;
+        /* Stack vertically */
+        gap: 24px;
+        height: auto;
+    }
+
+    .chartArea {
+        height: 350px;
+        /* Fixed height for chart */
+        flex: none;
+        width: 100%;
+        max-width: 100%;
+        /* Force constraint */
+        overflow: hidden;
+        /* Prevent spillover */
+    }
+
+    .sidebar {
+        width: 100%;
+        height: 300px;
+        /* Scrollable list area */
+        border-left: none;
+        border-top: 1px solid #f1f5f9;
+        padding-top: 16px;
+        padding-left: 0;
+        padding-right: 0;
+    }
+}

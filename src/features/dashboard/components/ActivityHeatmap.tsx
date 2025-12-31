@@ -91,9 +91,9 @@ export const ActivityHeatmap = ({ history = [], loading }: ActivityHeatmapProps)
 
     const getColor = (minutes: number) => {
         if (minutes === 0) return '#f5f5f4';          // Warm gray for empty
-        if (minutes < 60) return '#fff7ed';           // Very light orange
-        if (minutes < 120) return '#fed7aa';          // Light orange
-        if (minutes < 180) return '#fb923c';          // Medium orange
+        if (minutes < 120) return '#fff7ed';           // Very light orange
+        if (minutes < 240) return '#fed7aa';          // Light orange
+        if (minutes < 360) return '#fdba74';          // Medium orange
         return 'var(--brand-color)';                  // Brand color (deep orange)
     };
 

@@ -1,0 +1,146 @@
+.stickyWrapper {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    margin-bottom: 32px;
+    margin-top: -20px;
+    padding: 16px 0;
+    transition: all 0.3s ease;
+}
+
+.bar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(12px);
+    padding: 12px 24px;
+    border-radius: 24px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    max-width: 1200px;
+    margin: 0 auto;
+    gap: 24px;
+    transition: all 0.3s ease;
+}
+
+.button {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 12px;
+    transition: background 0.2s;
+}
+
+.button:hover {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.iconBox {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.blueIcon {
+    background: #eff6ff;
+    color: #3b82f6;
+}
+
+.orangeIcon {
+    background: #fff7ed;
+    color: #f97316;
+}
+
+.textContainer {
+    text-align: left;
+}
+
+.label {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+
+.value {
+    font-size: 0.95rem;
+    color: #1e293b;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+/* Base Dropdown */
+.dropdown {
+    position: absolute;
+    top: 120%;
+    left: 0;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border: 1px solid #f1f5f9;
+    padding: 8px;
+    overflow: hidden;
+    animation: slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 60;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
+    .stickyWrapper {
+        padding: 8px 16px;
+        /* reduce vertical padding */
+        margin-bottom: 16px;
+        margin-top: 0;
+        /* Reset negative margin */
+    }
+
+    .bar {
+        padding: 8px 12px;
+        gap: 12px;
+        border-radius: 16px;
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .label {
+        display: none;
+        /* Hide "対象期間" / "対象学年" labels */
+    }
+
+    .value {
+        font-size: 0.85rem;
+    }
+
+    .iconBox {
+        width: 32px;
+        height: 32px;
+    }
+
+    .button {
+        gap: 8px;
+        padding: 4px;
+    }
+}

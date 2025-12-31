@@ -174,22 +174,24 @@ export const TimeRangeChart = ({ history = [], loading }: TimeRangeChartProps) =
                                 );
                             })}
 
-                            {/* Date Label (Below Axis) */}
-                            <div style={{
-                                position: 'absolute',
-                                bottom: '-30px',
-                                left: '50%',
-                                transform: 'translateX(-50%) rotate(-45deg)', // Rotate
-                                transformOrigin: 'top center',
-                                fontSize: '0.55rem',
-                                fontWeight: 500,
-                                color: getDayColor(day.date),
-                                whiteSpace: 'nowrap',
-                                width: '100%',
-                                textAlign: 'center'
-                            }}>
-                                {day.date.getDate()}({jpDays[day.date.getDay()]})
-                            </div>
+                            {/* Date Label (Below Axis) - Decluttered */}
+                            {(i === data.length - 1 || i % 4 === 0) && (
+                                <div style={{
+                                    position: 'absolute',
+                                    bottom: '-30px',
+                                    left: '50%',
+                                    transform: 'translateX(-50%) rotate(-45deg)', // Rotate
+                                    transformOrigin: 'top center',
+                                    fontSize: '0.55rem',
+                                    fontWeight: 500,
+                                    color: getDayColor(day.date),
+                                    whiteSpace: 'nowrap',
+                                    width: '100%',
+                                    textAlign: 'center'
+                                }}>
+                                    {day.date.getDate()}({jpDays[day.date.getDay()]})
+                                </div>
+                            )}
                         </div>
                     );
                 })}

@@ -1,5 +1,6 @@
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Skeleton } from '@/components/ui/Skeleton';
+import styles from './KPICard.module.css';
 
 interface KPICardProps {
     label: string;
@@ -14,9 +15,9 @@ interface KPICardProps {
 
 export const KPICard = ({ label, value, unit, subValue, trend, trendValue, icon, loading = false }: KPICardProps) => {
     return (
-        <GlassCard style={{ padding: '24px', display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-sub)' }}>{label}</span>
+        <GlassCard className={styles.card}>
+            <div className={styles.header}>
+                <span className={styles.label}>{label}</span>
                 {icon && <div style={{ color: 'var(--brand-color)', opacity: 0.8 }}>{icon}</div>}
             </div>
 
@@ -27,9 +28,9 @@ export const KPICard = ({ label, value, unit, subValue, trend, trendValue, icon,
                 </div>
             ) : (
                 <>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1 }}>{value}</span>
-                        {unit && <span style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-sub)' }}>{unit}</span>}
+                    <div className={styles.valueContainer}>
+                        <span className={styles.value}>{value}</span>
+                        {unit && <span className={styles.unit}>{unit}</span>}
                     </div>
 
                     <div style={{ minHeight: '24px' }}>
@@ -56,3 +57,4 @@ export const KPICard = ({ label, value, unit, subValue, trend, trendValue, icon,
         </GlassCard>
     );
 };
+

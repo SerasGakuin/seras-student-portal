@@ -1,34 +1,11 @@
 import { useState, Fragment } from 'react';
 import { api } from '@/lib/api';
 import { StudentStats } from '@/services/dashboardService';
-import { ChevronDown, ChevronUp, Clock, Calendar, Crown, Sunrise, Moon, CalendarDays, Timer, Zap, Flame } from 'lucide-react';
-import { ActivityHeatmap, HeatmapDataPoint } from './ActivityHeatmap';
-import { TimeRangeChart } from './TimeRangeChart';
-import { StudentBadgesMap } from '@/services/badgeService';
-
-const getBadgeIcon = (type: string) => {
-    switch (type) {
-        case 'HEAVY_USER': return <Crown size={16} color="var(--brand-color)" />;
-        case 'EARLY_BIRD': return <Sunrise size={16} color="var(--brand-color)" />;
-        case 'NIGHT_OWL': return <Moon size={16} color="var(--brand-color)" />;
-        case 'CONSISTENT': return <CalendarDays size={16} color="var(--brand-color)" />;
-        case 'MARATHON': return <Timer size={16} color="var(--brand-color)" />;
-        case 'RISING_STAR': return <Zap size={16} color="var(--brand-color)" />;
-        default: return null;
-    }
-};
-
-const getBadgeLabel = (type: string) => {
-    switch (type) {
-        case 'HEAVY_USER': return 'トップランカー';
-        case 'EARLY_BIRD': return '早起きマスター';
-        case 'NIGHT_OWL': return '深夜マスター';
-        case 'CONSISTENT': return '皆勤賞候補';
-        case 'MARATHON': return '長時間マスター';
-        case 'RISING_STAR': return '急上昇';
-        default: return '';
-    }
-};
+import { ChevronDown, ChevronUp } from 'lucide-react';
+import type { StudentBadgesMap } from '@/services/badgeService';
+import { RankingDetailView, BADGE_CONFIG } from '@/features/dashboard/components/RankingDetailView';
+import { HeatmapDataPoint } from './ActivityHeatmap';
+import styles from './RankingWidget.module.css';
 
 interface RankingWidgetProps {
     ranking: StudentStats[];
@@ -39,8 +16,9 @@ interface RankingWidgetProps {
 }
 
 export const RankingWidget = ({ ranking, periodDays, loading, badges, viewerId }: RankingWidgetProps) => {
+    // ... (state and maxDuration calc remain same)
     const [expandedStudent, setExpandedStudent] = useState<string | null>(null);
-    const [expandedData, setExpandedData] = useState<{ history: HeatmapDataPoint[]; maxConsecutiveDays: number } | null>(null);
+    const [expandedData, setExpandedData] = useState<{ history: HeatmapDataPoint[]; maxConsecutiveDays: number; currentStreak: number } | null>(null);
     const [detailLoading, setDetailLoading] = useState(false);
 
     // Calculate max for bar chart background
@@ -58,7 +36,8 @@ export const RankingWidget = ({ ranking, periodDays, loading, badges, viewerId }
         setExpandedData(null); // Clear previous
 
         try {
-            const data = await api.dashboard.getStudentDetail(viewerId, studentName);
+            // Fetch 28 days for visualizations (Heatmap/Streak context)
+            const data = await api.dashboard.getStudentDetail(viewerId, studentName, 28);
             setExpandedData(data);
         } catch (e) {
             console.error(e);
@@ -68,11 +47,11 @@ export const RankingWidget = ({ ranking, periodDays, loading, badges, viewerId }
     };
 
     return (
-        <div style={{ width: '100%', position: 'relative' }}>
+        <div className={styles.container}>
             {/* Header */}
-            <div style={{ marginBottom: '20px' }}>
+            <div className={styles.header}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                    <h2 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>学習時間ランキング</h2>
+                    <h2 className={styles.title}>学習時間ランキング</h2>
                 </div>
             </div>
 
@@ -92,232 +71,225 @@ export const RankingWidget = ({ ranking, periodDays, loading, badges, viewerId }
                     データがありません
                 </div>
             ) : (
-                <div style={{ overflowX: 'auto', opacity: loading ? 0.5 : 1, transition: 'opacity 0.2s', pointerEvents: loading ? 'none' : 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
-                        <thead>
-                            <tr style={{ color: 'var(--text-sub)', fontSize: '0.85rem', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
-                                <th style={{ padding: '16px', textAlign: 'center', width: '60px' }}>順位</th>
-                                <th style={{ padding: '16px', textAlign: 'left' }}>名前</th>
-                                <th style={{ padding: '16px', textAlign: 'center', width: '80px' }}>学年</th>
-                                <th style={{ padding: '16px', textAlign: 'right', width: '150px' }}>学習時間</th>
-                                <th style={{ padding: '16px', textAlign: 'right', width: '80px' }}>通塾日数</th>
-                                <th style={{ padding: '16px', textAlign: 'right', width: '80px' }}>通塾率</th>
-                                <th style={{ padding: '16px', width: '100px' }}>比較</th>
-                                <th style={{ width: '40px' }}></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {ranking.map((student, index) => {
-                                const hours = Math.floor(student.totalDurationMinutes / 60);
-                                const mins = student.totalDurationMinutes % 60;
-                                const isTop3 = index < 3;
-                                const isExpanded = expandedStudent === student.name;
+                <>
+                    {/* Desktop Table View */}
+                    <div className={styles.desktopView}>
+                        <table className={styles.table}>
+                            <thead>
+                                <tr>
+                                    <th className={styles.th} style={{ textAlign: 'center', width: '60px' }}>順位</th>
+                                    <th className={styles.th} style={{ textAlign: 'left' }}>名前</th>
+                                    <th className={styles.th} style={{ textAlign: 'center', width: '80px' }}>学年</th>
+                                    <th className={styles.th} style={{ textAlign: 'right', width: '150px' }}>学習時間</th>
+                                    <th className={styles.th} style={{ textAlign: 'right', width: '80px' }}>通塾日数</th>
+                                    <th className={styles.th} style={{ textAlign: 'right', width: '80px' }}>通塾率</th>
+                                    <th className={styles.th} style={{ width: '100px' }}>比較</th>
+                                    <th style={{ width: '40px' }}></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {ranking.map((student, index) => {
+                                    const hours = Math.floor(student.totalDurationMinutes / 60);
+                                    const mins = student.totalDurationMinutes % 60;
+                                    const isTop3 = index < 3;
+                                    const isExpanded = expandedStudent === student.name;
 
-                                // Safe calculation for rate
-                                const rate = periodDays > 0 ? Math.round((student.visitCount / periodDays) * 100) : 0;
+                                    // Safe calculation for rate
+                                    const rate = periodDays > 0 ? Math.round((student.visitCount / periodDays) * 100) : 0;
 
-                                // Bar width relative to max
-                                const barPercent = Math.min((student.totalDurationMinutes / maxDuration) * 100, 100);
+                                    // Bar width relative to max
+                                    const barPercent = Math.min((student.totalDurationMinutes / maxDuration) * 100, 100);
 
-                                return (
-                                    <Fragment key={student.name}>
-                                        <tr
-                                            onClick={() => toggleExpand(student.name)}
-                                            style={{
-                                                borderBottom: isExpanded ? 'none' : '1px solid rgba(0,0,0,0.03)',
-                                                cursor: 'pointer',
-                                                background: isExpanded ? 'rgba(0,0,0,0.02)' : 'transparent',
-                                                transition: 'background 0.2s'
-                                            }}
-                                            onMouseEnter={(e) => !isExpanded && (e.currentTarget.style.background = 'rgba(0,0,0,0.01)')}
-                                            onMouseLeave={(e) => !isExpanded && (e.currentTarget.style.background = 'transparent')}
-                                        >
-                                            <td style={{ padding: '24px 16px', textAlign: 'center', fontWeight: 800, fontSize: '1rem', color: isTop3 ? 'var(--brand-color)' : 'inherit' }}>
-                                                {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
-                                            </td>
-                                            <td style={{ padding: '24px 16px', fontWeight: 700 }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'space-between' }}>
+                                    return (
+                                        <Fragment key={student.name}>
+                                            <tr
+                                                onClick={() => toggleExpand(student.name)}
+                                                className={styles.td}
+                                                style={{
+                                                    borderBottom: isExpanded ? 'none' : '1px solid rgba(0,0,0,0.03)',
+                                                    cursor: 'pointer',
+                                                    background: isExpanded ? 'rgba(0,0,0,0.02)' : 'transparent',
+                                                }}
+                                                onMouseEnter={(e) => !isExpanded && (e.currentTarget.style.background = 'rgba(0,0,0,0.01)')}
+                                                onMouseLeave={(e) => !isExpanded && (e.currentTarget.style.background = 'transparent')}
+                                            >
+                                                <td className={`${styles.rankBadge} ${isTop3 ? styles.topRank : ''}`} style={{ padding: '24px 16px' }}>
+                                                    {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
+                                                </td>
+                                                <td style={{ padding: '24px 16px', fontWeight: 700 }}>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                         {student.name}
-                                                        {badges && badges[student.name] && (
-                                                            <div style={{ display: 'flex', gap: '4px' }}>
-                                                                {badges[student.name].map((b, i) => (
-                                                                    <span key={i} title={`${getBadgeLabel(b.type)}: ${b.value || ''}`} style={{ cursor: 'help', fontSize: '1rem' }}>
-                                                                        {getBadgeIcon(b.type)}
-                                                                    </span>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    {/* Google Docs/Sheets Links - Right Aligned */}
-                                                    <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
-                                                        {student.docLink && (
-                                                            <a
-                                                                href={student.docLink}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                onClick={(e) => e.stopPropagation()}
-                                                                title="Googleドキュメント"
-                                                                style={{ display: 'flex', alignItems: 'center' }}
-                                                            >
-                                                                <img src="/icons/google-docs.svg" alt="Docs" width={24} height={24} />
-                                                            </a>
-                                                        )}
-                                                        {student.sheetLink && (
-                                                            <a
-                                                                href={student.sheetLink}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                onClick={(e) => e.stopPropagation()}
-                                                                title="Googleスプレッドシート"
-                                                                style={{ display: 'flex', alignItems: 'center' }}
-                                                            >
-                                                                <img src="/icons/google-sheets.svg" alt="Sheets" width={24} height={24} />
-                                                            </a>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td style={{ padding: '24px 16px', textAlign: 'center', fontSize: '0.9rem', color: 'var(--text-sub)' }}>
-                                                <span style={{ background: '#f1f5f9', padding: '4px 8px', borderRadius: '4px' }}>{student.grade || '-'}</span>
-                                            </td>
-                                            <td style={{ padding: '24px 16px', textAlign: 'right', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
-                                                <span style={{ fontSize: '1.1rem' }}>{hours}</span><span style={{ fontSize: '0.8rem', color: 'var(--text-sub)' }}>h</span>{' '}
-                                                <span style={{ fontSize: '1.1rem' }}>{mins}</span><span style={{ fontSize: '0.8rem', color: 'var(--text-sub)' }}>m</span>
-                                            </td>
-                                            <td style={{ padding: '24px 16px', textAlign: 'right', fontWeight: 600, color: 'var(--text-sub)' }}>
-                                                {student.visitCount}<span style={{ fontSize: '0.75rem', fontWeight: 400, marginLeft: '2px' }}>日</span>
-                                            </td>
-                                            <td style={{ padding: '24px 16px', textAlign: 'right', fontWeight: 600, color: 'var(--text-sub)' }}>
-                                                {rate}<span style={{ fontSize: '0.75rem' }}>%</span>
-                                            </td>
-                                            <td style={{ padding: '24px 16px' }}>
-                                                <div style={{ width: '100%', height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
-                                                    <div style={{ width: `${barPercent}%`, height: '100%', background: isTop3 ? 'var(--brand-color)' : '#94a3b8', borderRadius: '4px' }} />
-                                                </div>
-                                            </td>
-                                            <td style={{ padding: '24px 16px', color: 'var(--text-sub)' }}>
-                                                {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                                            </td>
-                                        </tr>
-                                        {isExpanded && (
-                                            <tr key={`${student.name}-detail`} style={{ background: 'rgba(0,0,0,0.02)' }}>
-                                                <td colSpan={8} style={{ padding: '0 24px 24px 24px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
-                                                    <div style={{
-                                                        background: 'white',
-                                                        borderRadius: '12px',
-                                                        padding: '24px',
-                                                        boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                                                        marginTop: '8px'
-                                                    }}>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                                                <h4 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--text-main)', fontWeight: 800 }}>
-                                                                    {student.name}
-                                                                </h4>
-
-                                                                {/* Summary Stats */}
-                                                                <div style={{ display: 'flex', gap: '20px', fontSize: '0.85rem' }}>
-                                                                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                                                                        <Clock size={15} style={{ color: 'var(--text-sub)', marginRight: '6px' }} />
-                                                                        <span style={{ color: 'var(--text-sub)', fontWeight: 700 }}>
-                                                                            平均して
-                                                                            <span style={{ fontWeight: 800, color: 'var(--text-main)', fontSize: '0.95rem', margin: '0 4px' }}>
-                                                                                {student.visitCount > 0
-                                                                                    ? `${Math.floor((student.totalDurationMinutes / student.visitCount) / 60)}時間${Math.round((student.totalDurationMinutes / student.visitCount) % 60)}分`
-                                                                                    : '-'}
-                                                                            </span>
-                                                                            滞在
-                                                                        </span>
-                                                                    </div>
-                                                                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                                                                        <Calendar size={15} style={{ color: 'var(--text-sub)', marginRight: '6px' }} />
-                                                                        <span style={{ color: 'var(--text-sub)', fontWeight: 700 }}>
-                                                                            最後は
-                                                                            <span style={{ fontWeight: 800, color: 'var(--text-main)', fontSize: '0.95rem', margin: '0 4px' }}>
-                                                                                {student.lastVisit ? (() => {
-                                                                                    const d = new Date(student.lastVisit);
-                                                                                    return `${d.getMonth() + 1}/${d.getDate()}`;
-                                                                                })() : '-'}
-                                                                            </span>
-                                                                            に通塾
-                                                                        </span>
-                                                                    </div>
-                                                                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                                                                        <Flame size={15} style={{ color: 'var(--brand-color)', marginRight: '6px' }} />
-                                                                        <span style={{ color: 'var(--text-sub)', fontWeight: 700 }}>
-                                                                            最大
-                                                                            <span style={{ fontWeight: 800, color: 'var(--text-main)', fontSize: '0.95rem', margin: '0 4px' }}>
-                                                                                {expandedData?.maxConsecutiveDays || 0}日連続
-                                                                            </span>
-                                                                            通塾
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-
-                                                            {/* Action / Tag (Simplified) */}
-                                                            {isTop3 && (
-                                                                <span style={{ fontSize: '0.8rem', background: '#fff7ed', color: '#ea580c', padding: '4px 12px', borderRadius: '20px', fontWeight: 600 }}>
-                                                                    🏆 トップランカー
-                                                                </span>
-                                                            )}
-                                                        </div>
-
-                                                        {/* Visualizations Container */}
-                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '80px' }}>
-                                                            {/* Left: Heatmap */}
-                                                            <div style={{ flex: '0 0 auto' }}>
-                                                                <ActivityHeatmap history={expandedData?.history || []} loading={detailLoading} />
-                                                            </div>
-
-                                                            {/* Right: Time Range Chart */}
-                                                            <div style={{ flex: 1, minWidth: '300px' }}>
-                                                                <TimeRangeChart history={expandedData?.history || []} loading={detailLoading} />
-                                                            </div>
-                                                        </div>
                                                     </div>
                                                 </td>
+                                                <td style={{ padding: '24px 16px', textAlign: 'center', fontSize: '0.9rem', color: 'var(--text-sub)' }}>
+                                                    <span style={{ background: '#f1f5f9', padding: '4px 8px', borderRadius: '4px' }}>{student.grade || '-'}</span>
+                                                </td>
+                                                <td style={{ padding: '24px 16px', textAlign: 'right', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+                                                    <span style={{ fontSize: '1.1rem' }}>{hours}</span><span style={{ fontSize: '0.8rem', color: 'var(--text-sub)' }}>h</span>{' '}
+                                                    <span style={{ fontSize: '1.1rem' }}>{mins}</span><span style={{ fontSize: '0.8rem', color: 'var(--text-sub)' }}>m</span>
+                                                </td>
+                                                <td style={{ padding: '24px 16px', textAlign: 'right', fontWeight: 600, color: 'var(--text-sub)' }}>
+                                                    {student.visitCount}<span style={{ fontSize: '0.75rem', fontWeight: 400, marginLeft: '2px' }}>日</span>
+                                                </td>
+                                                <td style={{ padding: '24px 16px', textAlign: 'right', fontWeight: 600, color: 'var(--text-sub)' }}>
+                                                    {rate}<span style={{ fontSize: '0.75rem' }}>%</span>
+                                                </td>
+                                                <td style={{ padding: '24px 16px' }}>
+                                                    <div style={{ width: '100%', height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
+                                                        <div style={{ width: `${barPercent}%`, height: '100%', background: isTop3 ? 'var(--brand-color)' : '#94a3b8', borderRadius: '4px' }} />
+                                                    </div>
+                                                </td>
+                                                <td style={{ padding: '24px 16px', color: 'var(--text-sub)' }}>
+                                                    {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                                </td>
                                             </tr>
-                                        )}
-                                    </Fragment>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
-            )}
+                                            {isExpanded && (
+                                                <tr key={`${student.name}-detail`} style={{ background: 'rgba(0,0,0,0.02)' }}>
+                                                    <td colSpan={8} style={{ padding: '0', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                                                        <div style={{
+                                                            position: 'sticky',
+                                                            left: 0,
+                                                            width: 'min(100%, calc(100vw - 48px))',
+                                                        }}>
+                                                            <div style={{ padding: '16px 24px' }}>
+                                                                <RankingDetailView
+                                                                    studentName={student.name}
+                                                                    description={null}
+                                                                    rankingInfo={{
+                                                                        badges: badges?.[student.name] || [],
+                                                                        rankPosition: index + 1,
+                                                                        totalStudents: ranking.length,
+                                                                        groupLabel: (student.grade === '高3' || student.grade === '既卒') ? '受験生の部' : '一般の部'
+                                                                    }}
+                                                                    stats={{
+                                                                        totalMinutes: student.totalDurationMinutes,
+                                                                        visitCount: student.visitCount
+                                                                    }}
+                                                                    streakStats={{
+                                                                        maxConsecutiveDays: expandedData?.maxConsecutiveDays || 0,
+                                                                        currentStreak: expandedData?.currentStreak || 0
+                                                                    }}
+                                                                    history={expandedData?.history || []}
+                                                                    loading={detailLoading}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </Fragment>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
 
-            {/* Badge Legend - Footnote style */}
-            <div style={{
-                marginTop: '24px',
-                paddingTop: '16px',
-                borderTop: '1px solid rgba(0,0,0,0.05)',
-                fontSize: '0.75rem',
-                color: 'var(--text-sub)'
-            }}>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
-                    <span style={{ opacity: 0.7 }}>バッジ:</span>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        <Crown size={12} color="var(--brand-color)" /> トップランカー(総学習時間)
-                    </span>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        <Sunrise size={12} color="var(--brand-color)" /> 早起きマスター(朝4〜9時)
-                    </span>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        <Moon size={12} color="var(--brand-color)" /> 深夜マスター(20時以降)
-                    </span>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        <CalendarDays size={12} color="var(--brand-color)" /> 皆勤賞候補(通塾日数)
-                    </span>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        <Timer size={12} color="var(--brand-color)" /> 長時間マスター(日平均滞在)
-                    </span>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        <Zap size={12} color="var(--brand-color)" /> 急上昇(先週比増加)
-                    </span>
-                </div>
-            </div>
+                    {/* Mobile Card View */}
+                    <div className={styles.mobileView}>
+                        {ranking.map((student, index) => {
+                            const hours = Math.floor(student.totalDurationMinutes / 60);
+                            const mins = student.totalDurationMinutes % 60;
+                            const isTop3 = index < 3;
+                            const isExpanded = expandedStudent === student.name;
+                            const barPercent = Math.min((student.totalDurationMinutes / maxDuration) * 100, 100);
+
+                            return (
+                                <div
+                                    key={student.name}
+                                    className={`${styles.mobileCard} ${(isExpanded && detailLoading) ? styles.loadingState : ''}`}
+                                    onClick={() => toggleExpand(student.name)}
+                                >
+                                    <div className={styles.mobileCardHeader}>
+                                        <div className={`${styles.mobileRankBadge} ${isTop3 ? styles.mobileTopRank : ''}`}>
+                                            {index + 1}
+                                        </div>
+                                        <div className={styles.mobileName}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                                <span>{student.name}</span>
+                                                <div style={{ display: 'flex', gap: '4px' }}>
+                                                    {badges?.[student.name]?.map((badge, i) => (
+                                                        <span
+                                                            key={i}
+                                                            title={BADGE_CONFIG[badge.type]?.label}
+                                                            style={{
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                width: '20px',
+                                                                height: '20px',
+                                                                borderRadius: '50%',
+                                                                background: '#fff7ed',
+                                                                color: '#ea580c',
+                                                                border: '1px solid rgba(234,88,12,0.1)'
+                                                            }}
+                                                        >
+                                                            <span style={{ transform: 'scale(0.8)' }}>
+                                                                {BADGE_CONFIG[badge.type]?.icon}
+                                                            </span>
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 500, marginTop: '2px', display: 'block' }}>
+                                                {student.grade}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            {isExpanded ? <ChevronUp size={20} color="#94a3b8" /> : <ChevronDown size={20} color="#94a3b8" />}
+                                        </div>
+                                    </div>
+
+                                    <div className={styles.mobileStatsGrid}>
+                                        <div className={styles.mobileStatItem}>
+                                            <div className={styles.mobileStatLabel}>学習時間</div>
+                                            <div className={styles.mobileStatValue}>
+                                                {hours}<span style={{ fontSize: '0.8em' }}>h</span> {mins}<span style={{ fontSize: '0.8em' }}>m</span>
+                                            </div>
+                                        </div>
+                                        <div className={styles.mobileStatItem}>
+                                            <div className={styles.mobileStatLabel}>通塾日数</div>
+                                            <div className={styles.mobileStatValue}>
+                                                {student.visitCount}<span style={{ fontSize: '0.7em', fontWeight: 400 }}>日</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className={styles.mobileBarArea}>
+                                        <div className={`${styles.mobileBarFill} ${isTop3 ? styles.mobileBarFillActive : ''}`} style={{ width: `${barPercent}%` }}></div>
+                                    </div>
+
+                                    {/* Expanded Detail for Mobile */}
+                                    {isExpanded && (
+                                        <div className={styles.mobileDetailWrapper} onClick={(e) => e.stopPropagation()}>
+                                            <RankingDetailView
+                                                studentName={student.name}
+                                                description={null}
+                                                rankingInfo={{
+                                                    badges: badges?.[student.name] || [],
+                                                    rankPosition: index + 1,
+                                                    totalStudents: ranking.length,
+                                                    groupLabel: (student.grade === '高3' || student.grade === '既卒') ? '受験生の部' : '一般の部'
+                                                }}
+                                                stats={{
+                                                    totalMinutes: student.totalDurationMinutes,
+                                                    visitCount: student.visitCount
+                                                }}
+                                                streakStats={{
+                                                    maxConsecutiveDays: expandedData?.maxConsecutiveDays || 0,
+                                                    currentStreak: expandedData?.currentStreak || 0
+                                                }}
+                                                history={expandedData?.history || []}
+                                                loading={detailLoading}
+                                                variant="mobile"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </>
+            )}
         </div>
     );
 };

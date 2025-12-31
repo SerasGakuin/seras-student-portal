@@ -1,6 +1,7 @@
 'use client';
 
 import { GlassCard } from '@/components/ui/GlassCard';
+import Link from 'next/link';
 import Image from 'next/image';
 import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 import styles from './OccupancyCard.module.css';
@@ -36,6 +37,10 @@ export const OccupancyCard = memo(({ title, data, max, moleImage, comingSoon, is
         (authMethod === 'google' && (role === 'teacher' || role === 'principal')) ||
         !!(student?.status && (CONFIG.PERMISSIONS.VIEW_OCCUPANCY_MEMBERS as string[]).includes(student.status));
 
+    const canViewDashboard =
+        (authMethod === 'google' && (role === 'teacher' || role === 'principal')) ||
+        !!(student?.status && (CONFIG.PERMISSIONS.VIEW_DASHBOARD as string[]).includes(student.status));
+
     if (moleImage) {
         return (
             <div className={styles.wrapper}>
@@ -55,6 +60,7 @@ export const OccupancyCard = memo(({ title, data, max, moleImage, comingSoon, is
                     isReady={isReady}
                     // isReady already includes isLoading logic
                     canViewMembers={canViewMembers}
+                    canViewDashboard={canViewDashboard}
                 />
             </div>
         );
@@ -68,6 +74,7 @@ export const OccupancyCard = memo(({ title, data, max, moleImage, comingSoon, is
             comingSoon={comingSoon}
             isReady={isReady}
             canViewMembers={canViewMembers}
+            canViewDashboard={canViewDashboard}
         />
     );
 });
@@ -79,10 +86,11 @@ interface CardContentProps {
     comingSoon?: boolean;
     isReady: boolean | undefined;
     canViewMembers: boolean;
+    canViewDashboard: boolean;
 }
 
 // Extracted for cleaner render logic and reuse
-const CardContent = ({ title, max, data, comingSoon, isReady, canViewMembers }: CardContentProps) => {
+const CardContent = ({ title, max, data, comingSoon, isReady, canViewMembers, canViewDashboard }: CardContentProps) => {
     // If not ready, show Skeleton (Maintains correct height)
     if (!isReady || !data) {
         return (
@@ -151,6 +159,19 @@ const CardContent = ({ title, max, data, comingSoon, isReady, canViewMembers }: 
             {/* Teacher/Member View: Member List */}
             {canViewMembers && data.isOpen && (
                 <TeacherSection members={data.members} />
+            )}
+
+            {/* Dashboard Link for Teachers/Principals */}
+            {canViewDashboard && (
+                <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'center' }}>
+                    <Link
+                        href="/dashboard"
+                        className={styles.dashboardLink}
+                    >
+                        <span>講師用ダッシュボードへ</span>
+                        <span>→</span>
+                    </Link>
+                </div>
             )}
 
             {/* Coming Soon Overlay */}

@@ -366,3 +366,22 @@
 .animate-pulse {
     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+.dashboardLink {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--brand-color);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 16px;
+    background: #fff7ed;
+    border-radius: 20px;
+    transition: all 0.2s;
+}
+
+.dashboardLink:hover {
+    background: #ffedd5;
+    transform: translateY(-1px);
+}

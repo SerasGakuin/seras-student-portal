@@ -44,6 +44,12 @@ const getGradientColors = (count: number): string[] => {
     return colors;
 };
 
+import styles from './CumulativeGrowthChart.module.css';
+
+// ... (imports remain)
+
+// ... (GRADIENT_STOPS, interpolateColor, getGradientColors remain)
+
 export const CumulativeGrowthChart = ({ data, loading, selectedStudents, onSelectionChange }: CumulativeGrowthChartProps) => {
     const [hoveredStudent, setHoveredStudent] = useState<string | null>(null);
 
@@ -94,9 +100,9 @@ export const CumulativeGrowthChart = ({ data, loading, selectedStudents, onSelec
     };
 
     return (
-        <div style={{ width: '100%', height: '720px', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+        <div className={styles.container}>
             {/* Header */}
-            <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className={styles.header}>
                 <h2 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>
                     学習時間の累積
                 </h2>
@@ -112,9 +118,9 @@ export const CumulativeGrowthChart = ({ data, loading, selectedStudents, onSelec
                 </div>
             )}
 
-            <div style={{ display: 'flex', flex: 1, gap: '20px', opacity: loading ? 0.3 : 1, transition: 'opacity 0.2s', minHeight: 0 }}>
+            <div className={loading ? styles.contentWrapperLoading : styles.contentWrapper}>
                 {/* Chart Area */}
-                <div style={{ flex: 1, minWidth: 0 }}>
+                <div className={styles.chartArea}>
                     <ResponsiveContainer width="100%" height="100%">
                         <LineChart
                             data={data}
@@ -193,14 +199,7 @@ export const CumulativeGrowthChart = ({ data, loading, selectedStudents, onSelec
                     </ResponsiveContainer>
                 </div>
 
-                <div style={{
-                    width: '200px',
-                    padding: '0 8px',
-                    borderLeft: '1px solid #f1f5f9',
-                    fontFamily: 'var(--font-geist-sans, sans-serif)',
-                    display: 'flex',
-                    flexDirection: 'column'
-                }}>
+                <div className={styles.sidebar}>
                     <div style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', height: '28px',
                         padding: '0 8px', // Align header with items
