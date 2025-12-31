@@ -20,7 +20,9 @@ import { useLiff } from '@/lib/liff';
 import { useRouter } from 'next/navigation';// Re-defining these here or importing them if I had moved them.
 // For now, let's just use string types compatible with the component or import from the old file if it still exists (it does).
 import { FilterType, DateRangeOption } from '@/features/dashboard/components/DashboardControls';
+// ... (imports)
 import { fetchWithAuth } from '@/lib/api';
+import styles from './dashboard.module.css';
 
 export default function DashboardPage() {
     const [stats, setStats] = useState<DashboardSummary | null>(null);
@@ -118,7 +120,7 @@ export default function DashboardPage() {
     // Error State (Loaded but no data)
     if (!stats && !isLoading) {
         return (
-            <div className="container" style={{ maxWidth: '1200px', paddingBottom: '80px', position: 'relative' }}>
+            <div className={styles.container}>
                 <PageHeader
                     title="講師用ダッシュボード"
                     subtitle="生徒の学習状況・ランキング"
@@ -141,7 +143,7 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="container" style={{ maxWidth: '1200px', paddingBottom: '80px', position: 'relative' }}>
+        <div className={styles.container}>
             <PageHeader
                 title="講師用ダッシュボード"
                 subtitle="生徒の学習状況・ランキング"
@@ -157,9 +159,9 @@ export default function DashboardPage() {
             />
 
             {/* KPI Section */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginBottom: '40px' }}>
+            <div className={styles.kpiSection}>
                 {/* Row 1: Totals */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+                <div className={styles.kpiGrid}>
                     <KPICard
                         label="平均学習時間 (生徒1人・1日あたり)"
                         value={stats ? Math.floor(stats.avgDurationPerVisit.value / 60) : 0}
@@ -181,7 +183,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Row 2: Rankings (Top, Growth, Drop) */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', alignItems: 'stretch' }}>
+                <div className={styles.listsGrid}>
                     <RankerListCard
                         title="トップランカー"
                         icon="user"
@@ -207,9 +209,9 @@ export default function DashboardPage() {
             </div>
 
             {/* Chart & Ranking Section */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>
+            <div className={styles.mainGrid}>
                 {/* Cumulative Growth Chart */}
-                <GlassCard style={{ padding: '32px' }}>
+                <GlassCard className={styles.cardPadding}>
                     <CumulativeGrowthChart
                         data={stats?.history || []}
                         loading={isLoading}
@@ -219,7 +221,7 @@ export default function DashboardPage() {
                 </GlassCard>
 
                 {/* Ranking */}
-                <GlassCard style={{ padding: '32px' }}>
+                <GlassCard className={styles.cardPadding}>
                     <RankingWidget
                         ranking={stats?.ranking || []}
                         periodDays={stats?.periodDays || 0}

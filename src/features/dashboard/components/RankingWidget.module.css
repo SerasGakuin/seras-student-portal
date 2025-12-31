@@ -1,0 +1,178 @@
+.container {
+    width: 100%;
+    position: relative;
+}
+
+.header {
+    margin-bottom: 20px;
+}
+
+.title {
+    font-size: 1.2rem;
+    font-weight: 800;
+    margin: 0;
+}
+
+/* Desktop Table View */
+.desktopView {
+    display: block;
+    overflow-x: auto;
+    opacity: 1;
+    transition: opacity 0.2s;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px;
+}
+
+.th {
+    padding: 16px;
+    color: var(--text-sub);
+    font-size: 0.85rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.td {
+    padding: 24px 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+    transition: background 0.2s;
+}
+
+.rankBadge {
+    text-align: center;
+    font-weight: 800;
+    font-size: 1rem;
+}
+
+.topRank {
+    color: var(--brand-color);
+}
+
+/* Mobile Card View */
+.mobileView {
+    display: none;
+    /* Hidden by default */
+}
+
+/* Mobile Ranker Card */
+.mobileCard {
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.mobileCard:active {
+    transform: scale(0.98);
+    background: #f8fafc;
+}
+
+.mobileCardHeader {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.mobileRankBadge {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1f5f9;
+    border-radius: 50%;
+    font-weight: 800;
+    font-size: 0.9rem;
+    color: var(--text-sub);
+}
+
+.mobileTopRank {
+    background: #fff7ed;
+    color: var(--brand-color);
+}
+
+.mobileName {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--text-main);
+    flex: 1;
+}
+
+.mobileStatsGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed #e2e8f0;
+}
+
+.mobileStatItem {
+    display: flex;
+    flex-direction: column;
+}
+
+.mobileStatLabel {
+    font-size: 0.7rem;
+    color: var(--text-sub);
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.mobileStatValue {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-main);
+    font-variant-numeric: tabular-nums;
+}
+
+.mobileBarArea {
+    margin-top: 12px;
+    width: 100%;
+    height: 6px;
+    background: #f1f5f9;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.mobileBarFill {
+    height: 100%;
+    border-radius: 3px;
+    background: #cbd5e1;
+}
+
+.mobileBarFillActive {
+    background: var(--brand-color);
+}
+
+/* Mobile Expanded Detail Wrapper */
+.mobileDetailWrapper {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    animation: fadeIn 0.3s ease;
+    width: 100%;
+    overflow-x: hidden;
+}
+
+.loadingState {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+@media (max-width: 768px) {
+    .desktopView {
+        display: none;
+    }
+
+    .mobileView {
+        display: flex;
+        flex-direction: column;
+    }
+}

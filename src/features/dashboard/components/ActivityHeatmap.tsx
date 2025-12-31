@@ -91,9 +91,9 @@ export const ActivityHeatmap = ({ history = [], loading }: ActivityHeatmapProps)
 
     const getColor = (minutes: number) => {
         if (minutes === 0) return '#f5f5f4';          // Warm gray for empty
-        if (minutes < 60) return '#fff7ed';           // Very light orange
-        if (minutes < 120) return '#fed7aa';          // Light orange
-        if (minutes < 180) return '#fb923c';          // Medium orange
+        if (minutes < 120) return '#fff7ed';           // Very light orange
+        if (minutes < 240) return '#fed7aa';          // Light orange
+        if (minutes < 360) return '#fdba74';          // Medium orange
         return 'var(--brand-color)';                  // Brand color (deep orange)
     };
 
@@ -116,10 +116,10 @@ export const ActivityHeatmap = ({ history = [], loading }: ActivityHeatmapProps)
             {/* Minimal Header (Legend Only) */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <div style={{ width: 8, height: 8, background: '#f5f5f4', borderRadius: 2 }} title="0分" />
+                    <div style={{ width: 8, height: 8, background: '#f8fafc', borderRadius: 2 }} title="0分" />
                     <div style={{ width: 8, height: 8, background: '#fff7ed', borderRadius: 2 }} title="1時間未満" />
                     <div style={{ width: 8, height: 8, background: '#fed7aa', borderRadius: 2 }} title="2時間未満" />
-                    <div style={{ width: 8, height: 8, background: '#fb923c', borderRadius: 2 }} title="3時間未満" />
+                    <div style={{ width: 8, height: 8, background: '#fdba74', borderRadius: 2 }} title="3時間未満" />
                     <div style={{ width: 8, height: 8, background: 'var(--brand-color)', borderRadius: 2 }} title="3時間以上" />
                 </div>
             </div>
