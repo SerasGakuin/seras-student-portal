@@ -1,6 +1,6 @@
 
 // Remove static imports of the service to allow re-evaluation
-// import { DashboardService } from './dashboardService'; 
+// import { DashboardService } from './dashboardService';
 
 import { GoogleSheetOccupancyRepository } from '@/repositories/googleSheets/GoogleSheetOccupancyRepository';
 import { GoogleSheetStudentRepository } from '@/repositories/googleSheets/GoogleSheetStudentRepository';
@@ -10,6 +10,13 @@ import { BadgeService } from '@/services/badgeService';
 jest.mock('@/repositories/googleSheets/GoogleSheetOccupancyRepository');
 jest.mock('@/repositories/googleSheets/GoogleSheetStudentRepository');
 jest.mock('@/services/badgeService');
+
+// --- Test Constants (DRY) ---
+const TEST_DATE = {
+    BASE: '2025-12-25',           // Base date for test data
+    SYSTEM_TIME: '2025-12-25T14:00:00',  // System time for tests (same day as BASE)
+    NEXT_DAY: '2025-12-26T10:00:00',     // Next day (for testing past logs)
+};
 
 describe('DashboardService', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -48,13 +55,19 @@ describe('DashboardService', () => {
         });
     });
 
+    afterEach(() => {
+        jest.useRealTimers();
+    });
+
     describe('calculateDurationMinutes', () => {
         it('should calculate duration correctly when exit time is present', async () => {
+            jest.useFakeTimers().setSystemTime(new Date(TEST_DATE.SYSTEM_TIME));
+
             mockFindAllLogs.mockResolvedValue([
                 {
                     name: 'Test Student',
-                    entryTime: '2025-12-25T10:00:00',
-                    exitTime: '2025-12-25T12:30:00',
+                    entryTime: `${TEST_DATE.BASE}T10:00:00`,
+                    exitTime: `${TEST_DATE.BASE}T12:30:00`,  // 2.5 hours = 150 minutes
                     lineId: '123'
                 }
             ]);
@@ -66,13 +79,13 @@ describe('DashboardService', () => {
         });
 
         it('should cap duration at 4 hours if exit time is missing', async () => {
-            // Set system time to future so "diffHours < 12" logic is skipped
-            jest.useFakeTimers().setSystemTime(new Date('2025-12-26T10:00:00'));
+            // Set system time to next day so "diffHours < 12" logic is skipped
+            jest.useFakeTimers().setSystemTime(new Date(TEST_DATE.NEXT_DAY));
 
             mockFindAllLogs.mockResolvedValue([
                 {
                     name: 'Test Student',
-                    entryTime: '2025-12-25T10:00:00', // +4h = 14:00 (before 22:00)
+                    entryTime: `${TEST_DATE.BASE}T10:00:00`,  // +4h = 14:00 (before 22:00)
                     exitTime: '',
                     lineId: '123'
                 }
@@ -85,12 +98,12 @@ describe('DashboardService', () => {
         });
 
         it('should cap duration at 22:00 if start time is late', async () => {
-            jest.useFakeTimers().setSystemTime(new Date('2025-12-26T10:00:00'));
+            jest.useFakeTimers().setSystemTime(new Date(TEST_DATE.NEXT_DAY));
 
             mockFindAllLogs.mockResolvedValue([
                 {
                     name: 'Test Student',
-                    entryTime: '2025-12-25T20:00:00', // +4h = 24:00. Cap at 22:00 = 2h
+                    entryTime: `${TEST_DATE.BASE}T20:00:00`,  // +4h = 24:00, cap at 22:00 = 2h
                     exitTime: '',
                     lineId: '123'
                 }
@@ -105,10 +118,11 @@ describe('DashboardService', () => {
 
     describe('Streak Calculation', () => {
         it('should calculate current streak correctly', async () => {
-            jest.useFakeTimers().setSystemTime(new Date('2025-12-25T12:00:00'));
+            jest.useFakeTimers().setSystemTime(new Date(TEST_DATE.SYSTEM_TIME));
 
+            // 3 consecutive days (25, 24, 23) + 1 gap day (22) + 1 day (21)
             mockFindAllLogs.mockResolvedValue([
-                { name: 'S', entryTime: '2025-12-25T10:00:00', exitTime: '2025-12-25T11:00:00', lineId: '1' },
+                { name: 'S', entryTime: `${TEST_DATE.BASE}T10:00:00`, exitTime: `${TEST_DATE.BASE}T11:00:00`, lineId: '1' },
                 { name: 'S', entryTime: '2025-12-24T10:00:00', exitTime: '2025-12-24T11:00:00', lineId: '1' },
                 { name: 'S', entryTime: '2025-12-23T10:00:00', exitTime: '2025-12-23T11:00:00', lineId: '1' },
                 { name: 'S', entryTime: '2025-12-21T10:00:00', exitTime: '2025-12-21T11:00:00', lineId: '1' },
@@ -120,7 +134,7 @@ describe('DashboardService', () => {
         });
 
         it('should return 0 streak if last visit was 2 days ago', async () => {
-            jest.useFakeTimers().setSystemTime(new Date('2025-12-25T12:00:00'));
+            jest.useFakeTimers().setSystemTime(new Date(TEST_DATE.SYSTEM_TIME));
 
             mockFindAllLogs.mockResolvedValue([
                 { name: 'S', entryTime: '2025-12-23T10:00:00', exitTime: '2025-12-23T11:00:00', lineId: '1' },

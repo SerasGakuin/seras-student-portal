@@ -126,13 +126,67 @@ describe('BadgeService', () => {
         expect(result.general['S1']?.some((b: Badge) => b.type === 'EARLY_BIRD')).toBe(false);
     });
 
-    it('should count only hours after 04:00 for EARLY_BIRD even if entry is earlier', async () => {
-        // Wait, current logic: `entry >= morningStart` (Line 120 modified).
-        // If entry is 03:50, it is NOT >= 4:00. So WHOLE duration is ignored.
-        // This is acceptable behavior: "Early Bird" means *Arriving* early morning, not just *Being there*.
-        // If a student arrives at 01:00 and leaves at 08:00, they are Night Owl/Marathon, not Early Bird.
-        // Early Bird implies waking up for it.
-        // So strict entry check is correct.
+    it('should count hours after 04:00 for EARLY_BIRD even if entry is before 04:00', async () => {
+        // Entry at 03:50, exit at 08:00 -> should count 4:00-8:00 = 4 hours (240 mins)
+        mockFindAllStudents.mockResolvedValue({
+            1: { name: 'S1', grade: '中1', status: '在塾' },
+        });
+
+        const baseDate = '2025-01-01';
+        mockFindAllLogs.mockResolvedValue([
+            { name: 'S1', entryTime: `${baseDate}T03:50:00`, exitTime: `${baseDate}T08:00:00` }
+        ]);
+
+        const result = await service.getWeeklyBadges(new Date('2025-01-02T10:00:00'));
+        const s1Badges = result.general['S1'];
+
+        // Should have EARLY_BIRD badge with 240 minutes (displayed as '240m')
+        expect(s1Badges).toContainEqual(expect.objectContaining({ type: 'EARLY_BIRD' }));
+        const earlyBirdBadge = s1Badges.find((b: Badge) => b.type === 'EARLY_BIRD');
+        expect(earlyBirdBadge?.value).toBe('240m');
+    });
+
+    it('should merge overlapping logs for EARLY_BIRD calculation', async () => {
+        mockFindAllStudents.mockResolvedValue({
+            1: { name: 'S1', grade: '中1', status: '在塾' },
+        });
+
+        const baseDate = '2025-01-01';
+        // Two overlapping morning sessions: 05:00-07:00 and 06:00-08:30
+        // Merged: 05:00-08:30 = 3.5 hours = 210 mins
+        mockFindAllLogs.mockResolvedValue([
+            { name: 'S1', entryTime: `${baseDate}T05:00:00`, exitTime: `${baseDate}T07:00:00` },
+            { name: 'S1', entryTime: `${baseDate}T06:00:00`, exitTime: `${baseDate}T08:30:00` }
+        ]);
+
+        const result = await service.getWeeklyBadges(new Date('2025-01-02T10:00:00'));
+        const s1Badges = result.general['S1'];
+
+        const earlyBirdBadge = s1Badges.find((b: Badge) => b.type === 'EARLY_BIRD');
+        // Should be 210 mins (merged), NOT 270 mins (naive sum)
+        expect(earlyBirdBadge?.value).toBe('210m');
+    });
+
+    it('should merge overlapping logs for NIGHT_OWL calculation', async () => {
+        mockFindAllStudents.mockResolvedValue({
+            1: { name: 'S1', grade: '中1', status: '在塾' },
+        });
+
+        const baseDate = '2025-01-01';
+        // Two overlapping night sessions: 19:00-22:00 and 20:30-23:30
+        // Night portion (after 20:00): 20:00-22:00 and 20:30-23:30 -> Merged: 20:00-23:30 = 3.5 hours = 210 mins
+        // Naive would be: (22:00-20:00=120) + (23:30-20:30=180) = 300 mins = 5h
+        mockFindAllLogs.mockResolvedValue([
+            { name: 'S1', entryTime: `${baseDate}T19:00:00`, exitTime: `${baseDate}T22:00:00` },
+            { name: 'S1', entryTime: `${baseDate}T20:30:00`, exitTime: `${baseDate}T23:30:00` }
+        ]);
+
+        const result = await service.getWeeklyBadges(new Date('2025-01-02T10:00:00'));
+        const s1Badges = result.general['S1'];
+
+        const nightOwlBadge = s1Badges.find((b: Badge) => b.type === 'NIGHT_OWL');
+        // Should be 210 mins (3h), NOT 300 mins (5h)
+        expect(nightOwlBadge?.value).toBe('3h');
     });
 
     it('should assign RISING_STAR based on growth vs previous week', async () => {

@@ -132,45 +132,22 @@ export class BadgeService {
         studentLogsMap.forEach((studentLogs, key) => {
             const s = stats.get(key)!;
 
-            // 1. Total Duration (Corrected for overlaps)
+            // 1. Total Duration (with overlap merging)
             s.totalDuration = this.calculateEffectiveDuration(studentLogs);
-            s.visitCount = studentLogs.length; // Raw visit count (entry count)
+            s.visitCount = studentLogs.length;
 
-            // 2. Process individual logs for time-specific badges (approximated)
+            // 2. Morning Duration: 4:00-9:00 JST (with overlap merging)
+            s.morningDuration = this.calculateDurationInTimeRange(studentLogs, 4, 9, toJst);
+
+            // 3. Night Duration: 20:00-24:00 JST (with overlap merging)
+            s.nightDuration = this.calculateDurationInTimeRange(studentLogs, 20, 24, toJst);
+
+            // 4. Visit Days (unique dates)
             studentLogs.forEach(log => {
-                const duration = this.calculateNaiveDuration(log);
                 const entry = new Date(log.entryTime);
                 const entryJst = toJst(entry);
-
-                // 4-1. Visit Days
                 const dateStr = `${entryJst.getFullYear()}/${entryJst.getMonth() + 1}/${entryJst.getDate()}`;
                 s.visitDays.add(dateStr);
-
-                // 4-2. Morning
-                const morningCutoff = new Date(entryJst);
-                morningCutoff.setHours(9, 0, 0, 0);
-                const morningStart = new Date(entryJst);
-                morningStart.setHours(4, 0, 0, 0);
-
-                if (entryJst < morningCutoff && entryJst >= morningStart) {
-                    const exitTime = new Date(entry.getTime() + duration * 60000);
-                    const exitJst = toJst(exitTime);
-                    const end = exitJst < morningCutoff ? exitJst : morningCutoff;
-                    const morningMins = (end.getTime() - entryJst.getTime()) / 60000;
-                    if (morningMins > 0) s.morningDuration += morningMins;
-                }
-
-                // 4-3. Night
-                const nightCutoff = new Date(entryJst);
-                nightCutoff.setHours(20, 0, 0, 0);
-                const exitTime = new Date(entry.getTime() + duration * 60000);
-                const exitJst = toJst(exitTime);
-
-                if (exitJst > nightCutoff) {
-                    const start = entryJst > nightCutoff ? entryJst : nightCutoff;
-                    const nightMins = (exitJst.getTime() - start.getTime()) / 60000;
-                    if (nightMins > 0) s.nightDuration += nightMins;
-                }
             });
         });
 
@@ -276,8 +253,7 @@ export class BadgeService {
         }, s => (s.totalDuration - s.prevTotalDuration) > 120); // Min 2 hours growth
     }
 
-    // Copied from DashboardService (DRY violation but simple enough for now, prefer Utils in future)
-    // --- Improved Duration Calculation Logic (Ported from DashboardService) ---
+    // --- Duration Calculation Utilities ---
 
     /**
      * Determine the effective exit time for a log, applying auto-close logic if missing.
@@ -312,17 +288,10 @@ export class BadgeService {
     }
 
     /**
-     * Calculate effective duration in minutes by merging overlapping intervals.
+     * Merge overlapping intervals and return total duration in minutes.
+     * @param intervals Array of { start: number, end: number } (timestamps in ms)
      */
-    private calculateEffectiveDuration(logs: EntryExitLog[]): number {
-        if (logs.length === 0) return 0;
-
-        const intervals = logs.map(log => {
-            const start = new Date(log.entryTime).getTime();
-            const end = this.getEffectiveExitTime(log).getTime();
-            return { start, end };
-        }).filter(i => !isNaN(i.start) && !isNaN(i.end) && i.end > i.start);
-
+    private mergeIntervalsAndSum(intervals: Array<{ start: number; end: number }>): number {
         if (intervals.length === 0) return 0;
 
         // Sort by start time
@@ -354,13 +323,67 @@ export class BadgeService {
         return Math.floor(totalDurationMs / (1000 * 60));
     }
 
-    // Naive calc kept ONLY for Morning/Night specific attribution which is harder to de-overlap without complex logic
-    // For HEAVY_USER (Total), we MUST use calculateEffectiveDuration.
-    private calculateNaiveDuration(log: EntryExitLog): number {
-        const entry = new Date(log.entryTime);
-        const exit = this.getEffectiveExitTime(log);
-        const diff = (exit.getTime() - entry.getTime()) / 60000;
-        return Math.max(0, Math.floor(diff));
+    /**
+     * Calculate effective duration in minutes by merging overlapping intervals.
+     */
+    private calculateEffectiveDuration(logs: EntryExitLog[]): number {
+        if (logs.length === 0) return 0;
+
+        const intervals = logs.map(log => {
+            const start = new Date(log.entryTime).getTime();
+            const end = this.getEffectiveExitTime(log).getTime();
+            return { start, end };
+        }).filter(i => !isNaN(i.start) && !isNaN(i.end) && i.end > i.start);
+
+        return this.mergeIntervalsAndSum(intervals);
+    }
+
+    /**
+     * Calculate duration within a specific time range (e.g., 4:00-9:00 for morning).
+     * Clips each log's interval to the time range, then merges overlapping intervals.
+     * @param logs Entry/exit logs for a single student
+     * @param rangeStartHour Start hour of the time range (inclusive)
+     * @param rangeEndHour End hour of the time range (exclusive)
+     * @param toJst Function to convert Date to JST
+     */
+    private calculateDurationInTimeRange(
+        logs: EntryExitLog[],
+        rangeStartHour: number,
+        rangeEndHour: number,
+        toJst: (d: Date) => Date
+    ): number {
+        if (logs.length === 0) return 0;
+
+        const intervals: Array<{ start: number; end: number }> = [];
+
+        for (const log of logs) {
+            const entry = new Date(log.entryTime);
+            const exit = this.getEffectiveExitTime(log);
+
+            if (isNaN(entry.getTime()) || isNaN(exit.getTime()) || exit <= entry) {
+                continue;
+            }
+
+            const entryJst = toJst(entry);
+            const exitJst = toJst(exit);
+
+            // Create range boundaries for the entry date
+            const rangeStart = new Date(entryJst);
+            rangeStart.setHours(rangeStartHour, 0, 0, 0);
+
+            const rangeEnd = new Date(entryJst);
+            rangeEnd.setHours(rangeEndHour, 0, 0, 0);
+
+            // Clip interval to the time range
+            const clippedStart = Math.max(entryJst.getTime(), rangeStart.getTime());
+            const clippedEnd = Math.min(exitJst.getTime(), rangeEnd.getTime());
+
+            if (clippedEnd > clippedStart) {
+                intervals.push({ start: clippedStart, end: clippedEnd });
+            }
+        }
+
+        return this.mergeIntervalsAndSum(intervals);
     }
 }
 
