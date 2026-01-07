@@ -128,107 +128,26 @@ src/
 
 ## 5. 認証と権限 (Authentication & Authorization)
 
-本システムでは、**クライアントサイド (Hook)** と **サーバーサイド (Utility)** の両方で統一された認証モデルを採用しています。
-`src/lib/authUtils.ts` によるサーバーサイド認証の一元化により、LINE認証とGoogle認証（ハイブリッド認証）をAPIレベルで透過的に扱います。
+本システムでは、**ハイブリッド認証**（LINE LIFF + Google OAuth）を採用し、クライアントサイドとサーバーサイドで統一された認証モデルを実現しています。
 
-### ユーザーステート定義
-
-| ステート | 判定条件 | 説明 | できること |
-| :--- | :--- | :--- | :--- |
-| **1. 未ログイン (Guest)** | LIFF SDK `liff.isLoggedIn()` が `false` | LINEアプリ外、またはログイン未完了の状態。 | • ログインボタンの表示のみ |
-| **2. 未登録 (Unregistered)** | LIFFログイン済み (`lineId`有) だが、バックエンド (`AuthService`) が生徒データを返さない (`null`) | LINEログインはできているが、スプレッドシートに `lineId` が登録されていない（または間違っている）。 | • 「生徒登録が見つかりません」画面の表示<br>• ログアウト |
-| **3. 生徒 (Student)** | `Status` = "在塾" 等 | 通常の生徒アカウント。 | • 在室状況の閲覧<br>• 面談予約<br>• 欠席登録 |
-| **4. 講師 (Teacher)** | `Status` = "在塾(講師)" | 講師アカウント。 | • **ダッシュボードの閲覧** (New)<br>• 生徒リストの閲覧 (誰がどの校舎にいるか)<br>• 生徒と同じ予約機能 |
-| **5. 教室長 (Principal)** | `Status` = "教室長" | 管理者アカウント。 | • **自習室の開館/閉館操作**<br>• ダッシュボードの閲覧<br>• 生徒リストの閲覧<br>• 生徒と同じ予約機能 |
-
-### 判定ロジックフロー
-
-システムの認証フローは以下の通りです。
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant Frontend (LIFF)
-    participant API (/api/auth/login)
-    participant AuthService
-    participant Sheets (StudentMaster)
-
-    User->>Frontend: アクセス
-    Frontend->>Frontend: liff.init()
-    
-    alt 未ログイン
-        Frontend-->>User: ログインボタン表示
-    else ログイン済み (LIFF)
-        Frontend->>API: POST /api/auth/login { lineUserId }
-        API->>AuthService: verify(lineUserId)
-        AuthService->>Sheets: lineUserId で検索
-        
-        alt 生徒データなし
-            Sheets-->>AuthService: null
-            AuthService-->>API: { student: null }
-            API-->>Frontend: { student: null }
-            Frontend-->>User: 「未登録」画面 (機能制限)
-        else 生徒データあり
-            Sheets-->>AuthService: { name, status... }
-            AuthService-->>API: { student: {...} }
-            API-->>Frontend: { student: {...} }
-            
-            opt Status check in UI
-                Frontend->>Frontend: Status に応じてUI分岐 (講師/教室長)
-            end
-            
-            Frontend-->>User: ポータル画面 (権限に応じたUI)
-        end
-```
-
-### サーバーサイド認証の統合 (`authUtils.ts`)
-
-APIルート (`/api/*`) では、セキュリティと保守性を高めるため、`src/lib/authUtils.ts` が提供する `authenticateRequest` 関数を使用して認証を一元管理しています。
-
-```typescript
-// 実装パターン
-const auth = await authenticateRequest(req);
-if (!auth.isAuthenticated || !auth.permissions.canViewDashboard) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-}
-```
-
-このユーティリティは以下の責務を持ちます：
-1.  **ハイブリッド認証の解決**: リクエストヘッダー (`x-line-user-id`) または Cookie (Google Session) を自動検出し、ユーザーを特定します。
-2.  **権限の正規化**: `CONFIG.PERMISSIONS` に基づき、ユーザーロールから具体的な権限 (`canViewDashboard` 等) を算出します。
-
-### 権限管理の実装 (Role Management)
-スプレッドシートの `Status` カラムを利用して簡易的なロールベースアクセス制御 (RBAC) を実現しています。
-*   `useRole` フックを使用して、フロントエンド側で権限チェック (`canViewDashboard`, `isPrincipal`) を一元管理します。
-
-### Google OAuth 認証 (ハイブリッド認証)
-
-LINE認証に加え、**Google OAuth** によるPC向け認証もサポートしています。
+### 概要
 
 | 認証方式 | 対象 | 用途 |
 | :--- | :--- | :--- |
-| **LINE LIFF** | 生徒・講師・教室長 | スマートフォンからのアクセス (LINEアプリ内) |
-| **Google OAuth** | 講師・教室長 (院内PC) | PCブラウザからダッシュボードへのアクセス |
+| **LINE LIFF** | 生徒・講師・教室長 | スマートフォンからのアクセス |
+| **Google OAuth** | 講師・教室長 | PCブラウザからのダッシュボードアクセス |
 
-#### 実装詳細
-*   **ライブラリ**: `next-auth` (v4)
-*   **プロバイダー**: Google OAuth 2.0
-*   **許可リスト**: 環境変数 `ALLOWED_EMAILS` で許可されたメールアドレスのみサインイン可能
-*   **権限**: Google認証ユーザーは「講師」ロールとして扱われ、ダッシュボード閲覧権限を持つ
-*   **表示名**: Google認証ユーザーは「Seras学院」として表示される
+### 主要コンポーネント
 
-#### 認証フック (`useRole`)
-`useRole` フックはハイブリッド認証をサポートし、以下の情報を返します：
-```typescript
-interface RoleInfo {
-    role: 'student' | 'teacher' | 'principal' | 'guest';
-    canViewDashboard: boolean;
-    isLoading: boolean;
-    displayName: string | null;
-    authMethod: 'line' | 'google' | null;
-}
-```
+| コンポーネント | 役割 |
+| :--- | :--- |
+| `src/lib/authUtils.ts` | サーバーサイド認証の一元管理 |
+| `src/hooks/useRole.ts` | クライアントサイドの権限判定フック |
+| `src/lib/authConfig.ts` | NextAuth.js 設定 (Google OAuth) |
 
+### 詳細ドキュメント
+
+認証・権限システムの詳細（ユーザーロール、APIアクセスマトリクス、実装パターン）については **[権限システム (permissions.md)](./permissions.md)** を参照してください。
 
 ## 6. 自動化プロセス (Automation)
 

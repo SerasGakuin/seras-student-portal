@@ -16,14 +16,20 @@ Seras学院の生徒学習支援を目的としたWebアプリケーションの
 
 ## ドキュメント
 開発者向けの詳細ドキュメントは `docs/` ディレクトリに格納されています。
+完全な一覧は **[ドキュメント目次](./docs/README.md)** を参照してください。
 
-- **[環境構築ガイド](./docs/setup.md)**: 開発環境のセットアップとインストール手順。
-- **[アーキテクチャ](./docs/architecture.md)**: システム設計、レイヤー構造、技術スタック。
-- **[API仕様書](./docs/api-spec.md)**: APIエンドポイントとデータスキーマ。
-- **[データベース定義](./docs/database.md)**: Google Sheetsのカラム定義。
-- **[テストガイド](./docs/testing.md)**: テストの実行方法と方針。
-- **[デプロイ](./docs/deployment.md)**: Vercelへのデプロイ手順とAnalytics設定。
-- **[開発ガイド (AI/Contributing)](./CONTRIBUTING.md)**: 開発フローとAIエージェントへの指示。
+### 主要ドキュメント
+- **[環境構築ガイド](./docs/setup.md)**: 開発環境のセットアップとインストール手順
+- **[アーキテクチャ](./docs/architecture.md)**: システム設計、レイヤー構造、技術スタック
+- **[API仕様書](./docs/api-spec.md)**: APIエンドポイントとデータスキーマ
+- **[データベース定義](./docs/database.md)**: Google Sheetsのカラム定義
+- **[権限システム](./docs/permissions.md)**: ユーザーロールとアクセス制御
+- **[テストガイド](./docs/testing.md)**: テストの実行方法と方針
+- **[デプロイ](./docs/deployment.md)**: Vercelへのデプロイ手順
+
+### 開発ガイド
+- **[Contributing](./CONTRIBUTING.md)**: 開発フローとコーディング規約
+- **[変更履歴](./docs/CHANGELOG.md)**: バージョン履歴と変更ログ
 
 ## クイックスタート
 
