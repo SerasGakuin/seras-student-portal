@@ -1,34 +1,22 @@
 import { GoogleSheetOccupancyRepository } from '@/repositories/googleSheets/GoogleSheetOccupancyRepository';
 import { GoogleSheetStudentRepository } from '@/repositories/googleSheets/GoogleSheetStudentRepository';
-import { EntryExitLog } from '@/repositories/interfaces/IOccupancyRepository';
-
-export type BadgeType = 'HEAVY_USER' | 'EARLY_BIRD' | 'NIGHT_OWL' | 'CONSISTENT' | 'MARATHON' | 'RISING_STAR';
-
-export interface Badge {
-    type: BadgeType;
-    rank: number; // 1, 2, 3
-    value?: number | string; // e.g. "15h", "5 times"
-}
-
-export type StudentBadgesMap = Record<string, Badge[]>;
-
-// Maps student name to their rank (1-indexed)
-export type StudentRankingsMap = Record<string, number>;
-
-export interface UnifiedWeeklyBadges {
-    exam: StudentBadgesMap;
-    general: StudentBadgesMap;
-    totalExamStudents: number;
-    totalGeneralStudents: number;
-    // Full rankings based on total study time (all students, not just top 3)
-    examRankings: StudentRankingsMap;
-    generalRankings: StudentRankingsMap;
-}
-
-// DI: Allow injecting repository
-// DI: Allow injecting repository
-import { IOccupancyRepository } from '@/repositories/interfaces/IOccupancyRepository';
+import { EntryExitLog, IOccupancyRepository } from '@/repositories/interfaces/IOccupancyRepository';
 import { IStudentRepository } from '@/repositories/interfaces/IStudentRepository';
+import { toJst } from '@/lib/dateUtils';
+import {
+    calculateEffectiveDuration,
+    calculateDurationInTimeRange,
+} from '@/lib/durationUtils';
+import {
+    BadgeType,
+    Badge,
+    StudentBadgesMap,
+    StudentRankingsMap,
+    UnifiedWeeklyBadges,
+} from '@/types/badge';
+
+// Re-export types for backward compatibility
+export type { BadgeType, Badge, StudentBadgesMap, StudentRankingsMap, UnifiedWeeklyBadges };
 
 export class BadgeService {
 
@@ -45,11 +33,6 @@ export class BadgeService {
 
     async getWeeklyBadges(targetDate: Date = new Date()): Promise<UnifiedWeeklyBadges> {
         // Rolling 7-day window based on JST
-        // Convert targetDate (server time) to JST-shifted Date
-        // "JST-shifted Date" means a Date object where GetHours() returns JST hours.
-        // e.g. Real JST 09:00 -> Date object showing 09:00 (which is actually 09:00 UTC internally if created via string parsing without offset)
-        const toJst = (d: Date) => new Date(d.toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
-
         const targetJst = toJst(targetDate);
 
         // End date: Yesterday at 23:59:59 (JST)
@@ -133,14 +116,14 @@ export class BadgeService {
             const s = stats.get(key)!;
 
             // 1. Total Duration (with overlap merging)
-            s.totalDuration = this.calculateEffectiveDuration(studentLogs);
+            s.totalDuration = calculateEffectiveDuration(studentLogs);
             s.visitCount = studentLogs.length;
 
             // 2. Morning Duration: 4:00-9:00 JST (with overlap merging)
-            s.morningDuration = this.calculateDurationInTimeRange(studentLogs, 4, 9, toJst);
+            s.morningDuration = calculateDurationInTimeRange(studentLogs, 4, 9, toJst);
 
             // 3. Night Duration: 20:00-24:00 JST (with overlap merging)
-            s.nightDuration = this.calculateDurationInTimeRange(studentLogs, 20, 24, toJst);
+            s.nightDuration = calculateDurationInTimeRange(studentLogs, 20, 24, toJst);
 
             // 4. Visit Days (unique dates)
             studentLogs.forEach(log => {
@@ -162,7 +145,7 @@ export class BadgeService {
 
         prevLogsMap.forEach((logs, key) => {
             const s = stats.get(key)!;
-            s.prevTotalDuration = this.calculateEffectiveDuration(logs);
+            s.prevTotalDuration = calculateEffectiveDuration(logs);
         });
 
         // 5. Rank and Award Badges
@@ -251,139 +234,6 @@ export class BadgeService {
             const diff = Math.floor((s.totalDuration - s.prevTotalDuration) / 60);
             return '+' + diff + 'h';
         }, s => (s.totalDuration - s.prevTotalDuration) > 120); // Min 2 hours growth
-    }
-
-    // --- Duration Calculation Utilities ---
-
-    /**
-     * Determine the effective exit time for a log, applying auto-close logic if missing.
-     */
-    private getEffectiveExitTime(log: EntryExitLog): Date {
-        const entry = new Date(log.entryTime);
-        if (isNaN(entry.getTime())) return entry;
-
-        if (log.exitTime) {
-            const parsed = new Date(log.exitTime);
-            if (!isNaN(parsed.getTime())) {
-                return parsed;
-            }
-        }
-
-        const now = new Date();
-        const diffHours = (now.getTime() - entry.getTime()) / (1000 * 60 * 60);
-
-        if (diffHours < 12) {
-            return now;
-        } else {
-            const closeTime = new Date(entry);
-            closeTime.setHours(22, 0, 0, 0);
-            const fourHoursLater = new Date(entry.getTime() + 4 * 60 * 60 * 1000);
-
-            if (fourHoursLater < closeTime) {
-                return fourHoursLater;
-            } else {
-                return closeTime;
-            }
-        }
-    }
-
-    /**
-     * Merge overlapping intervals and return total duration in minutes.
-     * @param intervals Array of { start: number, end: number } (timestamps in ms)
-     */
-    private mergeIntervalsAndSum(intervals: Array<{ start: number; end: number }>): number {
-        if (intervals.length === 0) return 0;
-
-        // Sort by start time
-        intervals.sort((a, b) => a.start - b.start);
-
-        let totalDurationMs = 0;
-        let currentStart = intervals[0].start;
-        let currentEnd = intervals[0].end;
-
-        for (let i = 1; i < intervals.length; i++) {
-            const interval = intervals[i];
-
-            if (interval.start < currentEnd) {
-                // Overlap: extend end if needed
-                if (interval.end > currentEnd) {
-                    currentEnd = interval.end;
-                }
-            } else {
-                // No overlap: close current and start new
-                totalDurationMs += (currentEnd - currentStart);
-                currentStart = interval.start;
-                currentEnd = interval.end;
-            }
-        }
-
-        // Add last interval
-        totalDurationMs += (currentEnd - currentStart);
-
-        return Math.floor(totalDurationMs / (1000 * 60));
-    }
-
-    /**
-     * Calculate effective duration in minutes by merging overlapping intervals.
-     */
-    private calculateEffectiveDuration(logs: EntryExitLog[]): number {
-        if (logs.length === 0) return 0;
-
-        const intervals = logs.map(log => {
-            const start = new Date(log.entryTime).getTime();
-            const end = this.getEffectiveExitTime(log).getTime();
-            return { start, end };
-        }).filter(i => !isNaN(i.start) && !isNaN(i.end) && i.end > i.start);
-
-        return this.mergeIntervalsAndSum(intervals);
-    }
-
-    /**
-     * Calculate duration within a specific time range (e.g., 4:00-9:00 for morning).
-     * Clips each log's interval to the time range, then merges overlapping intervals.
-     * @param logs Entry/exit logs for a single student
-     * @param rangeStartHour Start hour of the time range (inclusive)
-     * @param rangeEndHour End hour of the time range (exclusive)
-     * @param toJst Function to convert Date to JST
-     */
-    private calculateDurationInTimeRange(
-        logs: EntryExitLog[],
-        rangeStartHour: number,
-        rangeEndHour: number,
-        toJst: (d: Date) => Date
-    ): number {
-        if (logs.length === 0) return 0;
-
-        const intervals: Array<{ start: number; end: number }> = [];
-
-        for (const log of logs) {
-            const entry = new Date(log.entryTime);
-            const exit = this.getEffectiveExitTime(log);
-
-            if (isNaN(entry.getTime()) || isNaN(exit.getTime()) || exit <= entry) {
-                continue;
-            }
-
-            const entryJst = toJst(entry);
-            const exitJst = toJst(exit);
-
-            // Create range boundaries for the entry date
-            const rangeStart = new Date(entryJst);
-            rangeStart.setHours(rangeStartHour, 0, 0, 0);
-
-            const rangeEnd = new Date(entryJst);
-            rangeEnd.setHours(rangeEndHour, 0, 0, 0);
-
-            // Clip interval to the time range
-            const clippedStart = Math.max(entryJst.getTime(), rangeStart.getTime());
-            const clippedEnd = Math.min(exitJst.getTime(), rangeEnd.getTime());
-
-            if (clippedEnd > clippedStart) {
-                intervals.push({ start: clippedStart, end: clippedEnd });
-            }
-        }
-
-        return this.mergeIntervalsAndSum(intervals);
     }
 }
 

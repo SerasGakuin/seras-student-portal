@@ -3,6 +3,7 @@ import { occupancyService } from '@/services/occupancyService';
 import { getPrincipal } from '@/services/studentService';
 import { lineService } from '@/services/lineService';
 import { CONFIG } from '@/lib/config';
+import { getJstDayOfWeek } from '@/lib/dateUtils';
 
 // Prevent deployment cache issues
 export const dynamic = 'force-dynamic';
@@ -17,10 +18,7 @@ export async function GET(req: NextRequest) {
 
     try {
         // 2. Check Day of Week (JST)
-        // Note: Deployment machine might be UTC.
-        const now = new Date();
-        const jstDate = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
-        const dayOfWeek = jstDate.getDay(); // 0 is Sunday, 5 is Friday
+        const dayOfWeek = getJstDayOfWeek();
 
         if (CONFIG.REMINDER.AUTO_OPEN.EXCLUDE_DAYS.includes(dayOfWeek)) {
             return NextResponse.json({ message: 'Skipped (Excluded Day)' });

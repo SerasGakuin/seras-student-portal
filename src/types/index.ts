@@ -1,3 +1,9 @@
+// Badge types
+export * from './badge';
+
+// Dashboard types
+export * from './dashboard';
+
 export interface ApiResponse<T = unknown> {
     status: 'ok' | 'error';
     data?: T;

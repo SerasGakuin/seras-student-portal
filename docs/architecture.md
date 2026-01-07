@@ -62,9 +62,17 @@ seras-student-portal/
 │   │   ├── config.ts           # 環境変数・定数管理
 │   │   ├── liff.tsx            # LINE LIFF SDK ラッパー
 │   │   ├── authConfig.ts       # NextAuth.js 設定 (Google OAuth)
-│   │   └── googleSheets.ts     # Google API クライアント初期化
+│   │   ├── authUtils.ts        # サーバーサイド認証ユーティリティ
+│   │   ├── googleSheets.ts     # Google API クライアント初期化
+│   │   ├── dateUtils.ts        # JST日付処理ユーティリティ
+│   │   ├── durationUtils.ts    # 滞在時間計算ユーティリティ
+│   │   ├── apiHandler.ts       # APIハンドラー共通処理
+│   │   └── cacheConfig.ts      # キャッシュ設定の一元管理
 │   │
 │   └── types/                  # 型定義 (TypeScript Interfaces)
+│       ├── index.ts            # 共通型定義
+│       ├── badge.ts            # バッジ・ランキング関連型
+│       └── dashboard.ts        # ダッシュボード関連型
 │
 └── scripts/                # 開発・運用スクリプト
 ```
@@ -184,3 +192,80 @@ Google Sheets API のレート制限を回避し、レスポンスを高速化�
 | 混雑状況 | `occupancyService` | 10秒 |
 
 **即時無効化**: 教室長が開館/閉館操作を行うと、`revalidateTag` でキャッシュを即時無効化し、UIに最新状態を反映します。
+
+## 8. 共通ユーティリティ
+
+コードの重複を排除し、保守性を高めるため、以下の共通ユーティリティを `src/lib/` に集約しています。
+
+### A. 日付処理 (`dateUtils.ts`)
+
+JST（日本標準時）を扱う処理を一元化。複数のサービスで同じロジックが重複していた問題を解消。
+
+| 関数 | 用途 |
+| :--- | :--- |
+| `toJst(date)` | Date を JST に変換 |
+| `toJstDateString(date)` | `YYYY/M/D` 形式の文字列を生成 |
+| `toJstMonthString(date)` | `YYYY-MM` 形式の文字列を生成 |
+| `getJstTimestamp()` | 現在時刻の JST タイムスタンプを取得 |
+| `getJstDayOfWeek()` | JST の曜日を取得（0=日, 6=土） |
+| `isEntryToday(entryTime)` | 入室時刻が今日かどうか判定 |
+| `formatTimeJst(dateString)` | 時刻を `HH:MM` 形式で取得 |
+
+### B. 滞在時間計算 (`durationUtils.ts`)
+
+重複する時間帯をマージして正確な滞在時間を計算するロジックを集約。
+
+| 関数 | 用途 |
+| :--- | :--- |
+| `getEffectiveExitTime(log)` | 退室時刻を取得（未退室時は12時間後を仮定） |
+| `mergeIntervalsAndSum(intervals)` | 重複区間をマージして合計時間を算出 |
+| `calculateEffectiveDuration(logs)` | ログ配列から実効滞在時間（分）を計算 |
+| `calculateDurationInTimeRange(logs, start, end, toJst)` | 指定時間帯のみの滞在時間を計算 |
+| `calculateSingleLogDuration(log)` | 単一ログの滞在時間（分）を計算 |
+
+### C. APIハンドラー (`apiHandler.ts`)
+
+API Route のボイラープレートを削減し、エラーハンドリング・認証・認可を統一。
+
+| 関数 | 用途 |
+| :--- | :--- |
+| `successResponse(data)` | `{ status: 'ok', data }` 形式のレスポンスを生成 |
+| `errorResponse(message, status)` | エラーレスポンスを生成 |
+| `withErrorHandler(context)` | try-catch によるエラーハンドリングをラップ |
+| `withAuth(context)` | 認証チェックを自動化 |
+| `withPermission(context, permission)` | 認証 + 権限チェックを自動化 |
+
+**使用例**:
+```typescript
+export const GET = withPermission('Dashboard Stats', 'canViewDashboard')(
+    async (request) => {
+        const stats = await service.getDashboardStats();
+        return successResponse(stats);
+    }
+);
+```
+
+### D. キャッシュ設定 (`cacheConfig.ts`)
+
+`unstable_cache` の設定値を一元管理し、変更を容易に。
+
+```typescript
+// 使用例
+import { CACHE_CONFIG, CACHE_TAGS } from '@/lib/cacheConfig';
+
+const cachedFetch = unstable_cache(
+    async () => { /* ... */ },
+    CACHE_CONFIG.OCCUPANCY_STATUS.keys,
+    { revalidate: CACHE_CONFIG.OCCUPANCY_STATUS.revalidate }
+);
+```
+
+## 9. 型定義の構成
+
+型定義は `src/types/` に集約し、機能ごとにファイルを分割しています。
+
+| ファイル | 内容 |
+| :--- | :--- |
+| `index.ts` | 共通型（`ApiResponse`, `Student`, `Grade` 等）と各ファイルの re-export |
+| `badge.ts` | バッジ関連（`BadgeType`, `Badge`, `UnifiedWeeklyBadges`） |
+| `dashboard.ts` | ダッシュボード関連（`StudentStats`, `DashboardSummary`） |

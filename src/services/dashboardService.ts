@@ -1,83 +1,21 @@
-
 import { Student } from '@/types';
+import { StudentStats, DashboardSummary } from '@/types/dashboard';
 import { GoogleSheetOccupancyRepository } from '@/repositories/googleSheets/GoogleSheetOccupancyRepository';
 import { GoogleSheetStudentRepository } from '@/repositories/googleSheets/GoogleSheetStudentRepository';
 import { EntryExitLog } from '@/repositories/interfaces/IOccupancyRepository';
-import { BadgeService, StudentBadgesMap } from '@/services/badgeService';
+import { BadgeService } from '@/services/badgeService';
+import { toJst, toJstDateString, toJstMonthString } from '@/lib/dateUtils';
+import {
+    calculateEffectiveDuration,
+    calculateSingleLogDuration
+} from '@/lib/durationUtils';
 
-// Stats Interfaces
-export interface StudentStats {
-    name: string;
-    grade: string | null;
-    totalDurationMinutes: number;
-    visitCount: number;
-    lastVisit: string | null;
-    growth?: number; // Delta vs previous period
-    docLink?: string; // Google Docs link
-    sheetLink?: string; // Google Sheets link
-}
-
-export interface MetricWithTrend {
-    value: number;
-    trend: number; // percentage change vs previous period
-}
-
-export interface DashboardSummary {
-    totalDuration: MetricWithTrend;
-    totalVisits: MetricWithTrend;
-    avgDurationPerVisit: MetricWithTrend;
-    avgVisitsPerStudent: MetricWithTrend;
-    topStudent: StudentStats | null;
-    ranking: StudentStats[];
-    period: {
-        from: string;
-        to: string;
-    };
-    // New Fields for Visualization
-    availableMonths: string[]; // e.g. ['2024-11', '2024-12']
-    periodDays: number; // Total days in the selected period (for attendance rate)
-    history: {
-        date: string;
-        [studentName: string]: number | string; // Cumulative minutes
-    }[];
-    metricLists?: {
-        growers: StudentStats[];
-        droppers: StudentStats[];
-        vanished: StudentStats[];
-    };
-    badges?: StudentBadgesMap;
-}
+// Re-export types for backward compatibility
+export type { StudentStats, DashboardSummary } from '@/types/dashboard';
 
 const occupancyRepo = new GoogleSheetOccupancyRepository();
 const studentRepo = new GoogleSheetStudentRepository();
 const badgeService = new BadgeService();
-
-/**
- * Helper: Convert any Date to a "JST-shifted" Date object.
- * The returned Date's getHours(), getDate(), etc. will return JST values
- * even when running on a UTC server.
- */
-function toJst(d: Date): Date {
-    return new Date(d.toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
-}
-
-/**
- * Helper: Get a JST date string (YYYY/M/D) from a raw Date
- */
-function toJstDateString(d: Date): string {
-    const jst = toJst(d);
-    return `${jst.getFullYear()}/${jst.getMonth() + 1}/${jst.getDate()}`;
-}
-
-/**
- * Helper: Get a JST month string (YYYY年MM月) from a raw Date
- */
-function toJstMonthString(d: Date): string {
-    const jst = toJst(d);
-    const yyyy = jst.getFullYear();
-    const mm = String(jst.getMonth() + 1).padStart(2, '0');
-    return `${yyyy}年${mm}月`;
-}
 
 export class DashboardService {
 
@@ -304,7 +242,7 @@ export class DashboardService {
         Object.entries(dailyStudentLogs).forEach(([dateStr, studentMap]) => {
             dailyTotals[dateStr] = {};
             Object.entries(studentMap).forEach(([studentName, studentLogs]) => {
-                dailyTotals[dateStr][studentName] = this.calculateEffectiveDuration(studentLogs);
+                dailyTotals[dateStr][studentName] = calculateEffectiveDuration(studentLogs);
             });
         });
 
@@ -365,7 +303,7 @@ export class DashboardService {
 
         for (const [name, studentLogs] of studentLogsMap.entries()) {
             // 1. Calculate Effective Duration (Merge Overlaps)
-            const duration = this.calculateEffectiveDuration(studentLogs);
+            const duration = calculateEffectiveDuration(studentLogs);
 
             // 2. Calculate Visits (Unique Days)
             const visitedDays = new Set<string>();
@@ -428,7 +366,7 @@ export class DashboardService {
         });
 
         const details = relevantLogs.map(log => {
-            const duration = this.calculateDurationMinutes(log);
+            const duration = calculateSingleLogDuration(log);
             const entry = new Date(log.entryTime);
             const exit = new Date(entry.getTime() + duration * 60 * 1000);
 
@@ -500,87 +438,5 @@ export class DashboardService {
             maxConsecutiveDays: maxConsecutive,
             currentStreak: currentStreak
         };
-    }
-
-    private calculateDurationMinutes(log: EntryExitLog): number {
-        const entry = new Date(log.entryTime);
-        const exit = this.getEffectiveExitTime(log);
-        const diffMinutes = (exit.getTime() - entry.getTime()) / (1000 * 60);
-        return Math.max(0, Math.floor(diffMinutes));
-    }
-
-    /**
-     * Determine the effective exit time for a log, applying auto-close logic if missing.
-     */
-    private getEffectiveExitTime(log: EntryExitLog): Date {
-        const entry = new Date(log.entryTime);
-        if (isNaN(entry.getTime())) return entry; // Fallback, though handled by caller
-
-        if (log.exitTime) {
-            const parsed = new Date(log.exitTime);
-            if (!isNaN(parsed.getTime())) {
-                return parsed;
-            }
-        }
-
-        const now = new Date();
-        const diffHours = (now.getTime() - entry.getTime()) / (1000 * 60 * 60);
-
-        if (diffHours < 12) {
-            return now;
-        } else {
-            const closeTime = new Date(entry);
-            closeTime.setHours(22, 0, 0, 0);
-            const fourHoursLater = new Date(entry.getTime() + 4 * 60 * 60 * 1000);
-
-            if (fourHoursLater < closeTime) {
-                return fourHoursLater;
-            } else {
-                return closeTime;
-            }
-        }
-    }
-
-    /**
-     * Calculate effective duration in minutes by merging overlapping intervals.
-     */
-    private calculateEffectiveDuration(logs: EntryExitLog[]): number {
-        if (logs.length === 0) return 0;
-
-        const intervals = logs.map(log => {
-            const start = new Date(log.entryTime).getTime();
-            const end = this.getEffectiveExitTime(log).getTime();
-            return { start, end };
-        }).filter(i => !isNaN(i.start) && !isNaN(i.end) && i.end > i.start);
-
-        if (intervals.length === 0) return 0;
-
-        // Sort by start time
-        intervals.sort((a, b) => a.start - b.start);
-
-        let totalDurationMs = 0;
-        let currentStart = intervals[0].start;
-        let currentEnd = intervals[0].end;
-
-        for (let i = 1; i < intervals.length; i++) {
-            const interval = intervals[i];
-
-            if (interval.start < currentEnd) {
-                // Overlap: extend end if needed
-                if (interval.end > currentEnd) {
-                    currentEnd = interval.end;
-                }
-            } else {
-                // No overlap: close current and start new
-                totalDurationMs += (currentEnd - currentStart);
-                currentStart = interval.start;
-                currentEnd = interval.end;
-            }
-        }
-
-        // Add last interval
-        totalDurationMs += (currentEnd - currentStart);
-
-        return Math.floor(totalDurationMs / (1000 * 60));
     }
 }
