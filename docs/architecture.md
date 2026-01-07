@@ -6,160 +6,181 @@
 ディレクトリ構成は、Next.js App Router の標準に従いつつ、ビジネスロジックと UI を明確に分離するように設計されています。
 
 ```
-src/
-├── app/                    # Next.js App Router (ルーティング層)
-│   ├── api/                # API Route Handlers (HTTPエンドポイント)
-│   │   ├── auth/           # 認証関連 (login, [...nextauth])
-│   │   ├── booking/        # 予約関連 (reserveMeeting/registerRestDay)
-│   │   ├── dashboard/      # ダッシュボード統計 API
-│   │   ├── ranking/        # 週間ランキング API
-│   │   └── occupancy/      # 混雑状況取得
-│   ├── booking/            # 予約画面ページ (Server Components)
-│   ├── dashboard/          # 講師用ダッシュボードページ (Client Component)
-│   └── occupancy/          # 混雑状況画面ページ
+seras-student-portal/
+├── analysis/               # データ分析 (別Python環境)
+│   ├── notebooks/          # Jupyter Notebooks (occupancy_analysis, open_analysis)
+│   ├── src/seras_analysis/ # 分析用Pythonモジュール
+│   ├── pyproject.toml      # uv によるPython依存管理
+│   └── .venv/              # 仮想環境
 │
-├── components/             # 共有 UI コンポーネント
-│   ├── ui/                 # 汎用部品 (Button, PageHeader, GlassCard, Skeleton 等)
-│   └── providers/          # コンテキストプロバイダー (AuthProvider 等)
+├── src/
+│   ├── app/                    # Next.js App Router (ルーティング層)
+│   │   ├── api/                # API Route Handlers (HTTPエンドポイント)
+│   │   │   ├── auth/           # 認証関連 (login, [...nextauth])
+│   │   │   ├── cron/           # Cronジョブ (auto-close等)
+│   │   │   ├── dashboard/      # ダッシュボード統計 API
+│   │   │   ├── occupancy/      # 混雑状況取得
+│   │   │   ├── ranking/        # 週間ランキング API
+│   │   │   ├── registerRestDay/# 休講登録 API
+│   │   │   └── reserveMeeting/ # 面談予約 API
+│   │   ├── booking/            # 予約画面ページ (Server Components)
+│   │   ├── dashboard/          # 講師用ダッシュボードページ (Client Component)
+│   │   └── occupancy/          # 混雑状況画面ページ
+│   │
+│   ├── components/             # 共有 UI コンポーネント
+│   │   ├── ui/                 # 汎用部品 (Button, PageHeader, GlassCard, Skeleton 等)
+│   │   └── providers/          # コンテキストプロバイダー (AuthProvider 等)
+│   │
+│   ├── features/               # 機能別モジュール (Domain Drivenに近い分割)
+│   │   ├── booking/            # 予約機能に関わる UI / Components
+│   │   │   └── components/     # TimeRangeSlider などドメイン固有の部品
+│   │   ├── occupancy/          # 混雑状況機能に関わる UI / Components
+│   │   │   └── components/     # OccupancyCard, ChampionsCard, GuideCard など
+│   │   └── dashboard/          # ダッシュボード機能 UI
+│   │       └── components/     # KPICard, RankingWidget, CumulativeGrowthChart など
+│   │
+│   ├── hooks/                  # カスタムフック
+│   │   ├── useRole.ts          # ハイブリッド認証 (LINE + Google) ロール判定
+│   │   └── useGoogleAuth.ts    # Google OAuth 状態管理
+│   │
+│   ├── services/               # ビジネスロジック層 (Service Layer)
+│   │   ├── studentService.ts   # 生徒データの取得 (Repository経由)
+│   │   ├── occupancyService.ts # 混雑状況の取得・更新
+│   │   ├── calendarService.ts  # カレンダー連携・イベント生成
+│   │   ├── lineService.ts      # LINE Messaging API 連携
+│   │   ├── authService.ts      # 認証ロジック
+│   │   ├── dashboardService.ts # 統計集計・データ加工ロジック
+│   │   └── badgeService.ts     # 週間ランキング・バッジ計算ロジック
+│   │
+│   ├── repositories/           # データアクセス層 (Repository Layer)
+│   │   ├── interfaces/         # インターフェース定義 (IStudentRepository, IOccupancyRepository)
+│   │   └── googleSheets/       # Google Sheets 実装 (GoogleSheetStudentRepository 等)
+│   │
+│   ├── lib/                    # インフラ/ユーティリティ層
+│   │   ├── api.ts              # フロントエンド用 API クライアント
+│   │   ├── schema.ts           # Zod スキーマ (バリデーション定義)
+│   │   ├── config.ts           # 環境変数・定数管理
+│   │   ├── liff.tsx            # LINE LIFF SDK ラッパー
+│   │   ├── authConfig.ts       # NextAuth.js 設定 (Google OAuth)
+│   │   └── googleSheets.ts     # Google API クライアント初期化
+│   │
+│   └── types/                  # 型定義 (TypeScript Interfaces)
 │
-├── features/               # 機能別モジュール (Domain Drivenに近い分割)
-│   ├── booking/            # 予約機能に関わる UI / Components
-│   │   └── components/     # TimeRangeSlider などドメイン固有の部品
-│   ├── occupancy/          # 混雑状況機能に関わる UI / Components
-│   │   └── components/     # OccupancyCard, ChampionsCard, GuideCard など
-│   └── dashboard/          # ダッシュボード機能 UI
-│       └── components/     # KPICard, RankingWidget, CumulativeGrowthChart, FilterCommandBar など
-│
-├── hooks/                  # カスタムフック
-│   ├── useRole.ts          # ハイブリッド認証 (LINE + Google) ロール判定
-│   └── useGoogleAuth.ts    # Google OAuth 状態管理
-│
-├── services/               # ビジネスロジック層 (Service Layer)
-│   ├── studentService.ts   # 生徒データの取得 (Repository経由)
-│   ├── calendarService.ts  # カレンダー連携・イベント生成
-│   ├── lineService.ts      # LINE Messaging API 連携
-│   ├── authService.ts      # 認証ロジック
-│   ├── dashboardService.ts # 統計集計・データ加工ロジック
-│   └── badgeService.ts     # 週間ランキング・バッジ計算ロジック
-│
-├── repositories/           # データアクセス層 (Repository Layer)
-│   ├── interfaces/         # インターフェース定義 (IStudentRepository)
-│   └── googleSheets/       # Google Sheets 実装 (GoogleSheetStudentRepository)
-│
-├── lib/                    # インフラ/ユーティリティ層
-│   ├── api.ts              # フロントエンド用 API クライアント
-│   ├── schema.ts           # Zod スキーマ (バリデーション定義)
-│   ├── config.ts           # 環境変数・定数管理
-│   ├── liff.tsx            # LINE LIFF SDK ラッパー
-│   ├── authConfig.ts       # NextAuth.js 設定 (Google OAuth)
-│   └── googleSheets.ts     # Google API クライアント初期化
-│
-├── types/                  # 型定義 (TypeScript Interfaces)
-│
-└── analysis/               # データ分析 (Python/Jupyter)
-    ├── data_loader.ipynb   # データ読み込み・前処理
-    ├── visualizer.py       # 可視化ロジック
-    └── loader.py           # データロードユーティリティ
+└── scripts/                # 開発・運用スクリプト
 ```
 
 
-## 2. 設計思想 (Design Philosophy)
+## 2. 設計思想
 
-### A. 責務の分離 (Separation of Concerns)
-各層の役割を厳密に定義し、依存方向を一方向に限定しています。
+### A. レイヤー構成と責務の分離
 
-1.  **Presentation Layer (`src/app`, `src/features`)**:
-    *   **役割**: 画面の描画とユーザー入力の受け付け。
-    *   **ルール**: ビジネスロジックを極力書かない。「API クライアントを呼んで、結果を表示する」ことに徹する。
-    *   **例**: `OccupancyCard` は表示に専念し、更新操作は `PrincipalControlPanel` が担当する（責務の分離）。
-2.  **API Handler Layer (`src/app/api`)**:
-    *   **役割**: HTTPリクエストの受付、入力バリデーション (Zod)、レスポンスの返却。
-    *   **ルール**: ロジックは書かず、サービス層 (`src/services`) に処理を委譲する。
-3.  **Service Layer (`src/services`)**:
-    *   **役割**: 具体的な業務処理（「予約可能か判定する」、「滞在時間を計算する」）。
-    *   **現状**: データアクセスは **Repository Layer** に委譲し、ビジネス判断に集中する。
-4.  **Repository Layer (`src/repositories`)** [NEW]:
-    *   **役割**: データの取得・保存（CRUD）を抽象化する。
-    *   **構成**: `IStudentRepository` (Interface) と `GoogleSheetStudentRepository` (Implementation) に分離し、将来的なDB移行を容易にしている。
-5.  **Infrastracture Layer (`src/lib`)**:
-    *   **役割**: 外部システム（Google, LINE）との通信詳細を隠蔽する。
+コードの保守性を高めるため、各層の役割を明確に分けています。上位層は下位層にのみ依存し、逆方向の依存は禁止です。
 
-## 3. UI/UX 実装パターン (UI Patterns)
+| 層 | ディレクトリ | 責務 |
+| :--- | :--- | :--- |
+| **表示層** | `src/app`, `src/features` | 画面の描画とユーザー操作の受け付け。ビジネスロジックは書かない |
+| **API層** | `src/app/api` | HTTPリクエストの受付、Zodによる入力検証、サービス層への委譲 |
+| **サービス層** | `src/services` | 業務ロジック（滞在時間計算、バッジ判定、統計集計など） |
+| **リポジトリ層** | `src/repositories` | データアクセスの抽象化。インターフェースと実装を分離 |
+| **インフラ層** | `src/lib` | 外部システム（Google API, LINE SDK）との通信を隠蔽 |
 
-### A. Granular Loading & Skeleton UI (きめ細やかな読み込み)
-従来の「ロード中は画面全体を`LoadingOverlay`で覆う」手法は、UXを損なうため廃止しました。
-*   **個別更新**: 教室長が開館/閉館操作を行った際、操作された建物のカード**だけ**をスケルトン表示にします。
-*   **ダッシュボード**: フィルタ変更時にレイアウトシフト（ガタつき）を起こさないよう、既存データを半透明で残しつつ、更新中であることを示します。`KPICard`には専用の`Skeleton`コンポーネントを使用し、スムーズな視覚体験を提供します。
+**リポジトリパターンの採用**:
+データアクセスをインターフェース（`IStudentRepository`, `IOccupancyRepository`）で抽象化し、現在はGoogle Sheets実装（`GoogleSheetStudentRepository`等）を使用しています。将来的にデータベースへ移行する場合も、サービス層のコードを変更せずに済みます。
 
-### B. パフォーマンス最適化 (React.memo)
-リアルタイム性を確保するため、`OccupancyPage` は数秒ごとにポーリングを行いますが、以下の対策でチラつき（Flickr）を防止しています。
-*   **コンポーネントのメモ化**: `PageHeader` などの静的コンポーネントを `React.memo` でラップし、不要な再レンダリングを阻止。
-*   **Propsの定数化**: 親コンポーネントから渡す JSX やオブジェクトを定数 (`const`) として定義。
+## 3. UI/UX 実装パターン
 
-### C. 型安全性とバリデーション (Zod & TypeScript)
-「入力は疑え」の原則に基づき、API の入り口で必ず **Zod** による検証を行います。
-*   `src/lib/schema.ts` に全スキーマを集約。
-*   型定義 (`src/types`) とスキーマ定義 (`src/lib/schema.ts`) を連携させ、コンパイル時と実行時の両方で安全性を担保します。
+### A. 読み込み表示の工夫
 
-### D. 変更への強さ (Robustness)
-外部依存（特に Google Sheets）の脆さをコードで吸収しています。
-*   **動的カラムマッピング**: スプレッドシートの列順序が変わっても、ヘッダー名（「生徒LINEID」など）で検索するため、プログラムは壊れません。
+画面全体をローディングで覆うのではなく、更新が必要な部分だけを個別に処理します。
 
-### E. スタイリングとアクセシビリティ (Styling & Accessibility)
-全てのユーザーに快適な体験を提供するため、グローバルなスタイル基盤を整備しています。
-*   **CSS Variables**: `globals.css` に色、フォント、影などを一元定義し、ダークモードやコントラスト調整を容易にしています。
-*   **Reduced Motion**: OSの「視差効果を減らす」設定を検知し、アニメーションを自動的に無効化するメディアクエリをグローバルに適用しています。
-*   **Form Accessibility**: 入力フォーム (`FormGroup`) は `role="alert"` を利用したインラインエラー表示をサポートし、スクリーンリーダーに対応しています。
+| 場面 | 実装 |
+| :--- | :--- |
+| **初回読み込み** | `Skeleton` コンポーネントでコンテンツの形を保ったプレースホルダーを表示 |
+| **フィルタ変更時** | 既存データを半透明（`opacity: 0.5`）で残し、レイアウトのガタつきを防止 |
+| **個別操作時** | 開館/閉館操作では、操作対象のカードのみスケルトン表示 |
 
-## 4. データフロー
+### B. 再レンダリングの抑制
 
-例：**生徒が面談予約をする場合**
+混雑状況ページは数秒ごとにデータを取得しますが、画面のちらつきを防ぐため以下の対策をしています。
 
-1.  **UI**: ユーザーが日付を選択し「予約」ボタンを押す。
-2.  **Client**: `api.booking.reserveMeeting(...)` を呼び出す。
-3.  **API Route**: `/api/reserveMeeting` がリクエストを受信。
-    *   Zod で `BookingRequest` スキーマと照合。不正なら即座に 400 エラー。
-4.  **Service**: `calendarService.createMeetingEvent(...)` を呼び出す。
-    *   空き状況を確認（将来実装予定）。
-    *   Google Calendar API を叩いてイベント作成。
-5.  **Service**: `lineService.sendPushMessage(...)` を呼び出す。
-    *   生徒に完了通知を送る。
-6.  **Response**: UI に成功 (`{ status: 'ok' }`) を返す。
+- **`React.memo` の活用**: `PageHeader`, `OccupancyCard` など、頻繁に変わらないコンポーネントをメモ化
+- **Props の安定化**: 親から渡すオブジェクトや関数を `useMemo`, `useCallback` で固定
 
-## 5. 認証と権限 (Authentication & Authorization)
+### C. 入力検証と型安全性
 
-本システムでは、**ハイブリッド認証**（LINE LIFF + Google OAuth）を採用し、クライアントサイドとサーバーサイドで統一された認証モデルを実現しています。
+「外部からの入力は信用しない」という方針で、APIの入り口で必ず検証を行います。
 
-### 概要
+- **Zod スキーマ**: `src/lib/schema.ts` に全APIリクエストのスキーマを集約
+- **TypeScript 連携**: Zodスキーマから型を生成し、コンパイル時と実行時の両方で安全性を確保
 
-| 認証方式 | 対象 | 用途 |
+### D. 外部依存への対策
+
+Google Sheetsのデータ構造変更に強い設計にしています。
+
+- **動的カラムマッピング**: 列の順序ではなく、ヘッダー名（「生徒LINEID」等）で列を特定するため、スプレッドシートの列を並び替えてもコードは動作します
+
+### E. アクセシビリティ
+
+- **CSS Variables**: `globals.css` で色・フォント・影を一元管理し、コントラスト調整を容易に
+- **アニメーション制御**: OSの「視差効果を減らす」設定を検知し、`prefers-reduced-motion` でアニメーションを無効化
+- **フォームのエラー表示**: `FormGroup` コンポーネントは `role="alert"` でスクリーンリーダーに対応
+
+## 4. データフローの例
+
+**面談予約の流れ**:
+
+```
+[UI] 日付選択・予約ボタン押下
+  ↓
+[APIクライアント] api.booking.reserveMeeting() を呼び出し
+  ↓
+[API Route] /api/reserveMeeting でリクエスト受信
+  ├─ Zod で入力検証（不正なら 400 エラー）
+  ↓
+[Service] calendarService.createMeetingEvent()
+  ├─ Google Calendar API でイベント作成
+  ↓
+[Service] lineService.pushMessage()
+  ├─ 生徒に完了通知を送信
+  ↓
+[Response] { status: 'ok' } を返却
+```
+
+## 5. 認証と権限
+
+本システムでは **LINE LIFF** と **Google OAuth** を組み合わせたハイブリッド認証を採用しています。
+
+| 認証方式 | 対象ユーザー | 用途 |
 | :--- | :--- | :--- |
 | **LINE LIFF** | 生徒・講師・教室長 | スマートフォンからのアクセス |
 | **Google OAuth** | 講師・教室長 | PCブラウザからのダッシュボードアクセス |
 
-### 主要コンポーネント
+**関連ファイル**:
+- `src/lib/authUtils.ts` - サーバーサイド認証の一元管理
+- `src/hooks/useRole.ts` - クライアントサイドの権限判定
+- `src/lib/authConfig.ts` - NextAuth.js 設定
 
-| コンポーネント | 役割 |
-| :--- | :--- |
-| `src/lib/authUtils.ts` | サーバーサイド認証の一元管理 |
-| `src/hooks/useRole.ts` | クライアントサイドの権限判定フック |
-| `src/lib/authConfig.ts` | NextAuth.js 設定 (Google OAuth) |
+詳細は **[権限システム (permissions.md)](./permissions.md)** を参照。
 
-### 詳細ドキュメント
+## 6. 自動化（Cron Jobs）
 
-認証・権限システムの詳細（ユーザーロール、APIアクセスマトリクス、実装パターン）については **[権限システム (permissions.md)](./permissions.md)** を参照してください。
+Vercel Cron Jobs で以下のジョブを定期実行しています。
 
-## 6. 自動化プロセス (Automation)
+| ジョブ | 実行時刻 (JST) | 目的 |
+| :--- | :--- | :--- |
+| **自動閉館** (`/api/cron/auto-close`) | 毎日 23:00 | 閉館忘れ防止。2号館が開館中なら自動で閉館 |
+| **開館リマインダー** (`/api/cron/remind-open`) | 毎日 14:30 | 2号館が未開館なら教室長にLINE通知 |
 
-### A. 自動閉館 (Auto-Close Cron)
-Vercel Cron Jobs を利用して、毎日23:00に自動実行されるジョブを設定しています。
-*   **目的**: 閉館忘れ防止。
+## 7. キャッシュ戦略
 
-## 7. パフォーマンスとキャッシュ (Performance & Caching)
+Google Sheets API のレート制限を回避し、レスポンスを高速化するためキャッシュを導入しています。
 
-### A. 混雑状況データのキャッシュ
-Google Sheets API の Rate Limit 回避とレスポンス向上を目的に、`occupancyService` 層でキャッシュを実装しています。
-*   **技術**: Next.js `unstable_cache`
-*   **有効期限**: 30秒 (`revalidate: 30`)
-*   **スコープ**: 全ユーザー共通のシートデータ (`occupancy-raw-sheet-data`)
-*   **無効化**: 教室長による `updateBuildingStatus` 実行時に `revalidateTag` で即時無効化し、UIへの反映遅延を防いでいます。
+**技術**: Next.js `unstable_cache` + `revalidateTag`
+
+| 対象 | キャッシュ箇所 | 有効期限 |
+| :--- | :--- | :--- |
+| 生徒マスター | `GoogleSheetStudentRepository` | 30秒 |
+| 入退室ログ | `GoogleSheetOccupancyRepository` | 1時間 |
+| 混雑状況 | `occupancyService` | 10秒 |
+
+**即時無効化**: 教室長が開館/閉館操作を行うと、`revalidateTag` でキャッシュを即時無効化し、UIに最新状態を反映します。

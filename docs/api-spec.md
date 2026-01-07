@@ -88,10 +88,52 @@ LINEユーザーが生徒として登録済みか確認
     ```
 *   **データ範囲**: 基準日の前日から遡って7日間のローリングウィンドウ
 
-### 5. Cron Jobs
+### 5. ダッシュボード (Dashboard)
+
+#### GET /api/dashboard/stats
+講師・教室長向けのダッシュボード統計を取得する。
+
+*   **認証**: `canViewDashboard` 権限必須
+*   **Query Parameters**:
+    *   `from` (optional): 開始日 (YYYY-MM-DD)
+    *   `to` (optional): 終了日 (YYYY-MM-DD)
+    *   `grade` (optional): 学年フィルター (例: `高3`, `中学生`)
+*   **Service Used**: `DashboardService`
+*   **Response**:
+    ```ts
+    interface DashboardStats {
+      totalStudyTime: number;          // 総学習時間（分）
+      totalAttendance: number;         // 延べ通塾人数
+      topLearner: { name: string; duration: number } | null;
+      studentStats: StudentStat[];     // ランキングデータ
+      dailyCumulative: DailyData[];    // 日次累積データ
+    }
+    ```
+
+#### GET /api/dashboard/student-detail
+個別生徒の詳細情報を取得する。
+
+*   **認証**: 本人または講師・教室長
+*   **Query Parameters**:
+    *   `name` (required): 生徒名
+    *   `days` (optional): 集計日数 (default: 28)
+*   **Service Used**: `DashboardService`
+*   **Response**:
+    ```ts
+    interface StudentDetails {
+      totalDuration: number;
+      attendanceDays: number;
+      currentStreak: number;
+      maxStreak: number;
+      dailyData: { date: string; duration: number }[];
+      hourlyDistribution: number[];    // 24時間帯別分布
+    }
+    ```
+
+### 6. Cron Jobs
 
 #### GET /api/cron/auto-close
-**System Internal**. 毎日23:00にVercel Cronによって実行される。
+**System Internal**. 毎日23:00 (JST) にVercel Cronによって実行される。
 2号館が開館中(OPEN)の場合、自動的に閉館(CLOSE)に変更し、ログを記録する。
 
 *   **Logic**:
@@ -100,4 +142,16 @@ LINEユーザーが生徒として登録済みか確認
 *   **Response**:
     *   `{ status: 'ok', data: { closed: true }, message: '...' }` (変更あり)
     *   `{ status: 'ok', data: { closed: false }, message: '...' }` (変更なし)
+
+#### GET /api/cron/remind-open
+**System Internal**. 教室長への開館リマインダー。
+
+*   **Logic**:
+    1.  曜日チェック: `CONFIG.REMINDER.AUTO_OPEN.EXCLUDE_DAYS` に含まれる曜日はスキップ。
+    2.  状態チェック: 2号館がすでに開館中(OPEN)の場合はスキップ。
+    3.  教室長のLINE IDを取得し、リマインドメッセージを送信。
+*   **Response**:
+    *   `{ message: 'Skipped (Excluded Day)' }` (除外曜日)
+    *   `{ message: 'Skipped (Building 2 Already Open)' }` (すでに開館)
+    *   `{ message: 'Reminder sent to Principal', principal: name }` (送信成功)
 

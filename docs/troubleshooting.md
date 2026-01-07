@@ -168,12 +168,16 @@ afterEach(() => {
 ```json
 // vercel.json
 {
-  "crons": [{
-    "path": "/api/cron/auto-close",
-    "schedule": "0 14 * * *"
-  }]
+  "crons": [
+    { "path": "/api/cron/auto-close", "schedule": "0 14 * * *" },
+    { "path": "/api/cron/remind-open", "schedule": "30 5 * * *" }
+  ]
 }
 ```
+
+**スケジュール解説**:
+- `0 14 * * *` = UTC 14:00 = JST 23:00 (自動閉館)
+- `30 5 * * *` = UTC 5:30 = JST 14:30 (開館リマインダー)
 
 ---
 
