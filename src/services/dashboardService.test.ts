@@ -78,15 +78,16 @@ describe('DashboardService', () => {
             expect(log.durationMinutes).toBe(150);
         });
 
-        it('should cap duration at 4 hours if exit time is missing', async () => {
-            // Set system time to next day so "diffHours < 12" logic is skipped
+        it('should use filled exit time from cron job for past dates', async () => {
+            // 23:00 JST の Cron ジョブにより exitTime が補完されるため、
+            // 過去の日付では exitTime が設定されている前提でテスト
             jest.useFakeTimers().setSystemTime(new Date(TEST_DATE.NEXT_DAY));
 
             mockFindAllLogs.mockResolvedValue([
                 {
                     name: 'Test Student',
-                    entryTime: `${TEST_DATE.BASE}T10:00:00`,  // +4h = 14:00 (before 22:00)
-                    exitTime: '',
+                    entryTime: `${TEST_DATE.BASE}T10:00:00`,
+                    exitTime: `${TEST_DATE.BASE}T14:00:00`,  // Cron により補完済み（4時間）
                     lineId: '123'
                 }
             ]);
@@ -97,13 +98,14 @@ describe('DashboardService', () => {
             expect(log.durationMinutes).toBe(240);
         });
 
-        it('should cap duration at 22:00 if start time is late', async () => {
-            jest.useFakeTimers().setSystemTime(new Date(TEST_DATE.NEXT_DAY));
+        it('should calculate duration to current time when exit time is missing (real-time display)', async () => {
+            // 同日のリアルタイム表示：exitTime が未設定の場合は現在時刻まで計算
+            jest.useFakeTimers().setSystemTime(new Date(`${TEST_DATE.BASE}T14:00:00`));
 
             mockFindAllLogs.mockResolvedValue([
                 {
                     name: 'Test Student',
-                    entryTime: `${TEST_DATE.BASE}T20:00:00`,  // +4h = 24:00, cap at 22:00 = 2h
+                    entryTime: `${TEST_DATE.BASE}T10:00:00`,  // 10:00入室、現在14:00 → 4時間
                     exitTime: '',
                     lineId: '123'
                 }
@@ -112,7 +114,7 @@ describe('DashboardService', () => {
             const result = await service.getStudentDetails('Test Student', 7);
             const log = result.history[0];
 
-            expect(log.durationMinutes).toBe(120);
+            expect(log.durationMinutes).toBe(240);  // 10:00 → 14:00 = 4時間
         });
     });
 

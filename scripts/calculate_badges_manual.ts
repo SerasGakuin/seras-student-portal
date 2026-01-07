@@ -2,7 +2,7 @@
 import fs from 'fs';
 import path from 'path';
 import { BadgeService } from '../src/services/badgeService';
-import { IOccupancyRepository, EntryExitLog } from '../src/repositories/interfaces/IOccupancyRepository';
+import { IOccupancyRepository, EntryExitLog, EntryExitLogWithIndex } from '../src/repositories/interfaces/IOccupancyRepository';
 import { IStudentRepository } from '../src/repositories/interfaces/IStudentRepository';
 import { getGoogleSheets } from '../src/lib/googleSheets';
 import { Student } from '@/lib/schema';
@@ -71,6 +71,15 @@ class ScriptOccupancyRepository implements IOccupancyRepository {
     async findLogsByName(name: string): Promise<EntryExitLog[]> {
         const allLogs = await this.findAllLogs();
         return allLogs.filter(log => log.name === name);
+    }
+
+    async findAllLogsWithIndex(): Promise<EntryExitLogWithIndex[]> {
+        const logs = await this.findAllLogs();
+        return logs.map((log, index) => ({ ...log, rowIndex: index }));
+    }
+
+    async updateExitTime(_rowIndex: number, _exitTime: string): Promise<void> {
+        throw new Error('updateExitTime is not supported in ScriptOccupancyRepository');
     }
 }
 

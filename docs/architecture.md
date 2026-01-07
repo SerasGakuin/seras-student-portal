@@ -17,7 +17,7 @@ seras-student-portal/
 │   ├── app/                    # Next.js App Router (ルーティング層)
 │   │   ├── api/                # API Route Handlers (HTTPエンドポイント)
 │   │   │   ├── auth/           # 認証関連 (login, [...nextauth])
-│   │   │   ├── cron/           # Cronジョブ (auto-close等)
+│   │   │   ├── cron/           # Cronジョブ (auto-close, remind-open, fill-exit-time)
 │   │   │   ├── dashboard/      # ダッシュボード統計 API
 │   │   │   ├── occupancy/      # 混雑状況取得
 │   │   │   ├── ranking/        # 週間ランキング API
@@ -50,7 +50,8 @@ seras-student-portal/
 │   │   ├── lineService.ts      # LINE Messaging API 連携
 │   │   ├── authService.ts      # 認証ロジック
 │   │   ├── dashboardService.ts # 統計集計・データ加工ロジック
-│   │   └── badgeService.ts     # 週間ランキング・バッジ計算ロジック
+│   │   ├── badgeService.ts     # 週間ランキング・バッジ計算ロジック
+│   │   └── exitTimeFillService.ts # 退室時刻自動補完ロジック
 │   │
 │   ├── repositories/           # データアクセス層 (Repository Layer)
 │   │   ├── interfaces/         # インターフェース定義 (IStudentRepository, IOccupancyRepository)
@@ -178,6 +179,19 @@ Vercel Cron Jobs で以下のジョブを定期実行しています。
 | :--- | :--- | :--- |
 | **自動閉館** (`/api/cron/auto-close`) | 毎日 23:00 | 閉館忘れ防止。2号館が開館中なら自動で閉館 |
 | **開館リマインダー** (`/api/cron/remind-open`) | 毎日 14:30 | 2号館が未開館なら教室長にLINE通知 |
+| **退室時刻補完** (`/api/cron/fill-exit-time`) | 毎日 23:00 | 退室忘れの自動補完＋LINE通知 |
+
+### 退室時刻補完の詳細
+
+退室記録を忘れた生徒のログに対して、過去7日間の平均滞在時間を基に退室時刻を自動補完します。
+
+**補完ロジック**:
+1. **個人平均**: 過去7日間の通塾日における平均滞在時間を使用
+2. **全体平均**: 個人データがない場合は全生徒の平均を使用
+3. **デフォルト**: 全体データもない場合は3時間（初日など）
+4. **上限**: 22:00 JST を超えないようにクリップ
+
+**LINE通知**: 補完対象の生徒には自動で注意喚起メッセージを送信します（LINE ID がある場合のみ）。
 
 ## 7. キャッシュ戦略
 
@@ -217,11 +231,15 @@ JST（日本標準時）を扱う処理を一元化。複数のサービスで�
 
 | 関数 | 用途 |
 | :--- | :--- |
-| `getEffectiveExitTime(log)` | 退室時刻を取得（未退室時は12時間後を仮定） |
+| `getEffectiveExitTime(log)` | 退室時刻を取得（未退室時は現在時刻を返す）※ 23:00のCronで補完済み |
 | `mergeIntervalsAndSum(intervals)` | 重複区間をマージして合計時間を算出 |
 | `calculateEffectiveDuration(logs)` | ログ配列から実効滞在時間（分）を計算 |
 | `calculateDurationInTimeRange(logs, start, end, toJst)` | 指定時間帯のみの滞在時間を計算 |
 | `calculateSingleLogDuration(log)` | 単一ログの滞在時間（分）を計算 |
+
+**注意**: `getEffectiveExitTime` は毎日23:00に実行される `/api/cron/fill-exit-time` により、
+未退室ログには退室時刻が補完されている前提で設計されています。同日のリアルタイム表示では
+現在時刻が使用されます。
 
 ### C. APIハンドラー (`apiHandler.ts`)
 

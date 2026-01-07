@@ -155,3 +155,35 @@ LINEユーザーが生徒として登録済みか確認
     *   `{ message: 'Skipped (Building 2 Already Open)' }` (すでに開館)
     *   `{ message: 'Reminder sent to Principal', principal: name }` (送信成功)
 
+#### GET /api/cron/fill-exit-time
+**System Internal**. 毎日23:00 (JST) にVercel Cronによって実行される。
+退室記録のない入室ログに対して、過去7日間の平均滞在時間を基に退室時刻を自動補完し、
+該当生徒にLINE通知を送信する。
+
+*   **Service Used**: `ExitTimeFillService`
+*   **Logic**:
+    1.  当日の未退室ログを取得
+    2.  各生徒の過去7日間の平均滞在時間を計算（データがない場合は全体平均を使用）
+    3.  `入室時刻 + 平均滞在時間` で退室時刻を補完（上限: 22:00 JST）
+    4.  Google Sheets に退室時刻を書き込み
+    5.  該当生徒にLINE通知を送信（LINE ID がある場合のみ）
+*   **Response**:
+    ```ts
+    interface FillExitTimeResponse {
+      status: 'ok';
+      data: {
+        filled: number;      // 補完したログ数
+        notified: number;    // LINE通知を送信した数
+        errors: string[];    // エラーメッセージ（あれば）
+      };
+      message: string;
+    }
+    ```
+*   **LINE通知メッセージ**:
+    ```
+    [自動]退室記録忘れのお知らせ
+
+    本日の{建物名}の退室時にカードをかざすのを忘れていたようです。
+    明日以降は退室時のカードタッチを忘れずにお願いします。
+    ```
+
