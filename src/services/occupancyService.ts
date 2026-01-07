@@ -3,6 +3,7 @@ import { CONFIG } from '@/lib/config';
 import { OccupancyData } from '@/types';
 import { getStudentFromLineId, getStudentsByNames } from '@/services/studentService';
 import { unstable_cache, revalidateTag } from 'next/cache';
+import { getJstTimestamp } from '@/lib/dateUtils';
 
 export interface UpdateStatusParams {
     building: '1' | '2';
@@ -46,7 +47,7 @@ export const occupancyService = {
 
         // 2. Append to open_logs
         const action = isOpen ? 'OPEN' : 'CLOSE';
-        const timestamp = new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
+        const timestamp = getJstTimestamp();
         const buildingLabel = building === '1' ? '本館' : '2号館';
 
         await sheets.spreadsheets.values.append({

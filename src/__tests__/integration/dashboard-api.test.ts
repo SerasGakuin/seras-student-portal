@@ -49,7 +49,7 @@ describe('Dashboard API Integration', () => {
             expect(res.status).toBe(401);
         });
 
-        it('should return 401 for Student (No Dashboard Permission)', async () => {
+        it('should return 403 for Student (No Dashboard Permission)', async () => {
             mockGetStudentFromLineId.mockResolvedValue({
                 lineId: 'student_id', name: 'Student', grade: '中3', status: '在塾'
             });
@@ -57,8 +57,8 @@ describe('Dashboard API Integration', () => {
             const req = createReq('/api/dashboard/stats', 'student_id');
             const res = await getStats(req);
 
-            // Student does not have canViewDashboard permission
-            expect(res.status).toBe(401);
+            // Student is authenticated but does not have canViewDashboard permission
+            expect(res.status).toBe(403);
         });
 
         it('should return 200 for Teacher', async () => {
