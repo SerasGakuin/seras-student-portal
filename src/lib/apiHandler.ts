@@ -50,6 +50,11 @@ export function validationErrorResponse(message: string) {
     }, { status: 400 });
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ApiHandler = (request: Request) => Promise<NextResponse<any>>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AuthenticatedHandler = (request: Request, auth: AuthResult) => Promise<NextResponse<any>>;
+
 /**
  * エラーハンドリングラッパー
  * APIハンドラーをラップして共通のエラーハンドリングを提供
@@ -58,8 +63,8 @@ export function validationErrorResponse(message: string) {
  * @param handler 実際のAPIハンドラー関数
  */
 export function withErrorHandler(context: string) {
-    return <T>(handler: (request: Request) => Promise<NextResponse<T>>) => {
-        return async (request: Request): Promise<NextResponse> => {
+    return (handler: ApiHandler): ApiHandler => {
+        return async (request: Request) => {
             try {
                 return await handler(request);
             } catch (error: unknown) {
@@ -79,7 +84,7 @@ export function withErrorHandler(context: string) {
  * @param handler 認証済みリクエストを処理するハンドラー
  */
 export function withAuth(context: string) {
-    return <T>(handler: (request: Request, auth: AuthResult) => Promise<NextResponse<T>>) => {
+    return (handler: AuthenticatedHandler): ApiHandler => {
         return withErrorHandler(context)(async (request: Request) => {
             const auth = await authenticateRequest(request);
 
@@ -103,7 +108,7 @@ export function withPermission(
     context: string,
     permission: 'canViewDashboard' | 'canViewOccupancyMembers' | 'canOperateBuildingStatus'
 ) {
-    return <T>(handler: (request: Request, auth: AuthResult) => Promise<NextResponse<T>>) => {
+    return (handler: AuthenticatedHandler): ApiHandler => {
         return withAuth(context)(async (request: Request, auth: AuthResult) => {
             if (!auth.permissions[permission]) {
                 return forbiddenResponse(`Missing permission: ${permission}`);
