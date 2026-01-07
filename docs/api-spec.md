@@ -132,16 +132,30 @@ LINEユーザーが生徒として登録済みか確認
 
 ### 6. Cron Jobs
 
-#### GET /api/cron/auto-close
-**System Internal**. 毎日23:00 (JST) にVercel Cronによって実行される。
-2号館が開館中(OPEN)の場合、自動的に閉館(CLOSE)に変更し、ログを記録する。
+#### GET /api/cron/nightly
+**System Internal**. 毎日23:00 (JST) にVercel Cronによって実行される夜間バッチ処理。
+以下の処理を統合して実行する:
 
-*   **Logic**:
-    1.  `occupancyService.getOccupancyData` で現在の状態を確認。
-    2.  `building2.isOpen === true` なら `occupancyService.updateBuildingStatus(isOpen=false)` を実行。
+1. **自動閉館**: 2号館が開館中(OPEN)の場合、自動的に閉館(CLOSE)に変更
+2. **退室時刻補完**: 退室記録のない入室ログに対して退室時刻を自動補完＋LINE通知
+
+*   **Service Used**: `NightlyService` (内部で `ExitTimeFillService` を使用)
 *   **Response**:
-    *   `{ status: 'ok', data: { closed: true }, message: '...' }` (変更あり)
-    *   `{ status: 'ok', data: { closed: false }, message: '...' }` (変更なし)
+    ```ts
+    interface NightlyResult {
+      autoClose: {
+        closed: boolean;
+        message: string;
+        error?: string;
+      };
+      fillExitTime: {
+        filled: number;
+        notified: number;
+        errors: string[];
+      };
+      summary: string;
+    }
+    ```
 
 #### GET /api/cron/remind-open
 **System Internal**. 教室長への開館リマインダー。
@@ -155,35 +169,9 @@ LINEユーザーが生徒として登録済みか確認
     *   `{ message: 'Skipped (Building 2 Already Open)' }` (すでに開館)
     *   `{ message: 'Reminder sent to Principal', principal: name }` (送信成功)
 
-#### GET /api/cron/fill-exit-time
-**System Internal**. 毎日23:00 (JST) にVercel Cronによって実行される。
-退室記録のない入室ログに対して、過去7日間の平均滞在時間を基に退室時刻を自動補完し、
-該当生徒にLINE通知を送信する。
+#### GET /api/cron/auto-close (非推奨)
+**Note**: `/api/cron/nightly` に統合されました。手動実行用に残されています。
 
-*   **Service Used**: `ExitTimeFillService`
-*   **Logic**:
-    1.  当日の未退室ログを取得
-    2.  各生徒の過去7日間の平均滞在時間を計算（データがない場合は全体平均を使用）
-    3.  `入室時刻 + 平均滞在時間` で退室時刻を補完（上限: 22:00 JST）
-    4.  Google Sheets に退室時刻を書き込み
-    5.  該当生徒にLINE通知を送信（LINE ID がある場合のみ）
-*   **Response**:
-    ```ts
-    interface FillExitTimeResponse {
-      status: 'ok';
-      data: {
-        filled: number;      // 補完したログ数
-        notified: number;    // LINE通知を送信した数
-        errors: string[];    // エラーメッセージ（あれば）
-      };
-      message: string;
-    }
-    ```
-*   **LINE通知メッセージ**:
-    ```
-    [自動]退室記録忘れのお知らせ
-
-    本日の{建物名}の退室時にカードをかざすのを忘れていたようです。
-    明日以降は退室時のカードタッチを忘れずにお願いします。
-    ```
+#### GET /api/cron/fill-exit-time (非推奨)
+**Note**: `/api/cron/nightly` に統合されました。手動実行用に残されています。
 

@@ -51,7 +51,8 @@ seras-student-portal/
 │   │   ├── authService.ts      # 認証ロジック
 │   │   ├── dashboardService.ts # 統計集計・データ加工ロジック
 │   │   ├── badgeService.ts     # 週間ランキング・バッジ計算ロジック
-│   │   └── exitTimeFillService.ts # 退室時刻自動補完ロジック
+│   │   ├── exitTimeFillService.ts # 退室時刻自動補完ロジック
+│   │   └── nightlyService.ts   # 夜間バッチ処理統合サービス
 │   │
 │   ├── repositories/           # データアクセス層 (Repository Layer)
 │   │   ├── interfaces/         # インターフェース定義 (IStudentRepository, IOccupancyRepository)
@@ -174,12 +175,21 @@ Google Sheetsのデータ構造変更に強い設計にしています。
 ## 6. 自動化（Cron Jobs）
 
 Vercel Cron Jobs で以下のジョブを定期実行しています。
+（Vercel無料プランは最大2つのCronに制限されるため、23:00の処理は統合）
 
 | ジョブ | 実行時刻 (JST) | 目的 |
 | :--- | :--- | :--- |
-| **自動閉館** (`/api/cron/auto-close`) | 毎日 23:00 | 閉館忘れ防止。2号館が開館中なら自動で閉館 |
+| **夜間バッチ** (`/api/cron/nightly`) | 毎日 23:00 | 自動閉館＋退室時刻補完＋LINE通知 |
 | **開館リマインダー** (`/api/cron/remind-open`) | 毎日 14:30 | 2号館が未開館なら教室長にLINE通知 |
-| **退室時刻補完** (`/api/cron/fill-exit-time`) | 毎日 23:00 | 退室忘れの自動補完＋LINE通知 |
+
+### 夜間バッチ処理の詳細
+
+`/api/cron/nightly` は `NightlyService` を使用して以下の処理を順次実行:
+
+1. **自動閉館**: 2号館が開館中なら自動で閉館
+2. **退室時刻補完**: 退室忘れの生徒に対して退室時刻を補完＋LINE通知
+
+各処理は独立しており、一方が失敗しても他方は継続します。
 
 ### 退室時刻補完の詳細
 
