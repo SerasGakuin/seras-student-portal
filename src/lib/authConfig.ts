@@ -49,10 +49,8 @@ export const authOptions: NextAuthOptions = {
             return session;
         },
     },
-    pages: {
-        signIn: '/auth/signin',  // カスタムサインインページ（オプション）
-        error: '/auth/error',    // エラーページ（オプション）
-    },
+    // デフォルトのNextAuth組み込みページを使用
+    // カスタムページが必要な場合は /auth/signin, /auth/error を作成すること
     session: {
         strategy: 'jwt',
         maxAge: 30 * 24 * 60 * 60, // 30日間有効
