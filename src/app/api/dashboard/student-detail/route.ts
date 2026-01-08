@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { DashboardService } from '@/services/dashboardService';
 import { authenticateRequest } from '@/lib/authUtils';
 import { ApiResponse } from '@/types';
+import { extractErrorMessage } from '@/lib/apiHandler';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,7 +49,7 @@ export async function GET(req: NextRequest) {
         console.error('Failed to fetch student details', e);
         return NextResponse.json<ApiResponse>({
             status: 'error',
-            message: 'Internal Server Error'
+            message: extractErrorMessage(e)
         }, { status: 500 });
     }
 }

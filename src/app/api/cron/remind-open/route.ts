@@ -4,17 +4,14 @@ import { getPrincipal } from '@/services/studentService';
 import { lineService } from '@/services/lineService';
 import { CONFIG } from '@/lib/config';
 import { getJstDayOfWeek } from '@/lib/dateUtils';
+import { validateCronRequest } from '@/lib/apiHandler';
 
 // Prevent deployment cache issues
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
-    // 1. Check if cron request is valid (Vercel cron header)
-    const authHeader = req.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-        // Allow local dev testing if needed, or stick to strict auth
-        // return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Cron認証チェック（ローカル開発やテスト時は認証をスキップ可能）
+    validateCronRequest(req, 'Cron remind-open');
 
     try {
         // 2. Check Day of Week (JST)

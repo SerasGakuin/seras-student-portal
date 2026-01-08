@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getStudentFromLineId } from '@/lib/studentMaster';
 import { ApiResponse } from '@/types';
+import { extractErrorMessage } from '@/lib/apiHandler';
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -21,7 +22,6 @@ export async function GET(request: Request) {
         }
     } catch (error: unknown) {
         console.error('Error in test API:', error);
-        const message = error instanceof Error ? error.message : 'Unknown error';
-        return NextResponse.json<ApiResponse>({ status: 'error', message }, { status: 500 });
+        return NextResponse.json<ApiResponse>({ status: 'error', message: extractErrorMessage(error) }, { status: 500 });
     }
 }

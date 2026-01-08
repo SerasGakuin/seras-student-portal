@@ -4,6 +4,7 @@ import { sendPushMessage } from '@/services/lineService';
 import { getStudentFromLineId } from '@/services/studentService';
 import { BookingRequestSchema } from '@/lib/schema';
 import { ApiResponse } from '@/types';
+import { extractErrorMessage } from '@/lib/apiHandler';
 
 export async function POST(request: Request) {
     try {
@@ -60,9 +61,8 @@ export async function POST(request: Request) {
 
     } catch (error: unknown) {
         console.error('Error in reserveMeeting API:', error);
-        const message = error instanceof Error ? error.message : 'Unknown error';
         return NextResponse.json<ApiResponse>(
-            { status: 'error', message },
+            { status: 'error', message: extractErrorMessage(error) },
             { status: 500 }
         );
     }

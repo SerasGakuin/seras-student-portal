@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { loginStudent } from '@/services/authService';
 import { ApiResponse } from '@/types';
+import { extractErrorMessage } from '@/lib/apiHandler';
 
 export async function POST(request: Request) {
     try {
@@ -26,7 +27,7 @@ export async function POST(request: Request) {
     } catch (error: unknown) {
         console.error('Error in login API:', error);
         return NextResponse.json<ApiResponse>(
-            { status: 'error', message: 'Internal Server Error' },
+            { status: 'error', message: extractErrorMessage(error) },
             { status: 500 }
         );
     }

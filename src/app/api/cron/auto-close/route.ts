@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { occupancyService } from '@/services/occupancyService';
 import { ApiResponse } from '@/types';
+import { extractErrorMessage } from '@/lib/apiHandler';
 
 /**
  * Cron Job: Auto-Close Building 2
@@ -35,7 +36,6 @@ export async function GET(req: Request) {
 
     } catch (error: unknown) {
         console.error('[Auto-Close] Error:', error);
-        const message = error instanceof Error ? error.message : 'Unknown error';
-        return NextResponse.json<ApiResponse>({ status: 'error', message }, { status: 500 });
+        return NextResponse.json<ApiResponse>({ status: 'error', message: extractErrorMessage(error) }, { status: 500 });
     }
 }

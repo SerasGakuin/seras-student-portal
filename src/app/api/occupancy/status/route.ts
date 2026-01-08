@@ -2,14 +2,14 @@ import { NextResponse } from 'next/server';
 import { ApiResponse } from '@/types';
 import { z } from 'zod';
 import { occupancyService } from '@/services/occupancyService';
+import { authenticateRequest } from '@/lib/authUtils';
+import { extractErrorMessage } from '@/lib/apiHandler';
 
 const StatusUpdateSchema = z.object({
     building: z.enum(['1', '2']),
     isOpen: z.boolean(),
     actorName: z.string().min(1),
 });
-
-import { authenticateRequest } from '@/lib/authUtils';
 
 export async function POST(req: Request) {
     try {
@@ -45,10 +45,9 @@ export async function POST(req: Request) {
 
     } catch (error: unknown) {
         console.error('Error updating status:', error);
-        const message = error instanceof Error ? error.message : 'Unknown error';
         return NextResponse.json<ApiResponse>({
             status: 'error',
-            message,
+            message: extractErrorMessage(error),
         }, { status: 500 });
     }
 }
