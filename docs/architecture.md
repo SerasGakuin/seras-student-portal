@@ -377,3 +377,36 @@ import { BADGE_CONFIG } from '@/constants/badges';
 | `index.ts` | 共通型（`ApiResponse`, `Student`, `Grade` 等）と各ファイルの re-export |
 | `badge.ts` | バッジ関連（`BadgeType`, `Badge`, `UnifiedWeeklyBadges`） |
 | `dashboard.ts` | ダッシュボード関連（`StudentStats`, `DashboardSummary`） |
+
+## 11. ダッシュボード機能詳細
+
+### A. 週間ランキングの仕様
+
+ダッシュボードのランキングでは、指定期間における生徒の学習時間を集計・表示します。
+
+**表示対象**:
+- **在籍中（`Status='在塾'`）の全生徒**を表示
+- 期間内に来塾していない生徒も `0h 0m` として表示される
+- 休塾・退塾・体験中の生徒は表示されない
+
+**ソート順**:
+1. 学習時間（降順）
+2. 学年（降順 - 既卒 > 高3 > 高2 > 高1 > 中3 > 中2 > 中1）
+3. 名前（あいうえお順）
+
+**学年順序の定数**:
+```typescript
+// src/lib/schema.ts
+export const GRADE_ORDER: Record<string, number> = {
+    '既卒': 7,
+    '高3': 6,
+    '高2': 5,
+    '高1': 4,
+    '中3': 3,
+    '中2': 2,
+    '中1': 1,
+    '講師': 0,
+};
+```
+
+この定数は将来的に他の機能でも学年順ソートが必要になった場合に再利用可能です。
