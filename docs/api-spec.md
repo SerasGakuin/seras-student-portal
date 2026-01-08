@@ -132,16 +132,30 @@ LINEユーザーが生徒として登録済みか確認
 
 ### 6. Cron Jobs
 
-#### GET /api/cron/auto-close
-**System Internal**. 毎日23:00 (JST) にVercel Cronによって実行される。
-2号館が開館中(OPEN)の場合、自動的に閉館(CLOSE)に変更し、ログを記録する。
+#### GET /api/cron/nightly
+**System Internal**. 毎日23:00 (JST) にVercel Cronによって実行される夜間バッチ処理。
+以下の処理を統合して実行する:
 
-*   **Logic**:
-    1.  `occupancyService.getOccupancyData` で現在の状態を確認。
-    2.  `building2.isOpen === true` なら `occupancyService.updateBuildingStatus(isOpen=false)` を実行。
+1. **自動閉館**: 2号館が開館中(OPEN)の場合、自動的に閉館(CLOSE)に変更
+2. **退室時刻補完**: 退室記録のない入室ログに対して退室時刻を自動補完＋LINE通知
+
+*   **Service Used**: `NightlyService` (内部で `ExitTimeFillService` を使用)
 *   **Response**:
-    *   `{ status: 'ok', data: { closed: true }, message: '...' }` (変更あり)
-    *   `{ status: 'ok', data: { closed: false }, message: '...' }` (変更なし)
+    ```ts
+    interface NightlyResult {
+      autoClose: {
+        closed: boolean;
+        message: string;
+        error?: string;
+      };
+      fillExitTime: {
+        filled: number;
+        notified: number;
+        errors: string[];
+      };
+      summary: string;
+    }
+    ```
 
 #### GET /api/cron/remind-open
 **System Internal**. 教室長への開館リマインダー。
@@ -154,4 +168,10 @@ LINEユーザーが生徒として登録済みか確認
     *   `{ message: 'Skipped (Excluded Day)' }` (除外曜日)
     *   `{ message: 'Skipped (Building 2 Already Open)' }` (すでに開館)
     *   `{ message: 'Reminder sent to Principal', principal: name }` (送信成功)
+
+#### GET /api/cron/auto-close (非推奨)
+**Note**: `/api/cron/nightly` に統合されました。手動実行用に残されています。
+
+#### GET /api/cron/fill-exit-time (非推奨)
+**Note**: `/api/cron/nightly` に統合されました。手動実行用に残されています。
 

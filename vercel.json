@@ -1,7 +1,7 @@
 {
     "crons": [
         {
-            "path": "/api/cron/auto-close",
+            "path": "/api/cron/nightly",
             "schedule": "0 14 * * *"
         },
         {

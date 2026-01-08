@@ -14,15 +14,20 @@ export interface TimeInterval {
 }
 
 /**
- * 退室時刻の補完ロジック
+ * 退室時刻の取得
+ *
  * - 退室時刻がある場合: そのまま使用
- * - 退室時刻がない & 入室から12時間未満: 現在時刻を仮の退室時刻
- * - 退室時刻がない & 入室から12時間以上: MIN(入室+4時間, 当日22:00)で補完
+ * - 退室時刻がない場合: 現在時刻を返す（リアルタイム表示用）
+ *
+ * 注意: 毎日23:00 JSTにCronジョブ（/api/cron/fill-exit-time）が
+ * 未退室ログに対して退室時刻を自動補完するため、
+ * 翌日以降は exitTime が設定された状態になる。
  */
 export function getEffectiveExitTime(log: EntryExitLog): Date {
     const entry = new Date(log.entryTime);
     if (isNaN(entry.getTime())) return entry;
 
+    // 1. exitTime がある場合はそのまま返す
     if (log.exitTime) {
         const parsed = new Date(log.exitTime);
         if (!isNaN(parsed.getTime())) {
@@ -30,22 +35,8 @@ export function getEffectiveExitTime(log: EntryExitLog): Date {
         }
     }
 
-    const now = new Date();
-    const diffHours = (now.getTime() - entry.getTime()) / (1000 * 60 * 60);
-
-    if (diffHours < 12) {
-        return now;
-    } else {
-        const closeTime = new Date(entry);
-        closeTime.setHours(22, 0, 0, 0);
-        const fourHoursLater = new Date(entry.getTime() + 4 * 60 * 60 * 1000);
-
-        if (fourHoursLater < closeTime) {
-            return fourHoursLater;
-        } else {
-            return closeTime;
-        }
-    }
+    // 2. exitTime がない場合は現在時刻を返す（在室中のリアルタイム表示用）
+    return new Date();
 }
 
 /**
