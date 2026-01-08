@@ -28,7 +28,7 @@ seras-student-portal/
 │   │   └── occupancy/          # 混雑状況画面ページ
 │   │
 │   ├── components/             # 共有 UI コンポーネント
-│   │   ├── ui/                 # 汎用部品 (Button, PageHeader, GlassCard, Skeleton 等)
+│   │   ├── ui/                 # 汎用部品 (Button, PageHeader, GlassCard, DocumentLinkIcon 等)
 │   │   └── providers/          # コンテキストプロバイダー (AuthProvider 等)
 │   │
 │   ├── features/               # 機能別モジュール (Domain Drivenに近い分割)
@@ -138,6 +138,32 @@ Google Sheetsのデータ構造変更に強い設計にしています。
 - **CSS Variables**: `globals.css` で色・フォント・影を一元管理し、コントラスト調整を容易に
 - **アニメーション制御**: OSの「視差効果を減らす」設定を検知し、`prefers-reduced-motion` でアニメーションを無効化
 - **フォームのエラー表示**: `FormGroup` コンポーネントは `role="alert"` でスクリーンリーダーに対応
+
+### F. 共有UIコンポーネント
+
+再利用可能なUIコンポーネントは `src/components/ui/` に集約しています。
+
+| コンポーネント | 用途 |
+| :--- | :--- |
+| `PageHeader` | ページタイトルとサブタイトル表示 |
+| `GlassCard` | グラスモーフィズム風のカードコンテナ |
+| `Button` | スタイル統一されたボタン |
+| `Skeleton` | ローディングプレースホルダー |
+| `DocumentLinkIcon` | Google Docs/Sheets へのリンクアイコン |
+| `BackLink` | 戻るリンク |
+| `FormGroup` | フォーム入力グループ |
+| `LoadingOverlay` | 全画面ローディング |
+
+**DocumentLinkIcon の使用例**:
+```tsx
+import { DocumentLinkIcon } from '@/components/ui/DocumentLinkIcon';
+
+// Google Docs リンク
+{student.docLink && <DocumentLinkIcon href={student.docLink} type="doc" size={14} />}
+
+// Google Sheets リンク
+{student.sheetLink && <DocumentLinkIcon href={student.sheetLink} type="sheet" size={14} />}
+```
 
 ## 4. データフローの例
 
