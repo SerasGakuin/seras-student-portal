@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import type { StudentBadgesMap } from '@/types/badge';
 import { RankingDetailView, getBadgeStyle } from '@/features/dashboard/components/RankingDetailView';
 import { BADGE_CONFIG } from '@/constants/badges';
+import { DocumentLinkIcon } from '@/components/ui/DocumentLinkIcon';
 import { HeatmapDataPoint } from './ActivityHeatmap';
 import styles from './RankingWidget.module.css';
 
@@ -120,30 +121,37 @@ export const RankingWidget = ({ ranking, periodDays, loading, badges, viewerId }
                                                     {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
                                                 </td>
                                                 <td style={{ padding: '24px 16px', fontWeight: 700 }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                        {student.name}
-                                                        <div style={{ display: 'flex', gap: '4px' }}>
-                                                            {badges?.[student.name]?.map((badge, i) => (
-                                                                <span
-                                                                    key={i}
-                                                                    title={BADGE_CONFIG[badge.type]?.label}
-                                                                    style={{
-                                                                        display: 'inline-flex',
-                                                                        alignItems: 'center',
-                                                                        justifyContent: 'center',
-                                                                        width: '20px',
-                                                                        height: '20px',
-                                                                        borderRadius: '50%',
-                                                                        background: badgeStyle.background,
-                                                                        color: badgeStyle.color,
-                                                                        border: badgeStyle.border
-                                                                    }}
-                                                                >
-                                                                    <span style={{ transform: 'scale(0.8)' }}>
-                                                                        {BADGE_CONFIG[badge.type]?.icon(16)}
+                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                            {student.name}
+                                                            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                                                                {badges?.[student.name]?.map((badge, i) => (
+                                                                    <span
+                                                                        key={i}
+                                                                        title={BADGE_CONFIG[badge.type]?.label}
+                                                                        style={{
+                                                                            display: 'inline-flex',
+                                                                            alignItems: 'center',
+                                                                            justifyContent: 'center',
+                                                                            width: '20px',
+                                                                            height: '20px',
+                                                                            borderRadius: '50%',
+                                                                            background: badgeStyle.background,
+                                                                            color: badgeStyle.color,
+                                                                            border: badgeStyle.border
+                                                                        }}
+                                                                    >
+                                                                        <span style={{ transform: 'scale(0.8)' }}>
+                                                                            {BADGE_CONFIG[badge.type]?.icon(16)}
+                                                                        </span>
                                                                     </span>
-                                                                </span>
-                                                            ))}
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                        {/* ドキュメントリンクアイコン（右寄せ） */}
+                                                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                                                            {student.docLink && <DocumentLinkIcon href={student.docLink} type="doc" size={14} />}
+                                                            {student.sheetLink && <DocumentLinkIcon href={student.sheetLink} type="sheet" size={14} />}
                                                         </div>
                                                     </div>
                                                 </td>
@@ -232,31 +240,38 @@ export const RankingWidget = ({ ranking, periodDays, loading, badges, viewerId }
                                         <div className={`${styles.mobileRankBadge} ${isTop3 ? styles.mobileTopRank : ''}`}>
                                             {index + 1}
                                         </div>
-                                        <div className={styles.mobileName}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                                <span>{student.name}</span>
-                                                <div style={{ display: 'flex', gap: '4px' }}>
-                                                    {badges?.[student.name]?.map((badge, i) => (
-                                                        <span
-                                                            key={i}
-                                                            title={BADGE_CONFIG[badge.type]?.label}
-                                                            style={{
-                                                                display: 'inline-flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                width: '20px',
-                                                                height: '20px',
-                                                                borderRadius: '50%',
-                                                                background: badgeStyle.background,
-                                                                color: badgeStyle.color,
-                                                                border: badgeStyle.border
-                                                            }}
-                                                        >
-                                                            <span style={{ transform: 'scale(0.8)' }}>
-                                                                {BADGE_CONFIG[badge.type]?.icon(16)}
+                                        <div className={styles.mobileName} style={{ flex: 1 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                                    <span>{student.name}</span>
+                                                    <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                                                        {badges?.[student.name]?.map((badge, i) => (
+                                                            <span
+                                                                key={i}
+                                                                title={BADGE_CONFIG[badge.type]?.label}
+                                                                style={{
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    width: '20px',
+                                                                    height: '20px',
+                                                                    borderRadius: '50%',
+                                                                    background: badgeStyle.background,
+                                                                    color: badgeStyle.color,
+                                                                    border: badgeStyle.border
+                                                                }}
+                                                            >
+                                                                <span style={{ transform: 'scale(0.8)' }}>
+                                                                    {BADGE_CONFIG[badge.type]?.icon(16)}
+                                                                </span>
                                                             </span>
-                                                        </span>
-                                                    ))}
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                {/* ドキュメントリンクアイコン（右寄せ） */}
+                                                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                                                    {student.docLink && <DocumentLinkIcon href={student.docLink} type="doc" size={16} />}
+                                                    {student.sheetLink && <DocumentLinkIcon href={student.sheetLink} type="sheet" size={16} />}
                                                 </div>
                                             </div>
                                             <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 500, marginTop: '2px', display: 'block' }}>
