@@ -51,6 +51,7 @@ export interface RankingDetailViewProps {
     history: HeatmapDataPoint[];
     loading?: boolean;
     variant?: 'default' | 'mobile';
+    periodDays: number;
 }
 
 export const RankingDetailView = ({
@@ -59,7 +60,8 @@ export const RankingDetailView = ({
     streakStats,
     history,
     loading = false,
-    variant = 'default'
+    variant = 'default',
+    periodDays
 }: RankingDetailViewProps) => {
 
     if (loading) {
@@ -229,7 +231,7 @@ export const RankingDetailView = ({
                             <span style={{ fontSize: '0.75rem', color: 'var(--text-sub)', fontWeight: 600 }}>通塾日数</span>
                         </div>
                         <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                            {stats.visitCount}<span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-sub)' }}> / 7日</span>
+                            {stats.visitCount}<span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-sub)' }}> / {periodDays}日</span>
                         </div>
                     </div>
 
