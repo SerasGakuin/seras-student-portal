@@ -196,6 +196,7 @@ export const RankingWidget = ({ ranking, periodDays, loading, badges, viewerId }
                                                                     }}
                                                                     history={expandedData?.history || []}
                                                                     loading={detailLoading}
+                                                                    periodDays={periodDays}
                                                                 />
                                                             </div>
                                                         </div>
@@ -308,6 +309,7 @@ export const RankingWidget = ({ ranking, periodDays, loading, badges, viewerId }
                                                 history={expandedData?.history || []}
                                                 loading={detailLoading}
                                                 variant="mobile"
+                                                periodDays={periodDays}
                                             />
                                         </div>
                                     )}

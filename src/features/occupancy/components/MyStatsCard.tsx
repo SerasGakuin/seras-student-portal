@@ -144,6 +144,7 @@ export const MyStatsCard = () => {
             streakStats={streakStats}
             history={detailData28Days?.history || []}
             loading={isLoading}
+            periodDays={7}
         />
     );
 };

@@ -34,6 +34,7 @@ export interface StudentStatsViewProps {
     };
     history: HeatmapDataPoint[];
     loading?: boolean;
+    periodDays: number;
 }
 
 export const StudentStatsView = ({
@@ -43,7 +44,8 @@ export const StudentStatsView = ({
     stats,
     streakStats,
     history,
-    loading = false
+    loading = false,
+    periodDays
 }: StudentStatsViewProps) => {
 
     if (loading) {
@@ -210,7 +212,7 @@ export const StudentStatsView = ({
                             <span style={{ fontSize: '0.75rem', color: 'var(--text-sub)', fontWeight: 600 }}>通塾日数</span>
                         </div>
                         <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                            {stats.visitCount}<span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-sub)' }}> / 7日</span>
+                            {stats.visitCount}<span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-sub)' }}> / {periodDays}日</span>
                         </div>
                     </div>
 
