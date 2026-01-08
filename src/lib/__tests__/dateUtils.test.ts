@@ -3,7 +3,7 @@
  * Phase 1: setStartOfDay, setEndOfDay, filterLogsByDateRange のテスト
  */
 
-import { setStartOfDay, setEndOfDay, filterLogsByDateRange } from '../dateUtils';
+import { setStartOfDay, setEndOfDay, filterLogsByDateRange, toJstString } from '../dateUtils';
 import { EntryExitLog } from '@/repositories/interfaces/IOccupancyRepository';
 
 describe('setStartOfDay', () => {
@@ -158,5 +158,42 @@ describe('filterLogsByDateRange', () => {
         const result = filterLogsByDateRange(logsWithNull, start, end);
 
         expect(result).toHaveLength(2);
+    });
+});
+
+describe('toJstString', () => {
+    it('should convert UTC date to JST toString format', () => {
+        // 2026-01-08 13:00:00 UTC = 2026-01-08 22:00:00 JST
+        const utcDate = new Date('2026-01-08T13:00:00.000Z');
+        const result = toJstString(utcDate);
+        expect(result).toBe('Thu Jan 08 2026 22:00:00 GMT+0900 (GMT+09:00)');
+    });
+
+    it('should handle dates crossing midnight JST', () => {
+        // 2026-01-08 16:30:00 UTC = 2026-01-09 01:30:00 JST
+        const utcDate = new Date('2026-01-08T16:30:00.000Z');
+        const result = toJstString(utcDate);
+        expect(result).toBe('Fri Jan 09 2026 01:30:00 GMT+0900 (GMT+09:00)');
+    });
+
+    it('should handle single-digit day correctly', () => {
+        // 2026-01-05 10:00:00 UTC = 2026-01-05 19:00:00 JST
+        const utcDate = new Date('2026-01-05T10:00:00.000Z');
+        const result = toJstString(utcDate);
+        expect(result).toBe('Mon Jan 05 2026 19:00:00 GMT+0900 (GMT+09:00)');
+    });
+
+    it('should handle December correctly', () => {
+        // 2025-12-31 14:00:00 UTC = 2025-12-31 23:00:00 JST
+        const utcDate = new Date('2025-12-31T14:00:00.000Z');
+        const result = toJstString(utcDate);
+        expect(result).toBe('Wed Dec 31 2025 23:00:00 GMT+0900 (GMT+09:00)');
+    });
+
+    it('should handle year boundary correctly', () => {
+        // 2025-12-31 15:30:00 UTC = 2026-01-01 00:30:00 JST
+        const utcDate = new Date('2025-12-31T15:30:00.000Z');
+        const result = toJstString(utcDate);
+        expect(result).toBe('Thu Jan 01 2026 00:30:00 GMT+0900 (GMT+09:00)');
     });
 });

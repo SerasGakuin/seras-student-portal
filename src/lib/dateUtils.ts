@@ -11,6 +11,32 @@ export function toJst(d: Date): Date {
 }
 
 /**
+ * DateオブジェクトをJSTのtoString形式で出力
+ * Google Sheets の既存データと同じ形式で書き込むために使用
+ *
+ * @example
+ * toJstString(new Date('2026-01-08T13:00:00.000Z'))
+ * // => "Thu Jan 08 2026 22:00:00 GMT+0900 (GMT+09:00)"
+ */
+export function toJstString(d: Date): string {
+    const jst = toJst(d);
+
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    const day = dayNames[jst.getDay()];
+    const month = monthNames[jst.getMonth()];
+    const date = String(jst.getDate()).padStart(2, '0');
+    const year = jst.getFullYear();
+    const hours = String(jst.getHours()).padStart(2, '0');
+    const minutes = String(jst.getMinutes()).padStart(2, '0');
+    const seconds = String(jst.getSeconds()).padStart(2, '0');
+
+    return `${day} ${month} ${date} ${year} ${hours}:${minutes}:${seconds} GMT+0900 (GMT+09:00)`;
+}
+
+/**
  * DateオブジェクトをJSTの日付文字列に変換 (YYYY/M/D形式)
  */
 export function toJstDateString(d: Date): string {

@@ -12,7 +12,7 @@ import {
 } from '@/repositories/interfaces/IOccupancyRepository';
 import { IStudentRepository } from '@/repositories/interfaces/IStudentRepository';
 import { lineService } from '@/services/lineService';
-import { toJst } from '@/lib/dateUtils';
+import { toJst, toJstString } from '@/lib/dateUtils';
 import { calculateSingleLogDuration } from '@/lib/durationUtils';
 import { extractErrorMessage } from '@/lib/apiHandler';
 
@@ -216,11 +216,11 @@ export class ExitTimeFillService {
                     const exitTime = this.calculateFilledExitTime(entryTime, averageMinutes);
 
                     // Google Sheets に書き込み
-                    await this.occupancyRepo.updateExitTime(rowIndex, exitTime.toISOString());
+                    await this.occupancyRepo.updateExitTime(rowIndex, toJstString(exitTime));
                     result.filled++;
 
                     console.log(
-                        `[ExitTimeFillService] Filled exitTime for ${log.name}: ${exitTime.toISOString()}`
+                        `[ExitTimeFillService] Filled exitTime for ${log.name}: ${toJstString(exitTime)}`
                     );
 
                     // LINE通知を送信

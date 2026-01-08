@@ -218,10 +218,10 @@ describe('ExitTimeFillService', () => {
             expect(result.notified).toBe(1);
             expect(result.errors).toHaveLength(0);
 
-            // exitTime が更新されたことを確認
+            // exitTime が更新されたことを確認（JST toString形式）
             expect(mockOccupancyRepo.updateExitTime).toHaveBeenCalledWith(
                 0,
-                expect.any(String)
+                expect.stringMatching(/^[A-Z][a-z]{2} [A-Z][a-z]{2} \d{2} \d{4} \d{2}:\d{2}:\d{2} GMT\+0900 \(GMT\+09:00\)$/)
             );
 
             // LINE通知が送信されたことを確認
