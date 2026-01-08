@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { BadgeService, Badge } from '@/services/badgeService';
+import { authenticateRequest } from '@/lib/authUtils';
+import { extractErrorMessage } from '@/lib/apiHandler';
 
 // Disable caching for dynamic data (though badges are static for a week, fetching fresh is safer)
 export const dynamic = 'force-dynamic';
 
 const badgeService = new BadgeService();
-
-import { authenticateRequest } from '@/lib/authUtils';
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -45,6 +45,6 @@ export async function GET(request: Request) {
         });
     } catch (error) {
         console.error('Ranking Fetch Error:', error);
-        return NextResponse.json({ error: 'Failed' }, { status: 500 });
+        return NextResponse.json({ status: 'error', message: extractErrorMessage(error) }, { status: 500 });
     }
 }

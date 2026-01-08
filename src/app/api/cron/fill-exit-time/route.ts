@@ -3,6 +3,7 @@ import { ExitTimeFillService } from '@/services/exitTimeFillService';
 import { GoogleSheetOccupancyRepository } from '@/repositories/googleSheets/GoogleSheetOccupancyRepository';
 import { GoogleSheetStudentRepository } from '@/repositories/googleSheets/GoogleSheetStudentRepository';
 import { ApiResponse } from '@/types';
+import { validateCronRequest, extractErrorMessage } from '@/lib/apiHandler';
 
 // Prevent deployment cache issues
 export const dynamic = 'force-dynamic';
@@ -16,12 +17,8 @@ export const dynamic = 'force-dynamic';
  * Vercel Cron: 0 14 * * * (14:00 UTC = 23:00 JST)
  */
 export async function GET(req: NextRequest) {
-    // Cron認証チェック（Vercel Cron Secretヘッダー）
-    const authHeader = req.headers.get('authorization');
-    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-        console.warn('[Cron fill-exit-time] Unauthorized request');
-        // Note: ローカル開発やテスト時は認証をスキップ可能
-    }
+    // Cron認証チェック（ローカル開発やテスト時は認証をスキップ可能）
+    validateCronRequest(req, 'Cron fill-exit-time');
 
     try {
         const service = new ExitTimeFillService(
@@ -40,9 +37,8 @@ export async function GET(req: NextRequest) {
         });
     } catch (error) {
         console.error('[Cron fill-exit-time] Error:', error);
-        const message = error instanceof Error ? error.message : 'Unknown error';
         return NextResponse.json<ApiResponse>(
-            { status: 'error', message },
+            { status: 'error', message: extractErrorMessage(error) },
             { status: 500 }
         );
     }

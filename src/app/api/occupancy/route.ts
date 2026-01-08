@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { ApiResponse, OccupancyData } from '@/types';
 import { occupancyService } from '@/services/occupancyService';
 import { authenticateRequest } from '@/lib/authUtils';
+import { extractErrorMessage } from '@/lib/apiHandler';
 
 export async function GET(req: Request) {
     try {
@@ -20,8 +21,7 @@ export async function GET(req: Request) {
 
     } catch (error: unknown) {
         console.error('Error fetching occupancy:', error);
-        const message = error instanceof Error ? error.message : 'Unknown error';
-        return NextResponse.json<ApiResponse<OccupancyData>>({ status: 'error', message }, { status: 500 });
+        return NextResponse.json<ApiResponse<OccupancyData>>({ status: 'error', message: extractErrorMessage(error) }, { status: 500 });
     }
 }
 

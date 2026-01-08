@@ -3,8 +3,37 @@
  * エラーハンドリング、認証チェック、レスポンス形式の統一
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest, AuthResult } from '@/lib/authUtils';
+
+/**
+ * エラーオブジェクトからメッセージを抽出
+ *
+ * @param error 任意のエラーオブジェクト
+ * @returns エラーメッセージ（Errorインスタンスでない場合は'Unknown error'）
+ */
+export function extractErrorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : 'Unknown error';
+}
+
+/**
+ * Cronリクエストの認証チェック
+ *
+ * CRON_SECRET環境変数が設定されている場合、AuthorizationヘッダーのBearerトークンと照合。
+ * 認証に失敗した場合はコンソールに警告を出力。
+ *
+ * @param req NextRequestオブジェクト
+ * @param context ログ出力用のコンテキスト名
+ * @returns 認証成功時true、失敗時false
+ */
+export function validateCronRequest(req: NextRequest, context: string): boolean {
+    const authHeader = req.headers.get('authorization');
+    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+        console.warn(`[${context}] Unauthorized cron request`);
+        return false;
+    }
+    return true;
+}
 
 /**
  * API成功レスポンスを生成

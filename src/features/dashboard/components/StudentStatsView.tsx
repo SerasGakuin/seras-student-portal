@@ -1,19 +1,9 @@
 import { GlassCard } from '@/components/ui/GlassCard';
 import { ActivityHeatmap, HeatmapDataPoint } from '@/features/dashboard/components/ActivityHeatmap';
 import { TimeRangeChart } from '@/features/dashboard/components/TimeRangeChart';
-import { BadgeType } from '@/services/badgeService';
-import {
-    User, Clock, Calendar, Flame, Trophy, Crown, Sunrise, Moon, CalendarDays, Timer, Zap
-} from 'lucide-react';
-
-const BADGE_CONFIG: Record<BadgeType, { label: string; icon: React.ReactNode }> = {
-    'HEAVY_USER': { label: 'トップランカー', icon: <Crown size={16} /> },
-    'EARLY_BIRD': { label: '早起きマスター', icon: <Sunrise size={16} /> },
-    'NIGHT_OWL': { label: '深夜マスター', icon: <Moon size={16} /> },
-    'CONSISTENT': { label: '皆勤賞候補', icon: <CalendarDays size={16} /> },
-    'MARATHON': { label: '長時間マスター', icon: <Timer size={16} /> },
-    'RISING_STAR': { label: '急上昇', icon: <Zap size={16} /> },
-};
+import { BadgeType } from '@/types/badge';
+import { BADGE_CONFIG } from '@/constants/badges';
+import { User, Clock, Calendar, Flame, Trophy, Crown } from 'lucide-react';
 
 export interface StudentStatsViewProps {
     studentName: string;
@@ -155,7 +145,7 @@ export const StudentStatsView = ({
                                             fontWeight: 700
                                         }}
                                     >
-                                        {BADGE_CONFIG[badge.type]?.icon}
+                                        {BADGE_CONFIG[badge.type]?.icon(16)}
                                         {BADGE_CONFIG[badge.type]?.label}
                                     </span>
                                 ))}

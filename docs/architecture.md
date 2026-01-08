@@ -68,8 +68,12 @@ seras-student-portal/
 │   │   ├── googleSheets.ts     # Google API クライアント初期化
 │   │   ├── dateUtils.ts        # JST日付処理ユーティリティ
 │   │   ├── durationUtils.ts    # 滞在時間計算ユーティリティ
+│   │   ├── stringUtils.ts      # 文字列処理ユーティリティ
 │   │   ├── apiHandler.ts       # APIハンドラー共通処理
 │   │   └── cacheConfig.ts      # キャッシュ設定の一元管理
+│   │
+│   ├── constants/              # 共有定数
+│   │   └── badges.tsx          # バッジ設定 (ラベル、アイコン、説明)
 │   │
 │   └── types/                  # 型定義 (TypeScript Interfaces)
 │       ├── index.ts            # 共通型定義
@@ -234,6 +238,9 @@ JST（日本標準時）を扱う処理を一元化。複数のサービスで�
 | `getJstDayOfWeek()` | JST の曜日を取得（0=日, 6=土） |
 | `isEntryToday(entryTime)` | 入室時刻が今日かどうか判定 |
 | `formatTimeJst(dateString)` | 時刻を `HH:MM` 形式で取得 |
+| `setStartOfDay(date)` | 日の開始時刻（00:00:00.000）を設定 |
+| `setEndOfDay(date)` | 日の終了時刻（23:59:59.999）を設定 |
+| `filterLogsByDateRange(logs, start, end)` | 日付範囲でログをフィルタリング |
 
 ### B. 滞在時間計算 (`durationUtils.ts`)
 
@@ -259,6 +266,8 @@ API Route のボイラープレートを削減し、エラーハンドリング�
 | :--- | :--- |
 | `successResponse(data)` | `{ status: 'ok', data }` 形式のレスポンスを生成 |
 | `errorResponse(message, status)` | エラーレスポンスを生成 |
+| `extractErrorMessage(error)` | エラーオブジェクトからメッセージを抽出 |
+| `validateCronRequest(req, context)` | Cron認証チェック（`CRON_SECRET` 検証） |
 | `withErrorHandler(context)` | try-catch によるエラーハンドリングをラップ |
 | `withAuth(context)` | 認証チェックを自動化 |
 | `withPermission(context, permission)` | 認証 + 権限チェックを自動化 |
@@ -273,7 +282,25 @@ export const GET = withPermission('Dashboard Stats', 'canViewDashboard')(
 );
 ```
 
-### D. キャッシュ設定 (`cacheConfig.ts`)
+### D. 文字列処理 (`stringUtils.ts`)
+
+名前の正規化など、文字列処理を一元化。
+
+| 関数 | 用途 |
+| :--- | :--- |
+| `normalizeName(name)` | 名前の正規化（空白・ゼロ幅文字を除去） |
+
+**対応する文字**:
+- 通常の空白（半角・全角スペース、タブ、改行）
+- ゼロ幅文字（U+200B-U+200D, U+FEFF）
+
+**使用例**:
+```typescript
+normalizeName('田中 太郎'); // → '田中太郎'
+normalizeName('佐藤\u200B花子'); // → '佐藤花子'
+```
+
+### E. キャッシュ設定 (`cacheConfig.ts`)
 
 `unstable_cache` の設定値を一元管理し、変更を容易に。
 
@@ -288,7 +315,34 @@ const cachedFetch = unstable_cache(
 );
 ```
 
-## 9. 型定義の構成
+## 9. 共有定数
+
+複数のコンポーネントで使用される定数は `src/constants/` に集約しています。
+
+### A. バッジ設定 (`badges.tsx`)
+
+週間ランキングのバッジ設定を一元管理。アイコンは関数として定義し、使用時にサイズを指定できます。
+
+```typescript
+import { BADGE_CONFIG } from '@/constants/badges';
+
+// 使用例
+{BADGE_CONFIG['HEAVY_USER'].icon(16)}  // サイズ16のアイコン
+{BADGE_CONFIG['HEAVY_USER'].label}      // "トップランカー"
+{BADGE_CONFIG['HEAVY_USER'].desc}       // "勉強時間の合計がトップクラス"
+```
+
+**対応バッジタイプ**:
+| タイプ | ラベル | 説明 |
+| :--- | :--- | :--- |
+| `HEAVY_USER` | トップランカー | 勉強時間の合計がトップクラス |
+| `EARLY_BIRD` | 早起きマスター | 朝イチから来て勉強している |
+| `NIGHT_OWL` | 深夜マスター | 閉館ギリギリまで残って勉強している |
+| `CONSISTENT` | 皆勤賞候補 | ほぼ毎日、塾に来ている |
+| `MARATHON` | 長時間マスター | 1回の滞在時間が長い |
+| `RISING_STAR` | 急上昇 | 前の週より勉強時間が大幅にアップ |
+
+## 10. 型定義の構成
 
 型定義は `src/types/` に集約し、機能ごとにファイルを分割しています。
 
