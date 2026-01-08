@@ -68,6 +68,7 @@ seras-student-portal/
 │   │   ├── googleSheets.ts     # Google API クライアント初期化
 │   │   ├── dateUtils.ts        # JST日付処理ユーティリティ
 │   │   ├── durationUtils.ts    # 滞在時間計算ユーティリティ
+│   │   ├── stringUtils.ts      # 文字列処理ユーティリティ
 │   │   ├── apiHandler.ts       # APIハンドラー共通処理
 │   │   └── cacheConfig.ts      # キャッシュ設定の一元管理
 │   │
@@ -234,6 +235,9 @@ JST（日本標準時）を扱う処理を一元化。複数のサービスで�
 | `getJstDayOfWeek()` | JST の曜日を取得（0=日, 6=土） |
 | `isEntryToday(entryTime)` | 入室時刻が今日かどうか判定 |
 | `formatTimeJst(dateString)` | 時刻を `HH:MM` 形式で取得 |
+| `setStartOfDay(date)` | 日の開始時刻（00:00:00.000）を設定 |
+| `setEndOfDay(date)` | 日の終了時刻（23:59:59.999）を設定 |
+| `filterLogsByDateRange(logs, start, end)` | 日付範囲でログをフィルタリング |
 
 ### B. 滞在時間計算 (`durationUtils.ts`)
 
@@ -259,6 +263,8 @@ API Route のボイラープレートを削減し、エラーハンドリング�
 | :--- | :--- |
 | `successResponse(data)` | `{ status: 'ok', data }` 形式のレスポンスを生成 |
 | `errorResponse(message, status)` | エラーレスポンスを生成 |
+| `extractErrorMessage(error)` | エラーオブジェクトからメッセージを抽出 |
+| `validateCronRequest(req, context)` | Cron認証チェック（`CRON_SECRET` 検証） |
 | `withErrorHandler(context)` | try-catch によるエラーハンドリングをラップ |
 | `withAuth(context)` | 認証チェックを自動化 |
 | `withPermission(context, permission)` | 認証 + 権限チェックを自動化 |
@@ -273,7 +279,25 @@ export const GET = withPermission('Dashboard Stats', 'canViewDashboard')(
 );
 ```
 
-### D. キャッシュ設定 (`cacheConfig.ts`)
+### D. 文字列処理 (`stringUtils.ts`)
+
+名前の正規化など、文字列処理を一元化。
+
+| 関数 | 用途 |
+| :--- | :--- |
+| `normalizeName(name)` | 名前の正規化（空白・ゼロ幅文字を除去） |
+
+**対応する文字**:
+- 通常の空白（半角・全角スペース、タブ、改行）
+- ゼロ幅文字（U+200B-U+200D, U+FEFF）
+
+**使用例**:
+```typescript
+normalizeName('田中 太郎'); // → '田中太郎'
+normalizeName('佐藤\u200B花子'); // → '佐藤花子'
+```
+
+### E. キャッシュ設定 (`cacheConfig.ts`)
 
 `unstable_cache` の設定値を一元管理し、変更を容易に。
 
