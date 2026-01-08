@@ -2,8 +2,9 @@ import { useState, Fragment } from 'react';
 import { api } from '@/lib/api';
 import { StudentStats } from '@/services/dashboardService';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import type { StudentBadgesMap } from '@/services/badgeService';
-import { RankingDetailView, BADGE_CONFIG, getBadgeStyle } from '@/features/dashboard/components/RankingDetailView';
+import type { StudentBadgesMap } from '@/types/badge';
+import { RankingDetailView, getBadgeStyle } from '@/features/dashboard/components/RankingDetailView';
+import { BADGE_CONFIG } from '@/constants/badges';
 import { HeatmapDataPoint } from './ActivityHeatmap';
 import styles from './RankingWidget.module.css';
 
@@ -139,7 +140,7 @@ export const RankingWidget = ({ ranking, periodDays, loading, badges, viewerId }
                                                                     }}
                                                                 >
                                                                     <span style={{ transform: 'scale(0.8)' }}>
-                                                                        {BADGE_CONFIG[badge.type]?.icon}
+                                                                        {BADGE_CONFIG[badge.type]?.icon(16)}
                                                                     </span>
                                                                 </span>
                                                             ))}
@@ -251,7 +252,7 @@ export const RankingWidget = ({ ranking, periodDays, loading, badges, viewerId }
                                                             }}
                                                         >
                                                             <span style={{ transform: 'scale(0.8)' }}>
-                                                                {BADGE_CONFIG[badge.type]?.icon}
+                                                                {BADGE_CONFIG[badge.type]?.icon(16)}
                                                             </span>
                                                         </span>
                                                     ))}

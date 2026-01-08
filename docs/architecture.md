@@ -72,6 +72,9 @@ seras-student-portal/
 │   │   ├── apiHandler.ts       # APIハンドラー共通処理
 │   │   └── cacheConfig.ts      # キャッシュ設定の一元管理
 │   │
+│   ├── constants/              # 共有定数
+│   │   └── badges.tsx          # バッジ設定 (ラベル、アイコン、説明)
+│   │
 │   └── types/                  # 型定義 (TypeScript Interfaces)
 │       ├── index.ts            # 共通型定義
 │       ├── badge.ts            # バッジ・ランキング関連型
@@ -312,7 +315,34 @@ const cachedFetch = unstable_cache(
 );
 ```
 
-## 9. 型定義の構成
+## 9. 共有定数
+
+複数のコンポーネントで使用される定数は `src/constants/` に集約しています。
+
+### A. バッジ設定 (`badges.tsx`)
+
+週間ランキングのバッジ設定を一元管理。アイコンは関数として定義し、使用時にサイズを指定できます。
+
+```typescript
+import { BADGE_CONFIG } from '@/constants/badges';
+
+// 使用例
+{BADGE_CONFIG['HEAVY_USER'].icon(16)}  // サイズ16のアイコン
+{BADGE_CONFIG['HEAVY_USER'].label}      // "トップランカー"
+{BADGE_CONFIG['HEAVY_USER'].desc}       // "勉強時間の合計がトップクラス"
+```
+
+**対応バッジタイプ**:
+| タイプ | ラベル | 説明 |
+| :--- | :--- | :--- |
+| `HEAVY_USER` | トップランカー | 勉強時間の合計がトップクラス |
+| `EARLY_BIRD` | 早起きマスター | 朝イチから来て勉強している |
+| `NIGHT_OWL` | 深夜マスター | 閉館ギリギリまで残って勉強している |
+| `CONSISTENT` | 皆勤賞候補 | ほぼ毎日、塾に来ている |
+| `MARATHON` | 長時間マスター | 1回の滞在時間が長い |
+| `RISING_STAR` | 急上昇 | 前の週より勉強時間が大幅にアップ |
+
+## 10. 型定義の構成
 
 型定義は `src/types/` に集約し、機能ごとにファイルを分割しています。
 

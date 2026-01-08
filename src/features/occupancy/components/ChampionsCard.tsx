@@ -5,41 +5,9 @@ import { api } from '@/lib/api';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { useLiff } from '@/lib/liff';
 import { useRole } from '@/hooks/useRole';
-import { Trophy, Sunrise, Moon, CalendarDays, Timer, Zap, Crown } from 'lucide-react';
-import type { UnifiedWeeklyBadges, BadgeType } from '@/services/badgeService';
-
-const BADGE_CONFIG: Record<BadgeType, { label: string; icon: React.ReactNode; desc: string }> = {
-    'HEAVY_USER': {
-        label: 'トップランカー',
-        icon: <Crown size={18} />,
-        desc: '勉強時間の合計がトップクラス'
-    },
-    'EARLY_BIRD': {
-        label: '早起きマスター',
-        icon: <Sunrise size={18} />,
-        desc: '朝イチから来て勉強している'
-    },
-    'NIGHT_OWL': {
-        label: '深夜マスター',
-        icon: <Moon size={18} />,
-        desc: '閉館ギリギリまで残って勉強している'
-    },
-    'CONSISTENT': {
-        label: '皆勤賞候補',
-        icon: <CalendarDays size={18} />,
-        desc: 'ほぼ毎日、塾に来ている'
-    },
-    'MARATHON': {
-        label: '長時間マスター',
-        icon: <Timer size={18} />,
-        desc: '1回の滞在時間が長い'
-    },
-    'RISING_STAR': {
-        label: '急上昇',
-        icon: <Zap size={18} />,
-        desc: '前の週より勉強時間が大幅にアップ'
-    },
-};
+import { Trophy } from 'lucide-react';
+import type { UnifiedWeeklyBadges, BadgeType } from '@/types/badge';
+import { BADGE_CONFIG } from '@/constants/badges';
 
 export const ChampionsCard = () => {
     const [ranking, setRanking] = useState<UnifiedWeeklyBadges | null>(null);
@@ -230,7 +198,7 @@ export const ChampionsCard = () => {
                                         color: 'var(--brand-color)',
                                         flexShrink: 0
                                     }}>
-                                        {config.icon}
+                                        {config.icon(18)}
                                     </div>
 
                                     {/* Title + Subtitle */}
