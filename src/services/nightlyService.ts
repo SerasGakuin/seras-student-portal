@@ -8,6 +8,7 @@
 
 import { occupancyService } from '@/services/occupancyService';
 import { ExitTimeFillService, FillResult } from '@/services/exitTimeFillService';
+import { extractErrorMessage } from '@/lib/apiHandler';
 
 /**
  * 自動閉館の結果
@@ -59,12 +60,11 @@ export class NightlyService {
                 message: '2号館は既に閉館済みです',
             };
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             console.error('[NightlyService] 自動閉館エラー:', error);
             return {
                 closed: false,
                 message: '自動閉館処理でエラーが発生しました',
-                error: errorMessage,
+                error: extractErrorMessage(error),
             };
         }
     }
@@ -85,12 +85,11 @@ export class NightlyService {
         try {
             fillExitTimeResult = await this.exitTimeFillService.fillAndNotify();
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             console.error('[NightlyService] 退室時刻補完エラー:', error);
             fillExitTimeResult = {
                 filled: 0,
                 notified: 0,
-                errors: [errorMessage],
+                errors: [extractErrorMessage(error)],
             };
         }
 

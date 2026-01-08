@@ -7,6 +7,7 @@ import {
     calculateEffectiveDuration,
     calculateDurationInTimeRange,
 } from '@/lib/durationUtils';
+import { normalizeName } from '@/lib/stringUtils';
 import {
     BadgeType,
     Badge,
@@ -71,8 +72,6 @@ export class BadgeService {
         });
 
         // 3. Group Students (only active students with status '在塾')
-        const normalizeName = (name: string) => name.replace(/[\s\u200B-\u200D\uFEFF]/g, '').trim();
-
         const examGroup: string[] = [];
         const generalGroup: string[] = [];
 

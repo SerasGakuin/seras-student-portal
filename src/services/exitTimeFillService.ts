@@ -14,6 +14,7 @@ import { IStudentRepository } from '@/repositories/interfaces/IStudentRepository
 import { lineService } from '@/services/lineService';
 import { toJst } from '@/lib/dateUtils';
 import { calculateSingleLogDuration } from '@/lib/durationUtils';
+import { extractErrorMessage } from '@/lib/apiHandler';
 
 /** 建物名のマッピング */
 const BUILDING_NAMES: Record<string, string> = {
@@ -237,9 +238,7 @@ export class ExitTimeFillService {
                         );
                     }
                 } catch (error) {
-                    const errorMsg =
-                        error instanceof Error ? error.message : 'Unknown error';
-                    result.errors.push(`${log.name}: ${errorMsg}`);
+                    result.errors.push(`${log.name}: ${extractErrorMessage(error)}`);
                     console.error(
                         `[ExitTimeFillService] Error processing ${log.name}:`,
                         error
@@ -249,9 +248,7 @@ export class ExitTimeFillService {
 
             return result;
         } catch (error) {
-            const errorMsg =
-                error instanceof Error ? error.message : 'Unknown error';
-            result.errors.push(errorMsg);
+            result.errors.push(extractErrorMessage(error));
             console.error('[ExitTimeFillService] Fatal error:', error);
             return result;
         }

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createMeetingEvent } from '@/services/calendarService';
-import { sendPushMessage } from '@/services/lineService';
+import { lineService } from '@/services/lineService';
 import { getStudentFromLineId } from '@/services/studentService';
 import { BookingRequestSchema } from '@/lib/schema';
 import { ApiResponse } from '@/types';
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
         // For now, keeping format logic here or moving it to lineService?
         // Let's keep it here for custom message construction or refactor later.
 
-        await sendPushMessage(
+        await lineService.pushMessage(
             userId,
             `【${meetingType}】${student.name}さんの${meetingType}は、${date} ${formatTime(arrivalTime.replace('T', ''))}-${formatTime(leaveTime.replace('T', ''))}で予約完了しました！`
         );

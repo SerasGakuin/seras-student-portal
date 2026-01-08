@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createRestDayEvent } from '@/services/calendarService';
-import { sendPushMessage } from '@/services/lineService';
+import { lineService } from '@/services/lineService';
 import { getStudentFromLineId } from '@/services/studentService';
 import { RestDayRequestSchema } from '@/lib/schema';
 import { ApiResponse } from '@/types';
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
         const eventResult = await createRestDayEvent(student.name, date);
 
         // Send confirmation message via LINE
-        await sendPushMessage(
+        await lineService.pushMessage(
             userId,
             `【休む日】${student.name}さんの休む日は、${date}で予約完了しました！\n ひとこと、お休みする理由をここのチャットで教えてください：`
         );
