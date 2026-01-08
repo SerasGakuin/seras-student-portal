@@ -118,6 +118,145 @@ describe('DashboardService', () => {
         });
     });
 
+    describe('getDashboardStats - zero duration students', () => {
+        it('includes students with no logs in the period', async () => {
+            jest.useFakeTimers().setSystemTime(new Date(TEST_DATE.SYSTEM_TIME));
+
+            // 生徒マスター: 田中, 山田, 佐藤（全員在塾）
+            mockFindAllStudents.mockResolvedValue({
+                'LINE_TANAKA': { lineId: 'LINE_TANAKA', name: '田中', grade: '高2', status: '在塾' },
+                'LINE_YAMADA': { lineId: 'LINE_YAMADA', name: '山田', grade: '高3', status: '在塾' },
+                'LINE_SATO': { lineId: 'LINE_SATO', name: '佐藤', grade: '中3', status: '在塾' },
+            });
+
+            // ログ: 田中のみ
+            mockFindAllLogs.mockResolvedValue([
+                { name: '田中', entryTime: `${TEST_DATE.BASE}T10:00:00`, exitTime: `${TEST_DATE.BASE}T12:00:00`, lineId: 'LINE_TANAKA' },
+            ]);
+
+            const result = await service.getDashboardStats();
+
+            // 結果: 3人全員がランキングに含まれる
+            expect(result.ranking.length).toBe(3);
+            expect(result.ranking.map((s: { name: string }) => s.name)).toContain('田中');
+            expect(result.ranking.map((s: { name: string }) => s.name)).toContain('山田');
+            expect(result.ranking.map((s: { name: string }) => s.name)).toContain('佐藤');
+        });
+
+        it('shows zero duration and zero visits for students without logs', async () => {
+            jest.useFakeTimers().setSystemTime(new Date(TEST_DATE.SYSTEM_TIME));
+
+            mockFindAllStudents.mockResolvedValue({
+                'LINE_TANAKA': { lineId: 'LINE_TANAKA', name: '田中', grade: '高2', status: '在塾' },
+                'LINE_YAMADA': { lineId: 'LINE_YAMADA', name: '山田', grade: '高3', status: '在塾' },
+            });
+
+            // ログ: 田中のみ
+            mockFindAllLogs.mockResolvedValue([
+                { name: '田中', entryTime: `${TEST_DATE.BASE}T10:00:00`, exitTime: `${TEST_DATE.BASE}T12:00:00`, lineId: 'LINE_TANAKA' },
+            ]);
+
+            const result = await service.getDashboardStats();
+
+            const yamada = result.ranking.find((s: { name: string }) => s.name === '山田');
+            expect(yamada).toBeDefined();
+            expect(yamada.totalDurationMinutes).toBe(0);
+            expect(yamada.visitCount).toBe(0);
+            expect(yamada.lastVisit).toBeNull();
+        });
+
+        it('applies grade filter to all students including zero-duration ones', async () => {
+            jest.useFakeTimers().setSystemTime(new Date(TEST_DATE.SYSTEM_TIME));
+
+            mockFindAllStudents.mockResolvedValue({
+                'LINE_TANAKA': { lineId: 'LINE_TANAKA', name: '田中', grade: '高3', status: '在塾' },
+                'LINE_YAMADA': { lineId: 'LINE_YAMADA', name: '山田', grade: '高2', status: '在塾' },
+                'LINE_SATO': { lineId: 'LINE_SATO', name: '佐藤', grade: '中3', status: '在塾' },
+            });
+
+            // ログ: なし
+            mockFindAllLogs.mockResolvedValue([]);
+
+            // グレードフィルタ: 'EXAM' (高3, 既卒)
+            const result = await service.getDashboardStats(undefined, undefined, 'EXAM');
+
+            // 結果: 田中のみ表示（学習時間0）
+            expect(result.ranking.length).toBe(1);
+            expect(result.ranking[0].name).toBe('田中');
+            expect(result.ranking[0].totalDurationMinutes).toBe(0);
+        });
+
+        it('sorts students by duration with zero-duration students at the bottom', async () => {
+            jest.useFakeTimers().setSystemTime(new Date(TEST_DATE.SYSTEM_TIME));
+
+            mockFindAllStudents.mockResolvedValue({
+                'LINE_TANAKA': { lineId: 'LINE_TANAKA', name: '田中', grade: '高2', status: '在塾' },
+                'LINE_YAMADA': { lineId: 'LINE_YAMADA', name: '山田', grade: '高3', status: '在塾' },
+                'LINE_SATO': { lineId: 'LINE_SATO', name: '佐藤', grade: '中3', status: '在塾' },
+            });
+
+            // ログ: 田中(120min), 佐藤(60min)
+            mockFindAllLogs.mockResolvedValue([
+                { name: '田中', entryTime: `${TEST_DATE.BASE}T10:00:00`, exitTime: `${TEST_DATE.BASE}T12:00:00`, lineId: 'LINE_TANAKA' },
+                { name: '佐藤', entryTime: `${TEST_DATE.BASE}T10:00:00`, exitTime: `${TEST_DATE.BASE}T11:00:00`, lineId: 'LINE_SATO' },
+            ]);
+
+            const result = await service.getDashboardStats();
+
+            // 結果: [田中(120min), 佐藤(60min), 山田(0min)] の順
+            expect(result.ranking[0].name).toBe('田中');
+            expect(result.ranking[0].totalDurationMinutes).toBe(120);
+            expect(result.ranking[1].name).toBe('佐藤');
+            expect(result.ranking[1].totalDurationMinutes).toBe(60);
+            expect(result.ranking[2].name).toBe('山田');
+            expect(result.ranking[2].totalDurationMinutes).toBe(0);
+        });
+
+        it('sorts zero-duration students by grade (descending) then by name', async () => {
+            jest.useFakeTimers().setSystemTime(new Date(TEST_DATE.SYSTEM_TIME));
+
+            mockFindAllStudents.mockResolvedValue({
+                'LINE_TANAKA': { lineId: 'LINE_TANAKA', name: '田中', grade: '高2', status: '在塾' },
+                'LINE_YAMADA': { lineId: 'LINE_YAMADA', name: '山田', grade: '高3', status: '在塾' },
+                'LINE_SATO': { lineId: 'LINE_SATO', name: '佐藤', grade: '高2', status: '在塾' },
+            });
+
+            // ログ: なし（全員学習時間0）
+            mockFindAllLogs.mockResolvedValue([]);
+
+            const result = await service.getDashboardStats();
+
+            // 結果: [山田(高3), 佐藤(高2), 田中(高2)] の順
+            // （学年降順、同学年は名前昇順：佐藤 < 田中）
+            expect(result.ranking[0].name).toBe('山田');
+            expect(result.ranking[0].grade).toBe('高3');
+            expect(result.ranking[1].name).toBe('佐藤');
+            expect(result.ranking[1].grade).toBe('高2');
+            expect(result.ranking[2].name).toBe('田中');
+            expect(result.ranking[2].grade).toBe('高2');
+        });
+
+        it('excludes students with status other than 在塾', async () => {
+            jest.useFakeTimers().setSystemTime(new Date(TEST_DATE.SYSTEM_TIME));
+
+            mockFindAllStudents.mockResolvedValue({
+                'LINE_TANAKA': { lineId: 'LINE_TANAKA', name: '田中', grade: '高2', status: '在塾' },
+                'LINE_YAMADA': { lineId: 'LINE_YAMADA', name: '山田', grade: '高3', status: '休塾' },
+                'LINE_SATO': { lineId: 'LINE_SATO', name: '佐藤', grade: '中3', status: '退塾' },
+                'LINE_ITO': { lineId: 'LINE_ITO', name: '伊藤', grade: '高1', status: '体験' },
+            });
+
+            // ログ: なし
+            mockFindAllLogs.mockResolvedValue([]);
+
+            const result = await service.getDashboardStats();
+
+            // 結果: 田中のみ（在塾のみ）
+            expect(result.ranking.length).toBe(1);
+            expect(result.ranking[0].name).toBe('田中');
+        });
+    });
+
     describe('Streak Calculation', () => {
         it('should calculate current streak correctly', async () => {
             jest.useFakeTimers().setSystemTime(new Date(TEST_DATE.SYSTEM_TIME));

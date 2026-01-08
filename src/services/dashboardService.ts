@@ -9,6 +9,7 @@ import {
     calculateEffectiveDuration,
     calculateSingleLogDuration
 } from '@/lib/durationUtils';
+import { GRADE_ORDER } from '@/lib/schema';
 
 // Re-export types for backward compatibility
 export type { StudentStats, DashboardSummary } from '@/types/dashboard';
@@ -53,13 +54,15 @@ export class DashboardService {
         const studentRecord = await studentRepo.findAll();
 
         // --- FILTERING START ---
-        let eligibleStudentNames: Set<string> | null = null;
+        // 在籍中の全生徒から eligibleStudentNames を構築（学習時間0でも表示するため）
+        const eligibleStudentNames = new Set<string>();
+        Object.values(studentRecord).forEach((s: Student) => {
+            // 在塾ステータスのみ対象
+            if (s.status !== '在塾') return;
+            if (!s.grade) return;
 
-        if (gradeFilter && gradeFilter !== 'ALL') {
-            eligibleStudentNames = new Set();
-            Object.values(studentRecord).forEach((s: Student) => {
-                if (!s.grade) return;
-
+            // グレードフィルタがある場合は適用
+            if (gradeFilter && gradeFilter !== 'ALL') {
                 let isMatch = false;
                 if (gradeFilter === 'HS') {
                     isMatch = s.grade.includes('高') || s.grade.includes('既卒');
@@ -74,23 +77,23 @@ export class DashboardService {
                     isMatch = s.grade === gradeFilter;
                 }
 
-                if (isMatch) {
-                    eligibleStudentNames!.add(s.name);
-                }
-            });
-        }
+                if (!isMatch) return;
+            }
 
-        const relevantLogs = eligibleStudentNames
-            ? logs.filter(l => l.name && eligibleStudentNames!.has(l.name))
+            eligibleStudentNames.add(s.name);
+        });
+
+        const relevantLogs = eligibleStudentNames.size > 0
+            ? logs.filter(l => l.name && eligibleStudentNames.has(l.name))
             : logs;
 
         // --- FILTERING END ---
 
         // Current Period Stats
-        const currentStats = await this.aggregateStats(relevantLogs, startDate, endDate, studentRecord);
+        const currentStats = await this.aggregateStats(relevantLogs, startDate, endDate, studentRecord, eligibleStudentNames);
 
         // Previous Period Stats (for Trend)
-        const prevStats = await this.aggregateStats(relevantLogs, prevStartDate, prevEndDate, studentRecord);
+        const prevStats = await this.aggregateStats(relevantLogs, prevStartDate, prevEndDate, studentRecord, eligibleStudentNames);
 
         // Calculate Trends
         const durationTrend = this.calculateTrend(currentStats.totalDuration, prevStats.totalDuration);
@@ -276,7 +279,8 @@ export class DashboardService {
         logs: EntryExitLog[],
         from: Date,
         to: Date,
-        studentMap: Record<string, Student>
+        studentMap: Record<string, Student>,
+        eligibleStudentNames?: Set<string>
     ): Promise<{ totalDuration: number; totalVisits: number; ranking: StudentStats[] }> {
 
         // Filter Logs using JST comparison
@@ -297,13 +301,24 @@ export class DashboardService {
             studentLogsMap.get(log.name)!.push(log);
         });
 
+        // 対象生徒リストを決定
+        // eligibleStudentNames があれば使用、なければログがある生徒のみ（後方互換性）
+        const targetStudents = eligibleStudentNames
+            ? Array.from(eligibleStudentNames)
+            : Array.from(studentLogsMap.keys());
+
         const ranking: StudentStats[] = [];
         let totalDuration = 0;
         let totalVisits = 0;
 
-        for (const [name, studentLogs] of studentLogsMap.entries()) {
+        for (const name of targetStudents) {
+            const studentLogs = studentLogsMap.get(name) || [];
+            const student = nameToStudent.get(name);
+
             // 1. Calculate Effective Duration (Merge Overlaps)
-            const duration = calculateEffectiveDuration(studentLogs);
+            const duration = studentLogs.length > 0
+                ? calculateEffectiveDuration(studentLogs)
+                : 0;
 
             // 2. Calculate Visits (Unique Days)
             const visitedDays = new Set<string>();
@@ -318,7 +333,6 @@ export class DashboardService {
             });
 
             const visitCount = visitedDays.size;
-            const student = nameToStudent.get(name);
 
             ranking.push({
                 name,
@@ -334,7 +348,21 @@ export class DashboardService {
             totalVisits += visitCount;
         }
 
-        ranking.sort((a, b) => b.totalDurationMinutes - a.totalDurationMinutes);
+        // 複合ソート: 学習時間 → 学年 → 名前
+        ranking.sort((a, b) => {
+            // 1. 学習時間で降順
+            if (b.totalDurationMinutes !== a.totalDurationMinutes) {
+                return b.totalDurationMinutes - a.totalDurationMinutes;
+            }
+            // 2. 学年で降順
+            const gradeA = GRADE_ORDER[a.grade || ''] || 0;
+            const gradeB = GRADE_ORDER[b.grade || ''] || 0;
+            if (gradeB !== gradeA) {
+                return gradeB - gradeA;
+            }
+            // 3. 名前で昇順
+            return (a.name || '').localeCompare(b.name || '', 'ja');
+        });
 
         console.log(`[DEBUG-JST] From: ${from.toLocaleString()}, To: ${to.toLocaleString()}`);
         console.log(`[DEBUG-JST] Total Logs: ${logs.length}, Period Logs: ${periodLogs.length}`);

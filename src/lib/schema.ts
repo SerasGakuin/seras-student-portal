@@ -10,6 +10,21 @@ export const GradeSchema = z.enum([
     '既卒', '講師'
 ]);
 
+/**
+ * 学年の優先度マップ（降順ソート用）
+ * 数値が大きいほど上位学年
+ */
+export const GRADE_ORDER: Record<string, number> = {
+    '既卒': 7,
+    '高3': 6,
+    '高2': 5,
+    '高1': 4,
+    '中3': 3,
+    '中2': 2,
+    '中1': 1,
+    '講師': 0,
+};
+
 export const StudentStatusSchema = z.enum([
     '在塾', '体験', '退塾', '休塾',
     '在塾(講師)', '退塾(講師)', '教室長'
