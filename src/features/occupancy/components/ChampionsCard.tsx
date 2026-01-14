@@ -228,7 +228,7 @@ export const ChampionsCard = () => {
                                     gap: '6px',
                                     paddingLeft: '52px'
                                 }}>
-                                    {winners.slice(0, 3).map((w) => (
+                                    {winners.filter(w => w.rank <= 3).map((w) => (
                                         <div key={w.name} style={{
                                             display: 'flex',
                                             alignItems: 'center',

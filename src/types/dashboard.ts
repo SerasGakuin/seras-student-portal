@@ -16,6 +16,7 @@ export interface StudentStats {
     growth?: number; // Delta vs previous period
     docLink?: string; // Google Docs link
     sheetLink?: string; // Google Sheets link
+    rank?: number; // Olympic-style rank (ties share same rank)
 }
 
 /**
