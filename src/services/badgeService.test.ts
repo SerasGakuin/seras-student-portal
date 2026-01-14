@@ -207,4 +207,137 @@ describe('BadgeService', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         expect(result.exam['S1']).toContainEqual(expect.objectContaining({ type: 'RISING_STAR', value: '+3h' } as any));
     });
+
+    describe('Tie handling (Olympic-style ranking)', () => {
+        it('should assign same rank to students with same study time for HEAVY_USER', async () => {
+            mockFindAllStudents.mockResolvedValue({
+                1: { name: 'S1', grade: '高3', status: '在塾' },
+                2: { name: 'S2', grade: '高3', status: '在塾' },
+                3: { name: 'S3', grade: '高3', status: '在塾' },
+            });
+
+            const baseDate = '2025-01-01';
+            // S1, S2: 5 hours each (tied), S3: 3 hours
+            mockFindAllLogs.mockResolvedValue([
+                { name: 'S1', entryTime: `${baseDate}T10:00:00`, exitTime: `${baseDate}T15:00:00` },
+                { name: 'S2', entryTime: `${baseDate}T10:00:00`, exitTime: `${baseDate}T15:00:00` },
+                { name: 'S3', entryTime: `${baseDate}T10:00:00`, exitTime: `${baseDate}T13:00:00` },
+            ]);
+
+            const result = await service.getWeeklyBadges(new Date('2025-01-02T10:00:00'));
+
+            const s1Badge = result.exam['S1']?.find((b: Badge) => b.type === 'HEAVY_USER');
+            const s2Badge = result.exam['S2']?.find((b: Badge) => b.type === 'HEAVY_USER');
+            const s3Badge = result.exam['S3']?.find((b: Badge) => b.type === 'HEAVY_USER');
+
+            // S1 and S2 should both be rank 1 (tied)
+            expect(s1Badge?.rank).toBe(1);
+            expect(s2Badge?.rank).toBe(1);
+            // S3 should be rank 3 (Olympic-style: 1, 1, 3)
+            expect(s3Badge?.rank).toBe(3);
+        });
+
+        it('should assign same rank to students with same visit days for CONSISTENT', async () => {
+            mockFindAllStudents.mockResolvedValue({
+                1: { name: 'S1', grade: '中1', status: '在塾' },
+                2: { name: 'S2', grade: '中1', status: '在塾' },
+                3: { name: 'S3', grade: '中1', status: '在塾' },
+            });
+
+            // S1 and S2 have 5 visit days, S3 has 3 visit days
+            mockFindAllLogs.mockResolvedValue([
+                // S1: 5 different days
+                { name: 'S1', entryTime: '2025-01-01T10:00:00', exitTime: '2025-01-01T11:00:00' },
+                { name: 'S1', entryTime: '2024-12-31T10:00:00', exitTime: '2024-12-31T11:00:00' },
+                { name: 'S1', entryTime: '2024-12-30T10:00:00', exitTime: '2024-12-30T11:00:00' },
+                { name: 'S1', entryTime: '2024-12-29T10:00:00', exitTime: '2024-12-29T11:00:00' },
+                { name: 'S1', entryTime: '2024-12-28T10:00:00', exitTime: '2024-12-28T11:00:00' },
+                // S2: 5 different days
+                { name: 'S2', entryTime: '2025-01-01T10:00:00', exitTime: '2025-01-01T11:00:00' },
+                { name: 'S2', entryTime: '2024-12-31T10:00:00', exitTime: '2024-12-31T11:00:00' },
+                { name: 'S2', entryTime: '2024-12-30T10:00:00', exitTime: '2024-12-30T11:00:00' },
+                { name: 'S2', entryTime: '2024-12-29T10:00:00', exitTime: '2024-12-29T11:00:00' },
+                { name: 'S2', entryTime: '2024-12-28T10:00:00', exitTime: '2024-12-28T11:00:00' },
+                // S3: 3 different days
+                { name: 'S3', entryTime: '2025-01-01T10:00:00', exitTime: '2025-01-01T11:00:00' },
+                { name: 'S3', entryTime: '2024-12-31T10:00:00', exitTime: '2024-12-31T11:00:00' },
+                { name: 'S3', entryTime: '2024-12-30T10:00:00', exitTime: '2024-12-30T11:00:00' },
+            ]);
+
+            const result = await service.getWeeklyBadges(new Date('2025-01-02T10:00:00'));
+
+            const s1Badge = result.general['S1']?.find((b: Badge) => b.type === 'CONSISTENT');
+            const s2Badge = result.general['S2']?.find((b: Badge) => b.type === 'CONSISTENT');
+            const s3Badge = result.general['S3']?.find((b: Badge) => b.type === 'CONSISTENT');
+
+            // S1 and S2 should both be rank 1 (tied)
+            expect(s1Badge?.rank).toBe(1);
+            expect(s2Badge?.rank).toBe(1);
+            // S3 should be rank 3 (Olympic-style: 1, 1, 3)
+            expect(s3Badge?.rank).toBe(3);
+        });
+
+        it('should award badges to all 5 students when they are all tied at rank 1', async () => {
+            mockFindAllStudents.mockResolvedValue({
+                1: { name: 'S1', grade: '高3', status: '在塾' },
+                2: { name: 'S2', grade: '高3', status: '在塾' },
+                3: { name: 'S3', grade: '高3', status: '在塾' },
+                4: { name: 'S4', grade: '高3', status: '在塾' },
+                5: { name: 'S5', grade: '高3', status: '在塾' },
+            });
+
+            const baseDate = '2025-01-01';
+            // All 5 students have exactly 5 hours
+            mockFindAllLogs.mockResolvedValue([
+                { name: 'S1', entryTime: `${baseDate}T10:00:00`, exitTime: `${baseDate}T15:00:00` },
+                { name: 'S2', entryTime: `${baseDate}T10:00:00`, exitTime: `${baseDate}T15:00:00` },
+                { name: 'S3', entryTime: `${baseDate}T10:00:00`, exitTime: `${baseDate}T15:00:00` },
+                { name: 'S4', entryTime: `${baseDate}T10:00:00`, exitTime: `${baseDate}T15:00:00` },
+                { name: 'S5', entryTime: `${baseDate}T10:00:00`, exitTime: `${baseDate}T15:00:00` },
+            ]);
+
+            const result = await service.getWeeklyBadges(new Date('2025-01-02T10:00:00'));
+
+            // All 5 students should have HEAVY_USER badge with rank 1
+            const badges = ['S1', 'S2', 'S3', 'S4', 'S5'].map(name =>
+                result.exam[name]?.find((b: Badge) => b.type === 'HEAVY_USER')
+            );
+
+            badges.forEach(badge => {
+                expect(badge).toBeDefined();
+                expect(badge?.rank).toBe(1);
+            });
+        });
+
+        it('should skip rank when there are ties (1, 1, 3 not 1, 1, 2)', async () => {
+            mockFindAllStudents.mockResolvedValue({
+                1: { name: 'S1', grade: '高3', status: '在塾' },
+                2: { name: 'S2', grade: '高3', status: '在塾' },
+                3: { name: 'S3', grade: '高3', status: '在塾' },
+                4: { name: 'S4', grade: '高3', status: '在塾' },
+            });
+
+            const baseDate = '2025-01-01';
+            // S1, S2: 5 hours (rank 1), S3, S4: 3 hours (rank 3)
+            mockFindAllLogs.mockResolvedValue([
+                { name: 'S1', entryTime: `${baseDate}T10:00:00`, exitTime: `${baseDate}T15:00:00` },
+                { name: 'S2', entryTime: `${baseDate}T10:00:00`, exitTime: `${baseDate}T15:00:00` },
+                { name: 'S3', entryTime: `${baseDate}T10:00:00`, exitTime: `${baseDate}T13:00:00` },
+                { name: 'S4', entryTime: `${baseDate}T10:00:00`, exitTime: `${baseDate}T13:00:00` },
+            ]);
+
+            const result = await service.getWeeklyBadges(new Date('2025-01-02T10:00:00'));
+
+            const s1Badge = result.exam['S1']?.find((b: Badge) => b.type === 'HEAVY_USER');
+            const s2Badge = result.exam['S2']?.find((b: Badge) => b.type === 'HEAVY_USER');
+            const s3Badge = result.exam['S3']?.find((b: Badge) => b.type === 'HEAVY_USER');
+            const s4Badge = result.exam['S4']?.find((b: Badge) => b.type === 'HEAVY_USER');
+
+            expect(s1Badge?.rank).toBe(1);
+            expect(s2Badge?.rank).toBe(1);
+            // Both S3 and S4 should be rank 3 (not rank 2)
+            expect(s3Badge?.rank).toBe(3);
+            expect(s4Badge?.rank).toBe(3);
+        });
+    });
 });

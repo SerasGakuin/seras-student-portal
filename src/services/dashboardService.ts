@@ -9,6 +9,7 @@ import {
     calculateEffectiveDuration,
     calculateSingleLogDuration
 } from '@/lib/durationUtils';
+import { calculateRanksWithTies } from '@/lib/rankingUtils';
 import { GRADE_ORDER } from '@/lib/schema';
 
 // Re-export types for backward compatibility
@@ -362,6 +363,14 @@ export class DashboardService {
             }
             // 3. 名前で昇順
             return (a.name || '').localeCompare(b.name || '', 'ja');
+        });
+
+        // Assign Olympic-style ranks (ties share same rank)
+        const rankedItems = calculateRanksWithTies(
+            ranking.map(s => ({ item: s, value: s.totalDurationMinutes }))
+        );
+        rankedItems.forEach(({ item, rank }) => {
+            item.rank = rank;
         });
 
         console.log(`[DEBUG-JST] From: ${from.toLocaleString()}, To: ${to.toLocaleString()}`);

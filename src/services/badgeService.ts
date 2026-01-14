@@ -8,6 +8,7 @@ import {
     calculateDurationInTimeRange,
 } from '@/lib/durationUtils';
 import { normalizeName } from '@/lib/stringUtils';
+import { calculateRanksWithTies, getTopNWithTies } from '@/lib/rankingUtils';
 import {
     BadgeType,
     Badge,
@@ -170,69 +171,94 @@ export class BadgeService {
     private calculateFullRankings(groupNames: string[], stats: Map<string, StudentWeeklyStats>): StudentRankingsMap {
         const rankings: StudentRankingsMap = {};
 
-        // Sort by total duration descending
-        const sorted = groupNames
+        // Prepare items for ranking
+        const items = groupNames
             .map(name => ({ name, stats: stats.get(name) }))
             .filter(item => item.stats)
-            .sort((a, b) => (b.stats!.totalDuration) - (a.stats!.totalDuration));
+            .map(item => ({
+                item: item,
+                value: item.stats!.totalDuration
+            }));
 
-        sorted.forEach((item, index) => {
-            rankings[item.stats!.name] = index + 1; // 1-indexed rank
+        // Calculate ranks with tie handling (Olympic-style)
+        const ranked = calculateRanksWithTies(items);
+
+        ranked.forEach(({ item, rank }) => {
+            rankings[item.stats!.name] = rank;
         });
 
         return rankings;
     }
 
     private awardBadgesForGroup(groupNames: string[], stats: Map<string, StudentWeeklyStats>, result: StudentBadgesMap) {
-        // Helper to sort and pick top 3
+        // Helper to rank and pick top 3 with proper tie handling
         const processRanking = (
-            comparator: (a: StudentWeeklyStats, b: StudentWeeklyStats) => number,
+            getValue: (s: StudentWeeklyStats) => number,
             type: BadgeType,
             displayValue: (s: StudentWeeklyStats) => string | number,
-            threshold: (s: StudentWeeklyStats) => boolean = () => true
+            minThreshold?: number
         ) => {
-            const candidates = groupNames
+            // Prepare items for ranking
+            const items = groupNames
                 .map(name => stats.get(name)!)
-                .filter(s => s && threshold(s))
-                .sort(comparator);
+                .filter(s => s)
+                .map(s => ({
+                    item: s,
+                    value: getValue(s)
+                }));
 
-            candidates.slice(0, 3).forEach((s, index) => {
-                if (!result[s.name]) result[s.name] = [];
-                result[s.name].push({
+            // Get top 3 with tie handling (Olympic-style)
+            const ranked = getTopNWithTies(items, 3, minThreshold);
+
+            ranked.forEach(({ item, rank }) => {
+                if (!result[item.name]) result[item.name] = [];
+                result[item.name].push({
                     type,
-                    rank: index + 1,
-                    value: displayValue(s)
+                    rank,
+                    value: displayValue(item)
                 });
             });
         };
 
         // 1. HEAVY_USER (Total Duration)
-        processRanking((a, b) => b.totalDuration - a.totalDuration, 'HEAVY_USER', s => Math.floor(s.totalDuration / 60) + 'h', s => s.totalDuration > 0);
+        // Min threshold: > 0 means >= 1 (any positive value)
+        processRanking(s => s.totalDuration, 'HEAVY_USER', s => Math.floor(s.totalDuration / 60) + 'h', 1);
 
         // 2. EARLY_BIRD (Morning Duration)
-        processRanking((a, b) => b.morningDuration - a.morningDuration, 'EARLY_BIRD', s => Math.floor(s.morningDuration) + 'm', s => s.morningDuration > 30); // Min 30 mins
+        // Min threshold: > 30 means >= 31
+        processRanking(s => s.morningDuration, 'EARLY_BIRD', s => Math.floor(s.morningDuration) + 'm', 31);
 
         // 3. NIGHT_OWL (Night Duration)
-        processRanking((a, b) => b.nightDuration - a.nightDuration, 'NIGHT_OWL', s => Math.floor(s.nightDuration / 60) + 'h', s => s.nightDuration > 60); // Min 1 hour
+        // Min threshold: > 60 means >= 61
+        processRanking(s => s.nightDuration, 'NIGHT_OWL', s => Math.floor(s.nightDuration / 60) + 'h', 61);
 
         // 4. CONSISTENT (Visit Days)
-        processRanking((a, b) => b.visitDays.size - a.visitDays.size, 'CONSISTENT', s => s.visitDays.size + 'd', s => s.visitDays.size >= 3);
+        // Min threshold: >= 3
+        processRanking(s => s.visitDays.size, 'CONSISTENT', s => s.visitDays.size + 'd', 3);
 
         // 5. MARATHON (Avg Duration / Day)
-        processRanking((a, b) => {
-            const avgA = a.visitDays.size ? a.totalDuration / a.visitDays.size : 0;
-            const avgB = b.visitDays.size ? b.totalDuration / b.visitDays.size : 0;
-            return avgB - avgA;
-        }, 'MARATHON', s => {
-            const avg = s.visitDays.size ? Math.floor(s.totalDuration / s.visitDays.size / 60) : 0;
-            return avg + 'h/d';
-        }, s => s.totalDuration > 0);
+        // Min threshold: > 0 means >= 1 (any positive value)
+        processRanking(
+            s => s.visitDays.size ? s.totalDuration / s.visitDays.size : 0,
+            'MARATHON',
+            s => {
+                const avg = s.visitDays.size ? Math.floor(s.totalDuration / s.visitDays.size / 60) : 0;
+                return avg + 'h/d';
+            },
+            1
+        );
 
         // 6. RISING_STAR (Growth)
-        processRanking((a, b) => (b.totalDuration - b.prevTotalDuration) - (a.totalDuration - a.prevTotalDuration), 'RISING_STAR', s => {
-            const diff = Math.floor((s.totalDuration - s.prevTotalDuration) / 60);
-            return '+' + diff + 'h';
-        }, s => (s.totalDuration - s.prevTotalDuration) > 120); // Min 2 hours growth
+        // Min threshold: > 120 means >= 121 (more than 2 hours growth)
+        processRanking(
+            s => s.totalDuration - s.prevTotalDuration,
+            'RISING_STAR',
+            s => {
+                const diff = Math.floor((s.totalDuration - s.prevTotalDuration) / 60);
+                return '+' + diff + 'h';
+            },
+            121
+        );
     }
 }
 

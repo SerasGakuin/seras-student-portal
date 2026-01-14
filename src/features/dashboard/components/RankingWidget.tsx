@@ -93,7 +93,8 @@ export const RankingWidget = ({ ranking, periodDays, loading, badges, viewerId }
                                 {ranking.map((student, index) => {
                                     const hours = Math.floor(student.totalDurationMinutes / 60);
                                     const mins = student.totalDurationMinutes % 60;
-                                    const isTop3 = index < 3;
+                                    const rank = student.rank ?? index + 1; // Fallback for backward compatibility
+                                    const isTop3 = rank <= 3;
                                     const isExpanded = expandedStudent === student.name;
                                     const isExaminee = student.grade === '高3' || student.grade === '既卒';
                                     const badgeStyle = getBadgeStyle(isExaminee);
@@ -118,7 +119,7 @@ export const RankingWidget = ({ ranking, periodDays, loading, badges, viewerId }
                                                 onMouseLeave={(e) => !isExpanded && (e.currentTarget.style.background = 'transparent')}
                                             >
                                                 <td className={`${styles.rankBadge} ${isTop3 ? styles.topRank : ''}`} style={{ padding: '24px 16px' }}>
-                                                    {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
+                                                    {rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank}
                                                 </td>
                                                 <td style={{ padding: '24px 16px', fontWeight: 700 }}>
                                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -191,7 +192,7 @@ export const RankingWidget = ({ ranking, periodDays, loading, badges, viewerId }
                                                                     description={null}
                                                                     rankingInfo={{
                                                                         badges: badges?.[student.name] || [],
-                                                                        rankPosition: index + 1,
+                                                                        rankPosition: rank,
                                                                         totalStudents: ranking.length,
                                                                         groupLabel: (student.grade === '高3' || student.grade === '既卒') ? '受験生の部' : '一般の部'
                                                                     }}
@@ -224,7 +225,8 @@ export const RankingWidget = ({ ranking, periodDays, loading, badges, viewerId }
                         {ranking.map((student, index) => {
                             const hours = Math.floor(student.totalDurationMinutes / 60);
                             const mins = student.totalDurationMinutes % 60;
-                            const isTop3 = index < 3;
+                            const rank = student.rank ?? index + 1; // Fallback for backward compatibility
+                            const isTop3 = rank <= 3;
                             const isExpanded = expandedStudent === student.name;
                             const barPercent = Math.min((student.totalDurationMinutes / maxDuration) * 100, 100);
                             const isExaminee = student.grade === '高3' || student.grade === '既卒';
@@ -238,7 +240,7 @@ export const RankingWidget = ({ ranking, periodDays, loading, badges, viewerId }
                                 >
                                     <div className={styles.mobileCardHeader}>
                                         <div className={`${styles.mobileRankBadge} ${isTop3 ? styles.mobileTopRank : ''}`}>
-                                            {index + 1}
+                                            {rank}
                                         </div>
                                         <div className={styles.mobileName} style={{ flex: 1 }}>
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -310,7 +312,7 @@ export const RankingWidget = ({ ranking, periodDays, loading, badges, viewerId }
                                                 description={null}
                                                 rankingInfo={{
                                                     badges: badges?.[student.name] || [],
-                                                    rankPosition: index + 1,
+                                                    rankPosition: rank,
                                                     totalStudents: ranking.length,
                                                     groupLabel: (student.grade === '高3' || student.grade === '既卒') ? '受験生の部' : '一般の部'
                                                 }}
