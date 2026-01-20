@@ -77,7 +77,7 @@ export const ChampionsCard = () => {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '10px',
-                    marginBottom: '15px'
+                    marginBottom: '4px'
                 }}>
                     <Trophy size={20} style={{ color: 'var(--brand-color)' }} />
                     <h2 style={{
@@ -89,7 +89,7 @@ export const ChampionsCard = () => {
                         Weekly Rankings
                     </h2>
                     <span style={{
-                        fontSize: '0.75rem',
+                        fontSize: '0.7rem',
                         color: 'var(--text-sub)',
                         fontWeight: 500,
                         marginLeft: 'auto'
@@ -97,14 +97,24 @@ export const ChampionsCard = () => {
                         毎週月曜更新
                     </span>
                 </div>
+                <div style={{
+                    fontSize: '1.05rem',
+                    fontWeight: 700,
+                    color: 'var(--text-main)',
+                    marginLeft: '30px',
+                    marginBottom: '12px'
+                }}>
+                    {ranking.period?.label || '先週'}
+                </div>
                 <p style={{
-                    fontSize: '0.85rem',
+                    fontSize: '0.8rem',
                     color: 'var(--text-sub)',
                     fontWeight: 500,
                     margin: 0,
+                    marginLeft: '30px',
                     lineHeight: 1.5
                 }}>
-                    {ranking.period?.label || '先週'}の頑張りをランキング！<br />各部門3位以内に入ると、バッジがもらえます✨
+                    各部門3位以内に入ると、バッジがもらえます✨
                 </p>
             </div>
 
