@@ -108,6 +108,7 @@ export class DashboardService {
         const history = this.calculateHistory(relevantLogs, startDate, endDate, allStudents);
         const badgeResult = await badgeService.getWeeklyBadges();
         const badges = { ...badgeResult.exam, ...badgeResult.general };
+        const badgePeriod = badgeResult.period;
 
         return {
             totalDuration: {
@@ -142,7 +143,8 @@ export class DashboardService {
             periodDays,
             history,
             metricLists: this.calculateLists(currentStats.ranking, prevStats.ranking),
-            badges
+            badges,
+            badgePeriod,
         };
     }
 

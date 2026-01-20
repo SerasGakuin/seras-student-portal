@@ -1,6 +1,7 @@
 import { GlassCard } from '@/components/ui/GlassCard';
 import { ActivityHeatmap, HeatmapDataPoint } from '@/features/dashboard/components/ActivityHeatmap';
 import { TimeRangeChart } from '@/features/dashboard/components/TimeRangeChart';
+import { getBadgeStyle } from '@/features/dashboard/components/RankingDetailView';
 import { BadgeType } from '@/types/badge';
 import { BADGE_CONFIG } from '@/constants/badges';
 import { User, Clock, Calendar, Flame, Trophy, Crown } from 'lucide-react';
@@ -25,6 +26,7 @@ export interface StudentStatsViewProps {
     history: HeatmapDataPoint[];
     loading?: boolean;
     periodDays: number;
+    badgePeriodLabel?: string;
 }
 
 export const StudentStatsView = ({
@@ -35,7 +37,8 @@ export const StudentStatsView = ({
     streakStats,
     history,
     loading = false,
-    periodDays
+    periodDays,
+    badgePeriodLabel
 }: StudentStatsViewProps) => {
 
     if (loading) {
@@ -53,188 +56,163 @@ export const StudentStatsView = ({
 
     const hours = Math.floor(stats.totalMinutes / 60);
     const mins = stats.totalMinutes % 60;
+    const isExaminee = rankingInfo?.groupLabel === '受験生の部';
+    const badgeStyle = getBadgeStyle(isExaminee);
 
     return (
-        <GlassCard style={{ padding: '9px', marginBottom: '24px', overflow: 'hidden' }}>
-            {/* Header */}
+        <GlassCard style={{ padding: '16px', marginBottom: '24px', overflow: 'hidden' }}>
+            {/* Header - Compact */}
             <div style={{
-                padding: '20px',
-                borderBottom: '1px solid rgba(0,0,0,0.05)'
+                padding: '12px 8px 20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px'
             }}>
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    marginBottom: '12px'
+                <User size={18} style={{ color: 'var(--brand-color)' }} />
+                <h2 style={{
+                    fontSize: '1.1rem',
+                    fontWeight: 800,
+                    color: 'var(--text-main)',
+                    margin: 0
                 }}>
-                    <User size={20} style={{ color: 'var(--brand-color)' }} />
-                    <h2 style={{
-                        fontSize: '1.2rem',
-                        fontWeight: 900,
-                        color: 'var(--text-main)',
-                        margin: 0
-                    }}>
-                        {studentName}さんの記録
-                    </h2>
-                    <span style={{
-                        fontSize: '0.75rem',
-                        color: 'var(--text-sub)',
-                        fontWeight: 500,
-                        marginLeft: 'auto'
-                    }}>
-                        {rankingInfo?.groupLabel || '部門なし'}
-                    </span>
-                </div>
-                <p style={{
-                    fontSize: '0.85rem',
-                    color: 'var(--text-sub)',
-                    fontWeight: 500,
-                    margin: 0,
-                    lineHeight: 1.5
-                }}>
-                    {description}
-                </p>
+                    {studentName}さんの記録
+                </h2>
             </div>
 
             {/* Badges Section */}
             <div style={{
-                padding: '16px 20px',
-                borderBottom: '1px solid rgba(0,0,0,0.05)'
+                padding: '16px 20px 20px',
+                background: 'linear-gradient(135deg, rgba(255,245,235,0.5) 0%, rgba(255,237,224,0.3) 100%)',
+                borderRadius: '14px',
+                margin: '0 0 20px'
             }}>
                 <div style={{
                     display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '12px'
+                    alignItems: 'center',
+                    gap: '8px',
+                    marginBottom: '14px'
                 }}>
-                    <div style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '10px',
-                        background: 'linear-gradient(135deg, #fff5eb 0%, #ffede0 100%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'var(--brand-color)',
-                        flexShrink: 0
-                    }}>
-                        <Trophy size={18} />
-                    </div>
-                    <div>
-                        <div style={{
-                            fontWeight: 800,
-                            fontSize: '1rem',
-                            color: 'var(--text-main)',
-                            marginBottom: '8px'
-                        }}>
-                            獲得バッジ
-                        </div>
-                        {rankingInfo && rankingInfo.badges.length > 0 ? (
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                {rankingInfo.badges.map((badge, i) => (
-                                    <span
-                                        key={i}
-                                        style={{
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: '6px',
-                                            padding: '6px 12px',
-                                            borderRadius: '20px',
-                                            background: 'linear-gradient(135deg, #fff5eb 0%, #ffede0 100%)',
-                                            color: 'var(--brand-color)',
-                                            fontSize: '0.85rem',
-                                            fontWeight: 700
-                                        }}
-                                    >
-                                        {BADGE_CONFIG[badge.type]?.icon(16)}
-                                        {BADGE_CONFIG[badge.type]?.label}
-                                    </span>
-                                ))}
-                            </div>
-                        ) : (
-                            <div style={{
-                                fontSize: '0.85rem',
-                                color: 'var(--text-sub)',
-                                fontWeight: 500
-                            }}>
-                                まだ獲得していません<br />各部門3位以内を目指そう！
-                            </div>
-                        )}
-                    </div>
+                    <Trophy size={14} style={{ color: 'var(--brand-color)' }} />
+                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)' }}>獲得バッジ</span>
+                    {rankingInfo?.groupLabel && (
+                        <span style={{ fontSize: '0.7rem', fontWeight: 500, color: 'var(--text-sub)' }}>
+                            {rankingInfo.groupLabel}
+                        </span>
+                    )}
+                    {badgePeriodLabel && (
+                        <span style={{ fontSize: '0.7rem', fontWeight: 500, color: 'var(--text-sub)' }}>
+                            / {badgePeriodLabel}
+                        </span>
+                    )}
                 </div>
+                {rankingInfo && rankingInfo.badges.length > 0 ? (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                        {rankingInfo.badges.map((badge, i) => (
+                            <span
+                                key={i}
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '5px',
+                                    padding: '6px 12px',
+                                    borderRadius: '14px',
+                                    background: badgeStyle.background,
+                                    color: badgeStyle.color,
+                                    fontSize: '0.8rem',
+                                    fontWeight: 600,
+                                    border: badgeStyle.border
+                                }}
+                            >
+                                {BADGE_CONFIG[badge.type]?.icon(14)}
+                                {BADGE_CONFIG[badge.type]?.label}
+                            </span>
+                        ))}
+                    </div>
+                ) : (
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-sub)', fontWeight: 500, lineHeight: 1.6 }}>
+                        まだ獲得していません。各部門3位以内を目指そう！
+                    </div>
+                )}
             </div>
 
             {/* Stats Section */}
-            <div style={{
-                padding: '20px',
-                borderBottom: '1px solid rgba(0,0,0,0.05)'
-            }}>
+            <div style={{ padding: '0 0 20px' }}>
+                <div style={{
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    color: 'var(--text-main)',
+                    padding: '0 8px',
+                    marginBottom: '14px'
+                }}>
+                    直近7日間の記録
+                </div>
                 <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', // More flexible for mobile
+                    gridTemplateColumns: 'repeat(2, 1fr)',
                     gap: '12px'
                 }}>
                     {/* Total Time */}
                     <div style={{
-                        padding: '16px',
+                        padding: '16px 18px',
                         background: 'rgba(255,255,255,0.7)',
-                        borderRadius: '16px',
+                        borderRadius: '14px',
                         border: '1px solid rgba(0,0,0,0.04)'
                     }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                            <Clock size={16} style={{ color: 'var(--brand-color)' }} />
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-sub)', fontWeight: 600 }}>合計学習時間</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                            <Clock size={13} style={{ color: 'var(--brand-color)' }} />
+                            <span style={{ fontSize: '0.7rem', color: 'var(--text-sub)', fontWeight: 600 }}>学習時間</span>
                         </div>
-                        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                            {hours}<span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-sub)' }}>h </span>
-                            {mins}<span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-sub)' }}>m</span>
+                        <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                            {hours}<span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-sub)' }}>h </span>
+                            {mins}<span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-sub)' }}>m</span>
                         </div>
                     </div>
 
                     {/* Visit Count */}
                     <div style={{
-                        padding: '16px',
+                        padding: '16px 18px',
                         background: 'rgba(255,255,255,0.7)',
-                        borderRadius: '16px',
+                        borderRadius: '14px',
                         border: '1px solid rgba(0,0,0,0.04)'
                     }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                            <Calendar size={16} style={{ color: 'var(--brand-color)' }} />
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-sub)', fontWeight: 600 }}>通塾日数</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                            <Calendar size={13} style={{ color: 'var(--brand-color)' }} />
+                            <span style={{ fontSize: '0.7rem', color: 'var(--text-sub)', fontWeight: 600 }}>通塾日数</span>
                         </div>
-                        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                            {stats.visitCount}<span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-sub)' }}> / {periodDays}日</span>
+                        <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                            {stats.visitCount}<span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-sub)' }}> / {periodDays}日</span>
                         </div>
                     </div>
 
-                    {/* Streak (Current > Max) */}
+                    {/* Streak */}
                     {streakStats.currentStreak >= 2 ? (
                         <div style={{
-                            padding: '16px',
+                            padding: '16px 18px',
                             background: 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)',
-                            borderRadius: '16px',
+                            borderRadius: '14px',
                             border: '1px solid rgba(234,88,12,0.1)'
                         }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                <Flame size={16} style={{ color: '#ea580c' }} />
-                                <span style={{ fontSize: '0.75rem', color: '#c2410c', fontWeight: 600 }}>連続通塾中 🔥</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                                <Flame size={13} style={{ color: '#ea580c' }} />
+                                <span style={{ fontSize: '0.7rem', color: '#c2410c', fontWeight: 600 }}>連続通塾中</span>
                             </div>
-                            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ea580c' }}>
-                                {streakStats.currentStreak}<span style={{ fontSize: '0.9rem', fontWeight: 600 }}>日</span>
+                            <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#ea580c' }}>
+                                {streakStats.currentStreak}<span style={{ fontSize: '0.8rem', fontWeight: 600 }}>日</span>
                             </div>
                         </div>
                     ) : (
                         <div style={{
-                            padding: '16px',
+                            padding: '16px 18px',
                             background: 'rgba(255,255,255,0.7)',
-                            borderRadius: '16px',
+                            borderRadius: '14px',
                             border: '1px solid rgba(0,0,0,0.04)'
                         }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                <Flame size={16} style={{ color: 'var(--text-sub)' }} />
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-sub)', fontWeight: 600 }}>最長連続</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                                <Flame size={13} style={{ color: 'var(--text-sub)' }} />
+                                <span style={{ fontSize: '0.7rem', color: 'var(--text-sub)', fontWeight: 600 }}>最長連続</span>
                             </div>
-                            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                                {streakStats.maxConsecutiveDays}<span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-sub)' }}>日</span>
+                            <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                                {streakStats.maxConsecutiveDays}<span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-sub)' }}>日</span>
                             </div>
                         </div>
                     )}
@@ -242,33 +220,33 @@ export const StudentStatsView = ({
                     {/* Ranking */}
                     {rankingInfo && rankingInfo.rankPosition ? (
                         <div style={{
-                            padding: '16px',
+                            padding: '16px 18px',
                             background: 'rgba(255,255,255,0.7)',
-                            borderRadius: '16px',
+                            borderRadius: '14px',
                             border: '1px solid rgba(0,0,0,0.04)'
                         }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                <Crown size={16} style={{ color: 'var(--brand-color)' }} />
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-sub)', fontWeight: 600 }}>ランキング</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                                <Crown size={13} style={{ color: 'var(--brand-color)' }} />
+                                <span style={{ fontSize: '0.7rem', color: 'var(--text-sub)', fontWeight: 600 }}>ランキング</span>
                             </div>
-                            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                                {rankingInfo.rankPosition}<span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-sub)' }}>位</span>
-                                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-sub)' }}> / {rankingInfo.totalStudents}人</span>
+                            <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                                {rankingInfo.rankPosition}<span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-sub)' }}>位</span>
+                                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-sub)' }}> / {rankingInfo.totalStudents}人</span>
                             </div>
                         </div>
                     ) : (
                         <div style={{
-                            padding: '16px',
+                            padding: '16px 18px',
                             background: 'rgba(255,255,255,0.7)',
-                            borderRadius: '16px',
+                            borderRadius: '14px',
                             border: '1px solid rgba(0,0,0,0.04)'
                         }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                <Crown size={16} style={{ color: 'var(--text-sub)' }} />
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-sub)', fontWeight: 600 }}>ランキング</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                                <Crown size={13} style={{ color: 'var(--text-sub)' }} />
+                                <span style={{ fontSize: '0.7rem', color: 'var(--text-sub)', fontWeight: 600 }}>ランキング</span>
                             </div>
-                            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-sub)' }}>
-                                --<span style={{ fontSize: '0.9rem', fontWeight: 600 }}>位</span>
+                            <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-sub)' }}>
+                                --<span style={{ fontSize: '0.8rem', fontWeight: 600 }}>位</span>
                             </div>
                         </div>
                     )}
@@ -277,7 +255,7 @@ export const StudentStatsView = ({
 
             {/* Charts Section */}
             <div style={{
-                padding: '20px',
+                padding: '0',
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', // Safe responsive grid
                 gap: '12px'

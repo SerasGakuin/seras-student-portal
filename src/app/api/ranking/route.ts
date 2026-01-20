@@ -40,7 +40,8 @@ export async function GET(request: Request) {
                 totalExamStudents: result.totalExamStudents,
                 totalGeneralStudents: result.totalGeneralStudents,
                 examRankings: result.examRankings,
-                generalRankings: result.generalRankings
+                generalRankings: result.generalRankings,
+                period: result.period,
             }
         });
     } catch (error) {

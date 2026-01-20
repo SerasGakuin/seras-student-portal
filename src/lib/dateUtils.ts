@@ -155,3 +155,103 @@ export function filterLogsByDateRange<T extends LogWithEntryTime>(
         return entryTime >= startTime && entryTime <= endTime;
     });
 }
+
+// ============================================
+// 週間ユーティリティ関数（固定週間方式用）
+// ============================================
+
+/**
+ * 指定した日付が属する「固定週」の開始日（月曜00:00:00 JST）を取得
+ *
+ * @param date - 対象日付
+ * @returns その週の月曜日00:00:00（JST）
+ */
+export function getWeekStartJst(date: Date): Date {
+    const jst = toJst(date);
+    const dayOfWeek = jst.getDay(); // 0=日曜, 1=月曜, ..., 6=土曜
+
+    // 月曜日を週の開始とする
+    // 日曜(0)の場合は-6日、月曜(1)の場合は0日、火曜(2)の場合は-1日、...
+    const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+
+    const monday = new Date(jst);
+    monday.setDate(jst.getDate() + daysToMonday);
+    monday.setHours(0, 0, 0, 0);
+
+    return monday;
+}
+
+/**
+ * 指定した日付が属する「固定週」の終了日（日曜23:59:59 JST）を取得
+ *
+ * @param date - 対象日付
+ * @returns その週の日曜日23:59:59.999（JST）
+ */
+export function getWeekEndJst(date: Date): Date {
+    const monday = getWeekStartJst(date);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    sunday.setHours(23, 59, 59, 999);
+    return sunday;
+}
+
+/**
+ * 「先週」の期間を取得（月曜00:00 〜 日曜23:59:59 JST）
+ *
+ * @param date - 基準日（通常は「今日」）
+ * @returns { start: Date, end: Date }
+ */
+export function getLastWeekJst(date: Date): { start: Date; end: Date } {
+    const currentWeekStart = getWeekStartJst(date);
+
+    // 先週の月曜日 = 今週の月曜日 - 7日
+    const lastWeekStart = new Date(currentWeekStart);
+    lastWeekStart.setDate(currentWeekStart.getDate() - 7);
+
+    const lastWeekEnd = new Date(lastWeekStart);
+    lastWeekEnd.setDate(lastWeekStart.getDate() + 6);
+    lastWeekEnd.setHours(23, 59, 59, 999);
+
+    return { start: lastWeekStart, end: lastWeekEnd };
+}
+
+/**
+ * 「先々週」の期間を取得（月曜00:00 〜 日曜23:59:59 JST）
+ *
+ * @param date - 基準日
+ * @returns { start: Date, end: Date }
+ */
+export function getWeekBeforeLastJst(date: Date): { start: Date; end: Date } {
+    const currentWeekStart = getWeekStartJst(date);
+
+    // 先々週の月曜日 = 今週の月曜日 - 14日
+    const weekBeforeLastStart = new Date(currentWeekStart);
+    weekBeforeLastStart.setDate(currentWeekStart.getDate() - 14);
+
+    const weekBeforeLastEnd = new Date(weekBeforeLastStart);
+    weekBeforeLastEnd.setDate(weekBeforeLastStart.getDate() + 6);
+    weekBeforeLastEnd.setHours(23, 59, 59, 999);
+
+    return { start: weekBeforeLastStart, end: weekBeforeLastEnd };
+}
+
+/**
+ * 週の情報を人間が読める形式で取得
+ *
+ * @param start - 週の開始日
+ * @param end - 週の終了日
+ * @returns "1/13(月) - 1/19(日)" 形式の文字列
+ */
+export function formatWeekPeriod(start: Date, end: Date): string {
+    const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+
+    const startMonth = start.getMonth() + 1;
+    const startDate = start.getDate();
+    const startDay = dayNames[start.getDay()];
+
+    const endMonth = end.getMonth() + 1;
+    const endDate = end.getDate();
+    const endDay = dayNames[end.getDay()];
+
+    return `${startMonth}/${startDate}(${startDay}) - ${endMonth}/${endDate}(${endDay})`;
+}

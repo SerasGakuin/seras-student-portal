@@ -2,7 +2,12 @@ import { GoogleSheetOccupancyRepository } from '@/repositories/googleSheets/Goog
 import { GoogleSheetStudentRepository } from '@/repositories/googleSheets/GoogleSheetStudentRepository';
 import { EntryExitLog, IOccupancyRepository } from '@/repositories/interfaces/IOccupancyRepository';
 import { IStudentRepository } from '@/repositories/interfaces/IStudentRepository';
-import { toJst } from '@/lib/dateUtils';
+import {
+    toJst,
+    getLastWeekJst,
+    getWeekBeforeLastJst,
+    formatWeekPeriod,
+} from '@/lib/dateUtils';
 import {
     calculateEffectiveDuration,
     calculateDurationInTimeRange,
@@ -15,6 +20,7 @@ import {
     StudentBadgesMap,
     StudentRankingsMap,
     UnifiedWeeklyBadges,
+    WeekPeriod,
 } from '@/types/badge';
 
 // Re-export types for backward compatibility
@@ -34,29 +40,25 @@ export class BadgeService {
     }
 
     async getWeeklyBadges(targetDate: Date = new Date()): Promise<UnifiedWeeklyBadges> {
-        // Rolling 7-day window based on JST
-        const targetJst = toJst(targetDate);
+        // Fixed weekly period (Monday-Sunday)
+        // 先週（月曜00:00 〜 日曜23:59:59 JST）を取得
+        const lastWeek = getLastWeekJst(targetDate);
+        const startDateJst = lastWeek.start;
+        const endDateJst = lastWeek.end;
 
-        // End date: Yesterday at 23:59:59 (JST)
-        const endDateJst = new Date(targetJst);
-        endDateJst.setDate(endDateJst.getDate() - 1);
-        endDateJst.setHours(23, 59, 59, 999);
+        // Previous period for Rising Star comparison: 先々週
+        const weekBeforeLast = getWeekBeforeLastJst(targetDate);
+        const prevStartDateJst = weekBeforeLast.start;
+        const prevEndDateJst = weekBeforeLast.end;
 
-        // Start date: 7 days total (yesterday + 6 days before)
-        const startDateJst = new Date(endDateJst);
-        startDateJst.setDate(endDateJst.getDate() - 6);
-        startDateJst.setHours(0, 0, 0, 0);
+        // 週の期間情報を作成
+        const period: WeekPeriod = {
+            start: startDateJst.toISOString(),
+            end: endDateJst.toISOString(),
+            label: formatWeekPeriod(startDateJst, endDateJst),
+        };
 
-        // Previous period for Rising Star comparison
-        const prevEndDateJst = new Date(startDateJst);
-        prevEndDateJst.setDate(startDateJst.getDate() - 1);
-        prevEndDateJst.setHours(23, 59, 59, 999);
-
-        const prevStartDateJst = new Date(prevEndDateJst);
-        prevStartDateJst.setDate(prevEndDateJst.getDate() - 6);
-        prevStartDateJst.setHours(0, 0, 0, 0);
-
-        console.log(`[BadgeService - JST] Period: ${startDateJst.toLocaleString()} - ${endDateJst.toLocaleString()}`);
+        console.log(`[BadgeService - JST] Period: ${period.label}`);
 
         const logs = await this.occupancyRepo.findAllLogs();
         const students = await this.studentRepo.findAll();
@@ -164,7 +166,8 @@ export class BadgeService {
             totalExamStudents: examGroup.length,
             totalGeneralStudents: generalGroup.length,
             examRankings,
-            generalRankings
+            generalRankings,
+            period,
         };
     }
 

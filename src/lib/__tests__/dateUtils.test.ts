@@ -197,3 +197,205 @@ describe('toJstString', () => {
         expect(result).toBe('Thu Jan 01 2026 00:30:00 GMT+0900 (GMT+09:00)');
     });
 });
+
+/**
+ * 週間ユーティリティのテスト
+ * 固定週間方式（月曜〜日曜）のための関数群
+ */
+import {
+    getWeekStartJst,
+    getWeekEndJst,
+    getLastWeekJst,
+    getWeekBeforeLastJst,
+    formatWeekPeriod,
+} from '../dateUtils';
+
+describe('getWeekStartJst', () => {
+    it('should return Monday 00:00:00 for a Wednesday', () => {
+        // 2026-01-21 (水) JST → 2026-01-19 (月) 00:00:00 JST
+        const wednesday = new Date('2026-01-21T06:00:00.000Z'); // 15:00 JST
+        const result = getWeekStartJst(wednesday);
+
+        expect(result.getDay()).toBe(1); // Monday
+        expect(result.getDate()).toBe(19);
+        expect(result.getHours()).toBe(0);
+        expect(result.getMinutes()).toBe(0);
+        expect(result.getSeconds()).toBe(0);
+    });
+
+    it('should return same Monday for a Monday', () => {
+        // 2026-01-19 (月) JST → 2026-01-19 (月) 00:00:00 JST
+        const monday = new Date('2026-01-19T01:00:00.000Z'); // 10:00 JST
+        const result = getWeekStartJst(monday);
+
+        expect(result.getDay()).toBe(1); // Monday
+        expect(result.getDate()).toBe(19);
+    });
+
+    it('should return previous Monday for a Sunday (week ends on Sunday)', () => {
+        // 2026-01-25 (日) JST → 2026-01-19 (月) 00:00:00 JST (same week)
+        const sunday = new Date('2026-01-25T03:00:00.000Z'); // 12:00 JST
+        const result = getWeekStartJst(sunday);
+
+        expect(result.getDay()).toBe(1); // Monday
+        expect(result.getDate()).toBe(19); // 1/19 is the Monday of that week
+    });
+
+    it('should handle Saturday correctly', () => {
+        // 2026-01-24 (土) JST → 2026-01-19 (月) 00:00:00 JST
+        const saturday = new Date('2026-01-24T05:00:00.000Z'); // 14:00 JST
+        const result = getWeekStartJst(saturday);
+
+        expect(result.getDay()).toBe(1); // Monday
+        expect(result.getDate()).toBe(19);
+    });
+
+    it('should handle year boundary (week spanning year end)', () => {
+        // 2026-01-01 (木) JST → 2025-12-29 (月) 00:00:00 JST
+        const newYearsDay = new Date('2025-12-31T15:00:00.000Z'); // 2026-01-01 00:00 JST
+        const result = getWeekStartJst(newYearsDay);
+
+        expect(result.getDay()).toBe(1); // Monday
+        expect(result.getFullYear()).toBe(2025);
+        expect(result.getMonth()).toBe(11); // December
+        expect(result.getDate()).toBe(29);
+    });
+});
+
+describe('getWeekEndJst', () => {
+    it('should return Sunday 23:59:59 for a Wednesday', () => {
+        // 2026-01-21 (水) JST → 2026-01-25 (日) 23:59:59 JST
+        const wednesday = new Date('2026-01-21T06:00:00.000Z'); // 15:00 JST
+        const result = getWeekEndJst(wednesday);
+
+        expect(result.getDay()).toBe(0); // Sunday
+        expect(result.getDate()).toBe(25);
+        expect(result.getHours()).toBe(23);
+        expect(result.getMinutes()).toBe(59);
+        expect(result.getSeconds()).toBe(59);
+    });
+
+    it('should return same Sunday for a Sunday', () => {
+        // 2026-01-25 (日) JST → 2026-01-25 (日) 23:59:59 JST
+        const sunday = new Date('2026-01-25T03:00:00.000Z'); // 12:00 JST
+        const result = getWeekEndJst(sunday);
+
+        expect(result.getDay()).toBe(0); // Sunday
+        expect(result.getDate()).toBe(25);
+    });
+
+    it('should return following Sunday for a Monday', () => {
+        // 2026-01-19 (月) JST → 2026-01-25 (日) 23:59:59 JST
+        const monday = new Date('2026-01-19T01:00:00.000Z'); // 10:00 JST
+        const result = getWeekEndJst(monday);
+
+        expect(result.getDay()).toBe(0); // Sunday
+        expect(result.getDate()).toBe(25);
+    });
+});
+
+describe('getLastWeekJst', () => {
+    it('should return previous week Monday to Sunday', () => {
+        // 2026-01-20 (月) から見た先週 = 2026-01-12 (月) 〜 2026-01-18 (日)
+        const monday = new Date('2026-01-20T01:00:00.000Z'); // 10:00 JST
+        const { start, end } = getLastWeekJst(monday);
+
+        // Start: 2026-01-12 (月) 00:00:00 JST
+        expect(start.getDay()).toBe(1); // Monday
+        expect(start.getDate()).toBe(12);
+        expect(start.getMonth()).toBe(0); // January
+        expect(start.getHours()).toBe(0);
+
+        // End: 2026-01-18 (日) 23:59:59 JST
+        expect(end.getDay()).toBe(0); // Sunday
+        expect(end.getDate()).toBe(18);
+        expect(end.getHours()).toBe(23);
+        expect(end.getMinutes()).toBe(59);
+    });
+
+    it('should return same last week throughout the current week', () => {
+        // 月曜から日曜まで、同じ「先週」を返す
+        const mondayResult = getLastWeekJst(new Date('2026-01-19T01:00:00.000Z')); // 月
+        const wednesdayResult = getLastWeekJst(new Date('2026-01-21T06:00:00.000Z')); // 水
+        const sundayResult = getLastWeekJst(new Date('2026-01-25T03:00:00.000Z')); // 日
+
+        expect(mondayResult.start.getDate()).toBe(12);
+        expect(wednesdayResult.start.getDate()).toBe(12);
+        expect(sundayResult.start.getDate()).toBe(12);
+    });
+
+    it('should handle year boundary correctly', () => {
+        // 2026-01-05 (月) から見た先週 = 2025-12-29 (月) 〜 2026-01-04 (日)
+        const monday = new Date('2026-01-05T01:00:00.000Z'); // 10:00 JST
+        const { start, end } = getLastWeekJst(monday);
+
+        expect(start.getFullYear()).toBe(2025);
+        expect(start.getMonth()).toBe(11); // December
+        expect(start.getDate()).toBe(29);
+
+        expect(end.getFullYear()).toBe(2026);
+        expect(end.getMonth()).toBe(0); // January
+        expect(end.getDate()).toBe(4);
+    });
+});
+
+describe('getWeekBeforeLastJst', () => {
+    it('should return week before last Monday to Sunday', () => {
+        // 2026-01-20 (月) から見た先々週 = 2026-01-05 (月) 〜 2026-01-11 (日)
+        const monday = new Date('2026-01-20T01:00:00.000Z'); // 10:00 JST
+        const { start, end } = getWeekBeforeLastJst(monday);
+
+        // Start: 2026-01-05 (月) 00:00:00 JST
+        expect(start.getDay()).toBe(1); // Monday
+        expect(start.getDate()).toBe(5);
+        expect(start.getMonth()).toBe(0); // January
+
+        // End: 2026-01-11 (日) 23:59:59 JST
+        expect(end.getDay()).toBe(0); // Sunday
+        expect(end.getDate()).toBe(11);
+    });
+
+    it('should handle year boundary correctly', () => {
+        // 2026-01-05 (月) から見た先々週 = 2025-12-22 (月) 〜 2025-12-28 (日)
+        const monday = new Date('2026-01-05T01:00:00.000Z'); // 10:00 JST
+        const { start, end } = getWeekBeforeLastJst(monday);
+
+        expect(start.getFullYear()).toBe(2025);
+        expect(start.getMonth()).toBe(11); // December
+        expect(start.getDate()).toBe(22);
+
+        expect(end.getFullYear()).toBe(2025);
+        expect(end.getMonth()).toBe(11); // December
+        expect(end.getDate()).toBe(28);
+    });
+});
+
+describe('formatWeekPeriod', () => {
+    it('should format week period as "M/D(曜) - M/D(曜)"', () => {
+        const start = new Date('2026-01-12T00:00:00'); // Monday
+        const end = new Date('2026-01-18T23:59:59'); // Sunday
+
+        const result = formatWeekPeriod(start, end);
+
+        expect(result).toBe('1/12(月) - 1/18(日)');
+    });
+
+    it('should handle year boundary', () => {
+        const start = new Date('2025-12-29T00:00:00'); // Monday
+        const end = new Date('2026-01-04T23:59:59'); // Sunday
+
+        const result = formatWeekPeriod(start, end);
+
+        expect(result).toBe('12/29(月) - 1/4(日)');
+    });
+
+    it('should use Japanese day names', () => {
+        const start = new Date('2026-01-05T00:00:00'); // Monday
+        const end = new Date('2026-01-11T23:59:59'); // Sunday
+
+        const result = formatWeekPeriod(start, end);
+
+        expect(result).toContain('月'); // Monday in Japanese
+        expect(result).toContain('日'); // Sunday in Japanese
+    });
+});
