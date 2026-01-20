@@ -33,6 +33,15 @@ export type StudentBadgesMap = Record<string, Badge[]>;
 export type StudentRankingsMap = Record<string, number>;
 
 /**
+ * 週の期間情報
+ */
+export interface WeekPeriod {
+    start: string;  // ISO文字列
+    end: string;    // ISO文字列
+    label: string;  // "1/13(月) - 1/19(日)" 形式
+}
+
+/**
  * 統合週間バッジデータ（受験生/非受験生別）
  */
 export interface UnifiedWeeklyBadges {
@@ -42,4 +51,5 @@ export interface UnifiedWeeklyBadges {
     totalGeneralStudents: number;
     examRankings: StudentRankingsMap;
     generalRankings: StudentRankingsMap;
+    period?: WeekPeriod;  // 週の期間情報（オプショナル：後方互換性）
 }

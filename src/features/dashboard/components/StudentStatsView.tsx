@@ -1,6 +1,7 @@
 import { GlassCard } from '@/components/ui/GlassCard';
 import { ActivityHeatmap, HeatmapDataPoint } from '@/features/dashboard/components/ActivityHeatmap';
 import { TimeRangeChart } from '@/features/dashboard/components/TimeRangeChart';
+import { getBadgeStyle } from '@/features/dashboard/components/RankingDetailView';
 import { BadgeType } from '@/types/badge';
 import { BADGE_CONFIG } from '@/constants/badges';
 import { User, Clock, Calendar, Flame, Trophy, Crown } from 'lucide-react';
@@ -25,6 +26,7 @@ export interface StudentStatsViewProps {
     history: HeatmapDataPoint[];
     loading?: boolean;
     periodDays: number;
+    badgePeriodLabel?: string;
 }
 
 export const StudentStatsView = ({
@@ -35,7 +37,8 @@ export const StudentStatsView = ({
     streakStats,
     history,
     loading = false,
-    periodDays
+    periodDays,
+    badgePeriodLabel
 }: StudentStatsViewProps) => {
 
     if (loading) {
@@ -53,6 +56,8 @@ export const StudentStatsView = ({
 
     const hours = Math.floor(stats.totalMinutes / 60);
     const mins = stats.totalMinutes % 60;
+    const isExaminee = rankingInfo?.groupLabel === '受験生の部';
+    const badgeStyle = getBadgeStyle(isExaminee);
 
     return (
         <GlassCard style={{ padding: '9px', marginBottom: '24px', overflow: 'hidden' }}>
@@ -76,14 +81,6 @@ export const StudentStatsView = ({
                     }}>
                         {studentName}さんの記録
                     </h2>
-                    <span style={{
-                        fontSize: '0.75rem',
-                        color: 'var(--text-sub)',
-                        fontWeight: 500,
-                        marginLeft: 'auto'
-                    }}>
-                        {rankingInfo?.groupLabel || '部門なし'}
-                    </span>
                 </div>
                 <p style={{
                     fontSize: '0.85rem',
@@ -127,6 +124,17 @@ export const StudentStatsView = ({
                             marginBottom: '8px'
                         }}>
                             獲得バッジ
+                            {rankingInfo?.groupLabel && (
+                                <span style={{
+                                    fontWeight: 500,
+                                    fontSize: '0.75rem',
+                                    color: 'var(--text-sub)',
+                                    marginLeft: '8px'
+                                }}>
+                                    {rankingInfo.groupLabel}
+                                </span>
+                            )}
+                            {badgePeriodLabel && <span style={{ fontWeight: 500, fontSize: '0.75rem', color: 'var(--text-sub)', marginLeft: '4px' }}>/ {badgePeriodLabel}</span>}
                         </div>
                         {rankingInfo && rankingInfo.badges.length > 0 ? (
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -136,13 +144,14 @@ export const StudentStatsView = ({
                                         style={{
                                             display: 'inline-flex',
                                             alignItems: 'center',
-                                            gap: '6px',
-                                            padding: '6px 12px',
-                                            borderRadius: '20px',
-                                            background: 'linear-gradient(135deg, #fff5eb 0%, #ffede0 100%)',
-                                            color: 'var(--brand-color)',
-                                            fontSize: '0.85rem',
-                                            fontWeight: 700
+                                            gap: '4px',
+                                            padding: '4px 8px',
+                                            borderRadius: '12px',
+                                            background: badgeStyle.background,
+                                            color: badgeStyle.color,
+                                            fontSize: '0.75rem',
+                                            fontWeight: 600,
+                                            border: badgeStyle.border
                                         }}
                                     >
                                         {BADGE_CONFIG[badge.type]?.icon(16)}
@@ -168,6 +177,14 @@ export const StudentStatsView = ({
                 padding: '20px',
                 borderBottom: '1px solid rgba(0,0,0,0.05)'
             }}>
+                <div style={{
+                    fontWeight: 800,
+                    fontSize: '1rem',
+                    color: 'var(--text-main)',
+                    marginBottom: '16px'
+                }}>
+                    直近7日間の記録
+                </div>
                 <div style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', // More flexible for mobile

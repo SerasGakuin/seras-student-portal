@@ -94,7 +94,7 @@ export const ChampionsCard = () => {
                         fontWeight: 500,
                         marginLeft: 'auto'
                     }}>
-                        毎朝8時更新
+                        毎週月曜更新
                     </span>
                 </div>
                 <p style={{
@@ -104,7 +104,7 @@ export const ChampionsCard = () => {
                     margin: 0,
                     lineHeight: 1.5
                 }}>
-                    直近7日間の頑張りをランキング！<br />各部門3位以内に入ると、バッジがもらえます✨
+                    {ranking.period?.label || '先週'}の頑張りをランキング！<br />各部門3位以内に入ると、バッジがもらえます✨
                 </p>
             </div>
 

@@ -2,7 +2,7 @@
  * ダッシュボード関連の型定義
  */
 
-import { StudentBadgesMap } from './badge';
+import { StudentBadgesMap, WeekPeriod } from './badge';
 
 /**
  * 生徒統計情報
@@ -53,6 +53,7 @@ export interface DashboardSummary {
         vanished: StudentStats[];
     };
     badges?: StudentBadgesMap;
+    badgePeriod?: WeekPeriod;  // バッジ計算対象の週期間情報
 }
 
 /**

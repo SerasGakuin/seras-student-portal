@@ -136,7 +136,7 @@ export const MyStatsCard = () => {
             studentName={student.name}
             description={
                 <>
-                    <strong style={{ color: 'var(--brand-color)', fontWeight: 700 }}>{student.name}</strong> さんの直近7日間の記録です
+                    <strong style={{ color: 'var(--brand-color)', fontWeight: 700 }}>{student.name}</strong> さんの最近の記録です
                 </>
             }
             rankingInfo={rankingInfo}
@@ -145,6 +145,7 @@ export const MyStatsCard = () => {
             history={detailData28Days?.history || []}
             loading={isLoading}
             periodDays={7}
+            badgePeriodLabel={rankingData?.period?.label}
         />
     );
 };
