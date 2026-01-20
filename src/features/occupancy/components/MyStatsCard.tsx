@@ -134,11 +134,7 @@ export const MyStatsCard = () => {
     return (
         <StudentStatsView
             studentName={student.name}
-            description={
-                <>
-                    <strong style={{ color: 'var(--brand-color)', fontWeight: 700 }}>{student.name}</strong> さんの最近の記録です
-                </>
-            }
+            description={null}
             rankingInfo={rankingInfo}
             stats={stats}
             streakStats={streakStats}
