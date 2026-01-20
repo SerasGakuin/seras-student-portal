@@ -267,6 +267,18 @@ JST（日本標準時）を扱う処理を一元化。複数のサービスで�
 | `setStartOfDay(date)` | 日の開始時刻（00:00:00.000）を設定 |
 | `setEndOfDay(date)` | 日の終了時刻（23:59:59.999）を設定 |
 | `filterLogsByDateRange(logs, start, end)` | 日付範囲でログをフィルタリング |
+| `getWeekStartJst(date)` | その週の月曜00:00:00（JST）を取得 |
+| `getWeekEndJst(date)` | その週の日曜23:59:59（JST）を取得 |
+| `getLastWeekJst(date)` | 先週の期間（月曜〜日曜）を取得 |
+| `getWeekBeforeLastJst(date)` | 先々週の期間（月曜〜日曜）を取得 |
+| `formatWeekPeriod(start, end)` | 週の期間を `"1/13(月) - 1/19(日)"` 形式で取得 |
+
+**週間ユーティリティの使用例**:
+```typescript
+// バッジ計算での使用
+const { start, end } = getLastWeekJst(new Date());
+const periodLabel = formatWeekPeriod(start, end); // "1/13(月) - 1/19(日)"
+```
 
 ### B. 滞在時間計算 (`durationUtils.ts`)
 

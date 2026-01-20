@@ -84,9 +84,18 @@ LINEユーザーが生徒として登録済みか確認
     interface RankingResponse {
       exam: Record<string, { type: BadgeType; rank: number }[]>;
       general: Record<string, { type: BadgeType; rank: number }[]>;
+      totalExamStudents: number;      // 受験生の総数
+      totalGeneralStudents: number;   // 一般生の総数
+      examRankings: Record<string, number>;    // 受験生のランキング位置
+      generalRankings: Record<string, number>; // 一般生のランキング位置
+      period?: {
+        start: string;   // ISO文字列 (例: "2025-01-13T00:00:00.000Z")
+        end: string;     // ISO文字列 (例: "2025-01-19T23:59:59.999Z")
+        label: string;   // 表示用ラベル (例: "1/13(月) - 1/19(日)")
+      };
     }
     ```
-*   **データ範囲**: 基準日の前日から遡って7日間のローリングウィンドウ
+*   **データ範囲**: 固定週間方式（月曜00:00〜日曜23:59 JST）。基準日が属する週の「先週」が対象。
 
 ### 5. ダッシュボード (Dashboard)
 
