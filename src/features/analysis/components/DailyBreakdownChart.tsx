@@ -33,6 +33,13 @@ export function DailyBreakdownChart({ data }: DailyBreakdownChartProps) {
     );
   }
 
+  // 全日の total 最大値を算出し、Y軸を統一する
+  const globalMax = Math.max(
+    ...data.flatMap((day) => day.points.map((p) => p.total)),
+    1 // 最低1を保証（全て0の場合のフォールバック）
+  );
+  const yMax = Math.ceil(globalMax);
+
   return (
     <div style={{
       display: 'grid',
@@ -69,6 +76,7 @@ export function DailyBreakdownChart({ data }: DailyBreakdownChartProps) {
                 <YAxis
                   tick={{ fontSize: 9, fill: '#a4b0be' }}
                   allowDecimals={false}
+                  domain={[0, yMax]}
                 />
                 <Tooltip
                   labelFormatter={(t: number) => {
