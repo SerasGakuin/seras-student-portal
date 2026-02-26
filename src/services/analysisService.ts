@@ -6,6 +6,7 @@ import {
   OccupancyAnalysisData,
   HeatmapData,
   TrendsData,
+  TrendsPoint,
   DailyBreakdown,
 } from '@/types/analysis';
 
@@ -143,6 +144,17 @@ export function aggregateHeatmap(snapshots: OccupancySnapshot[]): HeatmapData {
   };
 }
 
+/** ソート済み配列からパーセンタイル値を算出（線形補間） */
+export function percentile(sorted: number[], p: number): number {
+  if (sorted.length === 0) return 0;
+  if (sorted.length === 1) return sorted[0];
+  const idx = (p / 100) * (sorted.length - 1);
+  const lo = Math.floor(idx);
+  const hi = Math.ceil(idx);
+  if (lo === hi) return sorted[lo];
+  return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
+}
+
 export function aggregateTrends(snapshots: OccupancySnapshot[]): TrendsData {
   // 平日/休日に分けて time → values[] を収集
   const weekdayMap = new Map<number, number[]>();
@@ -164,17 +176,27 @@ export function aggregateTrends(snapshots: OccupancySnapshot[]): TrendsData {
     }
   }
 
-  const toMeans = (map: Map<number, number[]>) =>
+  const round1 = (v: number) => Math.round(v * 10) / 10;
+
+  const toPoints = (map: Map<number, number[]>): TrendsPoint[] =>
     Array.from(map.entries())
       .sort(([a], [b]) => a - b)
-      .map(([time, values]) => ({
-        time,
-        total: Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 10) / 10,
-      }));
+      .map(([time, values]) => {
+        const sorted = [...values].sort((a, b) => a - b);
+        const mean = values.reduce((a, b) => a + b, 0) / values.length;
+        return {
+          time,
+          total: round1(mean),
+          p10: round1(percentile(sorted, 10)),
+          p25: round1(percentile(sorted, 25)),
+          p75: round1(percentile(sorted, 75)),
+          p90: round1(percentile(sorted, 90)),
+        };
+      });
 
   return {
-    weekdayMean: toMeans(weekdayMap),
-    weekendMean: toMeans(weekendMap),
+    weekdayMean: toPoints(weekdayMap),
+    weekendMean: toPoints(weekendMap),
   };
 }
 

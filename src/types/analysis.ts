@@ -18,10 +18,20 @@ export interface HeatmapData {
   maxValue: number;
 }
 
+/** トレンドの1時刻分の統計量 */
+export interface TrendsPoint {
+  time: number;
+  total: number;       // 平均
+  p10: number;         // 10th percentile
+  p25: number;         // 25th percentile
+  p75: number;         // 75th percentile
+  p90: number;         // 90th percentile
+}
+
 /** 日次トレンドデータ */
 export interface TrendsData {
-  weekdayMean: { time: number; total: number }[];
-  weekendMean: { time: number; total: number }[];
+  weekdayMean: TrendsPoint[];
+  weekendMean: TrendsPoint[];
 }
 
 /** 日次内訳データ（1日分） */

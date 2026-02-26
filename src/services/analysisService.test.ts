@@ -3,6 +3,7 @@ import {
   aggregateTrends,
   aggregateBreakdown,
   filterByDateRange,
+  percentile,
 } from '@/services/analysisService';
 import { OccupancySnapshot } from '@/types/analysis';
 
@@ -81,6 +82,33 @@ describe('analysisService', () => {
     });
   });
 
+  // ===== percentile =====
+  describe('percentile', () => {
+    it('空配列で0を返す', () => {
+      expect(percentile([], 50)).toBe(0);
+    });
+
+    it('1要素で常にその値を返す', () => {
+      expect(percentile([7], 10)).toBe(7);
+      expect(percentile([7], 90)).toBe(7);
+    });
+
+    it('P50が中央値になる', () => {
+      expect(percentile([1, 2, 3, 4, 5], 50)).toBe(3);
+    });
+
+    it('P25/P75が正しい', () => {
+      // [1,2,3,4,5] -> P25=2, P75=4
+      expect(percentile([1, 2, 3, 4, 5], 25)).toBe(2);
+      expect(percentile([1, 2, 3, 4, 5], 75)).toBe(4);
+    });
+
+    it('偶数個の配列で線形補間される', () => {
+      // [2, 4, 6, 8] -> P50 = 5 (idx=1.5 -> 4 + (6-4)*0.5 = 5)
+      expect(percentile([2, 4, 6, 8], 50)).toBe(5);
+    });
+  });
+
   // ===== aggregateTrends =====
   describe('aggregateTrends', () => {
     it('平日と休日が正しく分離される', () => {
@@ -120,10 +148,32 @@ describe('analysisService', () => {
       ];
       const result = aggregateTrends(data);
 
-      const p1 = result.weekdayMean.find(p => p.time === 10.25);
-      const p2 = result.weekdayMean.find(p => p.time === 10.5);
-      expect(p1?.total).toBe(5);
-      expect(p2?.total).toBe(7);
+      const pt1 = result.weekdayMean.find(p => p.time === 10.25);
+      const pt2 = result.weekdayMean.find(p => p.time === 10.5);
+      expect(pt1?.total).toBe(5);
+      expect(pt2?.total).toBe(7);
+    });
+
+    it('パーセンタイル統計量が含まれる', () => {
+      const data: OccupancySnapshot[] = [
+        snap({ date: '2026-01-05', day: 'Mon', hour: 10, minute: 0, total: 2 }),
+        snap({ date: '2026-01-06', day: 'Tue', hour: 10, minute: 0, total: 4 }),
+        snap({ date: '2026-01-07', day: 'Wed', hour: 10, minute: 0, total: 6 }),
+        snap({ date: '2026-01-08', day: 'Thu', hour: 10, minute: 0, total: 8 }),
+        snap({ date: '2026-01-09', day: 'Fri', hour: 10, minute: 0, total: 10 }),
+      ];
+      const result = aggregateTrends(data);
+
+      const point = result.weekdayMean.find(p => p.time === 10);
+      expect(point).toBeDefined();
+      expect(point!.total).toBe(6);   // mean = (2+4+6+8+10)/5 = 6
+      expect(point!.p10).toBeDefined();
+      expect(point!.p25).toBeDefined();
+      expect(point!.p75).toBeDefined();
+      expect(point!.p90).toBeDefined();
+      // p25=4, p75=8 for [2,4,6,8,10]
+      expect(point!.p25).toBe(4);
+      expect(point!.p75).toBe(8);
     });
   });
 
