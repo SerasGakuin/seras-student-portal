@@ -139,7 +139,41 @@ LINEユーザーが生徒として登録済みか確認
     }
     ```
 
-### 6. Cron Jobs
+### 6. データ分析 (Analysis)
+
+#### GET /api/analysis/occupancy
+在室状況の分析データ（ヒートマップ・トレンド・日次内訳）を取得する。
+
+*   **認証**: `canViewDashboard` 権限必須
+*   **Query Parameters**:
+    *   `from` (required): 開始日 (YYYY-MM-DD)
+    *   `to` (required): 終了日 (YYYY-MM-DD)
+*   **Service Used**: `analysisService` -> Google Sheets (`occupancy_logs`)
+*   **Response**:
+    ```ts
+    interface OccupancyAnalysisData {
+      heatmap: {
+        matrix: number[][];       // [7][16] 曜日×時間 平均値
+        weekdayLabels: string[];  // ["月","火",...,"日"]
+        hourLabels: number[];     // [7,8,...,22]
+        maxValue: number;
+      };
+      trends: {
+        weekdayMean: { time: number; total: number }[];
+        weekendMean: { time: number; total: number }[];
+      };
+      breakdown: {
+        date: string;
+        day: string;
+        points: { time: number; building1: number; building2: number; total: number }[];
+      }[];
+      period: { from: string; to: string };
+      totalDays: number;
+    }
+    ```
+*   **キャッシュ**: Google Sheetsデータは1時間キャッシュ（`unstable_cache`）
+
+### 7. Cron Jobs
 
 #### GET /api/cron/nightly
 **System Internal**. 毎日23:00 (JST) にVercel Cronによって実行される夜間バッチ処理。

@@ -80,6 +80,7 @@ else role = 'student';
 | `/api/ranking` | GET | ❌ | ✅ | ✅ | ✅ | 認証必須 |
 | `/api/dashboard/stats` | GET | ❌ | ❌ | ✅ | ✅ | 講師・教室長のみ |
 | `/api/dashboard/student-detail` | GET | ❌ | ✅* | ✅ | ✅ | *生徒は自分のデータのみ |
+| `/api/analysis/occupancy` | GET | ❌ | ❌ | ✅ | ✅ | 講師・教室長のみ |
 | `/api/auth/login` | POST | ✅ | ✅ | ✅ | ✅ | 認証エンドポイント |
 | `/api/reserveMeeting` | POST | ❌ | ✅ | ✅ | ✅ | 予約機能 |
 | `/api/registerRestDay` | POST | ❌ | ✅ | ✅ | ✅ | 欠席登録 |

@@ -1,0 +1,76 @@
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-md);
+}
+
+.runButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 28px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--brand-color);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: var(--shadow-badge);
+  transition: var(--transition-normal);
+  margin-bottom: var(--spacing-lg);
+}
+
+.runButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(242, 159, 48, 0.35);
+}
+
+.runButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-lg);
+}
+
+.periodBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-sub);
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 20px;
+  margin-bottom: var(--spacing-md);
+}
+
+.errorCard {
+  padding: 24px;
+  text-align: center;
+  color: var(--status-high);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+/* スケルトンプレースホルダー */
+.skeletonChart {
+  height: 300px;
+  border-radius: 16px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

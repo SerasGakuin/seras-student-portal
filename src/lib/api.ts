@@ -2,6 +2,7 @@ import { ApiResponse, Student, OccupancyData } from '@/types';
 import { UnifiedWeeklyBadges } from '@/services/badgeService';
 import { BookingRequest, RestDayRequest } from '@/lib/schema';
 import { CONFIG } from '@/lib/config';
+import { OccupancyAnalysisData } from '@/types/analysis';
 
 // Helper to handle fetch responses typesafely
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
@@ -95,5 +96,13 @@ export const api = {
                 lineUserId
             );
         }
+    },
+    analysis: {
+        getOccupancyData: async (lineUserId: string | null | undefined, from: string, to: string) => {
+            return fetchWithAuth<OccupancyAnalysisData>(
+                `/api/analysis/occupancy?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+                lineUserId
+            );
+        },
     },
 };
