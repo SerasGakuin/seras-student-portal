@@ -3,6 +3,7 @@ import { api } from '@/lib/api';
 import { StudentStats } from '@/services/dashboardService';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import type { StudentBadgesMap } from '@/types/badge';
+import { splitMinutes } from '@/lib/formatUtils';
 import { RankingDetailView, getBadgeStyle } from '@/features/dashboard/components/RankingDetailView';
 import { BADGE_CONFIG } from '@/constants/badges';
 import { DocumentLinkIcon } from '@/components/ui/DocumentLinkIcon';
@@ -91,8 +92,7 @@ export const RankingWidget = ({ ranking, periodDays, loading, badges, viewerId }
                             </thead>
                             <tbody>
                                 {ranking.map((student, index) => {
-                                    const hours = Math.floor(student.totalDurationMinutes / 60);
-                                    const mins = student.totalDurationMinutes % 60;
+                                    const { hours, mins } = splitMinutes(student.totalDurationMinutes);
                                     const rank = student.rank ?? index + 1; // Fallback for backward compatibility
                                     const isTop3 = rank <= 3;
                                     const isExpanded = expandedStudent === student.name;
@@ -223,8 +223,7 @@ export const RankingWidget = ({ ranking, periodDays, loading, badges, viewerId }
                     {/* Mobile Card View */}
                     <div className={styles.mobileView}>
                         {ranking.map((student, index) => {
-                            const hours = Math.floor(student.totalDurationMinutes / 60);
-                            const mins = student.totalDurationMinutes % 60;
+                            const { hours, mins } = splitMinutes(student.totalDurationMinutes);
                             const rank = student.rank ?? index + 1; // Fallback for backward compatibility
                             const isTop3 = rank <= 3;
                             const isExpanded = expandedStudent === student.name;

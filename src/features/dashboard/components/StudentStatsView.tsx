@@ -3,6 +3,7 @@ import { ActivityHeatmap, HeatmapDataPoint } from '@/features/dashboard/componen
 import { TimeRangeChart } from '@/features/dashboard/components/TimeRangeChart';
 import { getBadgeStyle } from '@/features/dashboard/components/RankingDetailView';
 import { BadgeType } from '@/types/badge';
+import { splitMinutes } from '@/lib/formatUtils';
 import { BADGE_CONFIG } from '@/constants/badges';
 import { User, Clock, Calendar, Flame, Trophy, Crown } from 'lucide-react';
 
@@ -54,8 +55,7 @@ export const StudentStatsView = ({
 
     if (!stats) return null;
 
-    const hours = Math.floor(stats.totalMinutes / 60);
-    const mins = stats.totalMinutes % 60;
+    const { hours, mins } = splitMinutes(stats.totalMinutes);
     const isExaminee = rankingInfo?.groupLabel === '受験生の部';
     const badgeStyle = getBadgeStyle(isExaminee);
 

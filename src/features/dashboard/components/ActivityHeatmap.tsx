@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { formatMinutesHm } from '@/lib/formatUtils';
 
 // Data Interface (Shared)
 export interface HeatmapDataPoint {
@@ -159,7 +160,7 @@ export const ActivityHeatmap = ({ history = [], loading }: ActivityHeatmapProps)
                                             position: 'relative',
                                             cursor: 'default'
                                         }}
-                                        title={`${day.date.toLocaleDateString()}: ${Math.floor(day.value / 60)}h ${day.value % 60}m`}
+                                        title={`${day.date.toLocaleDateString()}: ${formatMinutesHm(day.value)}`}
                                     >
                                         <span style={{
                                             position: 'absolute',

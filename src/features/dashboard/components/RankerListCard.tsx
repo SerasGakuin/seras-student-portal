@@ -2,6 +2,7 @@
 import { StudentStats } from '@/services/dashboardService';
 import { User, TrendingUp, TrendingDown, Ghost } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { splitMinutes } from '@/lib/formatUtils';
 
 interface RankerListCardProps {
     title: string;
@@ -24,15 +25,14 @@ export const RankerListCard = ({ title, icon, data, type, loading }: RankerListC
 
     const formatValue = (student: StudentStats) => {
         if (type === 'duration') {
-            return `${Math.floor(student.totalDurationMinutes / 60)}h`;
+            return `${splitMinutes(student.totalDurationMinutes).hours}h`;
         }
         if (type === 'growth') {
-            const h = Math.floor((student.growth || 0) / 60);
-            return `+${h}h`;
+            return `+${splitMinutes(student.growth || 0).hours}h`;
         }
         if (type === 'drop' || type === 'vanished') {
-            const h = Math.floor((student.growth || 0) / 60); // growth is negative
-            return `${h}h`; // Display as "-10h" naturally
+            const h = splitMinutes(Math.abs(student.growth || 0)).hours;
+            return `-${h}h`; // Display as "-10h"
         }
         return '';
     };

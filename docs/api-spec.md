@@ -173,6 +173,39 @@ LINEユーザーが生徒として登録済みか確認
     ```
 *   **キャッシュ**: Google Sheetsデータは1時間キャッシュ（`unstable_cache`）
 
+#### GET /api/analysis/ranking
+月間学習時間ランキングデータを取得する。入退室記録から生徒ごとの学習時間を集計し、受験部門/一般部門に分けてランキング。
+
+*   **認証**: `canViewDashboard` 権限必須
+*   **Query Parameters**:
+    *   `month` (required): 対象月 (YYYY-MM)
+    *   `topN` (optional): 表示上位人数 (1-50, default: 5)
+*   **Service Used**: `rankingAnalysisService` -> Google Sheets (`入退室記録`, 生徒マスター)
+*   **Response**:
+    ```ts
+    interface MonthlyRankingData {
+      month: string;            // "YYYY-MM"
+      monthLabel: string;       // "2026年02月"
+      examGroup: {
+        label: string;          // "受験部門"
+        students: {
+          rank: number;
+          name: string;
+          grade: string;
+          totalHours: number;
+          totalMinutes: number;
+          attendanceDays: number;
+        }[];
+        totalStudents: number;
+      };
+      generalGroup: { /* same structure */ };
+      topN: number;
+      generatedAt: string;
+    }
+    ```
+*   **ランキング**: Olympic式タイ対応（同率は同順位、次順位をスキップ）
+*   **キャッシュ**: 入退室記録は1時間キャッシュ（`unstable_cache`）
+
 ### 7. Cron Jobs
 
 #### GET /api/cron/nightly

@@ -399,3 +399,72 @@ describe('formatWeekPeriod', () => {
         expect(result).toContain('日'); // Sunday in Japanese
     });
 });
+
+// ============================================
+// 通塾日数ユーティリティのテスト
+// ============================================
+
+import { countUniqueVisitDays, getUniqueVisitDaySet } from '../dateUtils';
+
+describe('countUniqueVisitDays', () => {
+    it('should count unique JST dates from entry logs', () => {
+        const logs = [
+            // 2026-02-10 JST（2回来塾 → 1日とカウント）
+            { entryTime: '2026-02-10T01:00:00.000Z' }, // 10:00 JST
+            { entryTime: '2026-02-10T05:00:00.000Z' }, // 14:00 JST
+            // 2026-02-11 JST
+            { entryTime: '2026-02-11T02:00:00.000Z' }, // 11:00 JST
+        ];
+        expect(countUniqueVisitDays(logs)).toBe(2);
+    });
+
+    it('should return 0 for empty logs', () => {
+        expect(countUniqueVisitDays([])).toBe(0);
+    });
+
+    it('should handle JST date boundary (UTC midnight → different JST day)', () => {
+        const logs = [
+            // UTC 2026-02-09 23:00 = JST 2026-02-10 08:00
+            { entryTime: '2026-02-09T23:00:00.000Z' },
+            // UTC 2026-02-10 14:00 = JST 2026-02-10 23:00
+            { entryTime: '2026-02-10T14:00:00.000Z' },
+        ];
+        // 両方 JST 2/10 → 1日
+        expect(countUniqueVisitDays(logs)).toBe(1);
+    });
+
+    it('should count single log as 1 day', () => {
+        const logs = [{ entryTime: '2026-02-15T05:00:00.000Z' }];
+        expect(countUniqueVisitDays(logs)).toBe(1);
+    });
+
+    it('should count 5 different days correctly', () => {
+        const logs = [
+            { entryTime: '2026-02-10T01:00:00.000Z' },
+            { entryTime: '2026-02-11T01:00:00.000Z' },
+            { entryTime: '2026-02-12T01:00:00.000Z' },
+            { entryTime: '2026-02-13T01:00:00.000Z' },
+            { entryTime: '2026-02-14T01:00:00.000Z' },
+        ];
+        expect(countUniqueVisitDays(logs)).toBe(5);
+    });
+});
+
+describe('getUniqueVisitDaySet', () => {
+    it('should return Set of unique JST date strings', () => {
+        const logs = [
+            { entryTime: '2026-02-10T01:00:00.000Z' }, // 10:00 JST
+            { entryTime: '2026-02-10T05:00:00.000Z' }, // 14:00 JST (same day)
+            { entryTime: '2026-02-11T02:00:00.000Z' }, // 11:00 JST
+        ];
+        const result = getUniqueVisitDaySet(logs);
+        expect(result.size).toBe(2);
+        expect(result.has('2026/2/10')).toBe(true);
+        expect(result.has('2026/2/11')).toBe(true);
+    });
+
+    it('should return empty Set for empty logs', () => {
+        const result = getUniqueVisitDaySet([]);
+        expect(result.size).toBe(0);
+    });
+});

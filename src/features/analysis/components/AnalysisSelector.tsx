@@ -1,7 +1,7 @@
 'use client';
 
 import { ReactNode } from 'react';
-import { BarChart3 } from 'lucide-react';
+import { BarChart3, Trophy } from 'lucide-react';
 
 interface AnalysisType {
   id: string;
@@ -16,6 +16,12 @@ const ANALYSIS_TYPES: AnalysisType[] = [
     name: '在室状況分析',
     description: '混雑度ヒートマップ・日次トレンド・内訳を可視化',
     icon: <BarChart3 size={24} />,
+  },
+  {
+    id: 'ranking',
+    name: '月間学習時間ランキング',
+    description: '月間の学習時間ランキングをPDFで出力',
+    icon: <Trophy size={24} />,
   },
 ];
 

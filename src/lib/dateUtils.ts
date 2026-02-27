@@ -255,3 +255,62 @@ export function formatWeekPeriod(start: Date, end: Date): string {
 
     return `${startMonth}/${startDate}(${startDay}) - ${endMonth}/${endDate}(${endDay})`;
 }
+
+// ============================================
+// 月間ユーティリティ関数
+// ============================================
+
+/**
+ * "YYYY-MM" 形式の文字列から JST での月初〜月末の範囲を返す
+ *
+ * @param month "YYYY-MM" 形式（例: "2026-02"）
+ * @returns { start: 月初 00:00:00 JST, end: 月末 23:59:59.999 JST }
+ */
+export function getMonthRangeJst(month: string): { start: Date; end: Date } {
+    const [yearStr, monthStr] = month.split('-');
+    const year = parseInt(yearStr, 10);
+    const mon = parseInt(monthStr, 10); // 1-12
+
+    // JST 月初 00:00:00 = UTC (year, mon-1, 1) - 9時間
+    const start = new Date(Date.UTC(year, mon - 1, 1, -9, 0, 0, 0));
+
+    // JST 翌月初 00:00:00 の1ms前 = 月末 23:59:59.999 JST
+    const nextMonthStart = new Date(Date.UTC(year, mon, 1, -9, 0, 0, 0));
+    const end = new Date(nextMonthStart.getTime() - 1);
+
+    return { start, end };
+}
+
+// ============================================
+// 通塾日数ユーティリティ（DRY共通化）
+// ============================================
+
+/**
+ * 入退室ログからJST基準のユニークな通塾日数をカウントする
+ *
+ * rankingAnalysisService, dashboardService 等で重複していた
+ * 通塾日数カウントロジックを共通化。
+ *
+ * @param logs entryTime プロパティを持つログ配列
+ * @returns ユニーク通塾日数
+ */
+export function countUniqueVisitDays(logs: LogWithEntryTime[]): number {
+    return getUniqueVisitDaySet(logs).size;
+}
+
+/**
+ * 入退室ログからJST基準のユニーク通塾日のSetを取得する
+ *
+ * badgeService の visitDays (Set<string>) をそのまま使う場合に利用。
+ * 日付文字列は toJstDateString() 形式 ("YYYY/M/D")。
+ *
+ * @param logs entryTime プロパティを持つログ配列
+ * @returns ユニーク日付文字列のSet
+ */
+export function getUniqueVisitDaySet(logs: LogWithEntryTime[]): Set<string> {
+    const uniqueDays = new Set<string>();
+    for (const log of logs) {
+        uniqueDays.add(toJstDateString(new Date(log.entryTime)));
+    }
+    return uniqueDays;
+}

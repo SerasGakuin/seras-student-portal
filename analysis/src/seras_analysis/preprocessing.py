@@ -1,15 +1,22 @@
 import polars as pl
 from datetime import date, timedelta
+from typing import Optional
 
-def filter_occupancy_data(df: pl.DataFrame, start_date: date, exclude_today: bool = True) -> pl.DataFrame:
+def filter_occupancy_data(
+    df: pl.DataFrame,
+    start_date: date,
+    end_date: Optional[date] = None,
+    exclude_today: bool = True,
+) -> pl.DataFrame:
     """
-    在室状況データを開始日に基づいてフィルタリングし、オプションで当日（最新日）を除外します。
-    
+    在室状況データを開始日・終了日に基づいてフィルタリングし、オプションで当日（最新日）を除外します。
+
     Args:
         df: 'Date'カラムを含むPolars DataFrame
         start_date: フィルタリングの開始日（この日を含む）
+        end_date: フィルタリングの終了日（この日を含む）。Noneの場合は全日付を含む
         exclude_today: データセット内の最新日（当日と仮定）を除外するかどうか
-        
+
     Returns:
         フィルタリングされたPolars DataFrame
     """
@@ -18,9 +25,13 @@ def filter_occupancy_data(df: pl.DataFrame, start_date: date, exclude_today: boo
 
     # DateカラムをDate型にキャスト
     df = df.with_columns(pl.col("Date").cast(pl.Date))
-    
+
     # 開始日でフィルタリング
     df_clean = df.filter(pl.col("Date") >= start_date)
+
+    # 終了日でフィルタリング
+    if end_date is not None:
+        df_clean = df_clean.filter(pl.col("Date") <= end_date)
     
     # 当日/最新日の除外
     if exclude_today and not df_clean.is_empty():

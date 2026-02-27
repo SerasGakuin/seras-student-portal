@@ -8,6 +8,7 @@ import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
 import { BackLink } from '@/components/ui/BackLink';
 
 import { KPICard } from '@/features/dashboard/components/KPICard';
+import { splitMinutes } from '@/lib/formatUtils';
 import { RankerListCard } from '@/features/dashboard/components/RankerListCard';
 import { RankingWidget } from '@/features/dashboard/components/RankingWidget';
 // Removed legacy DashboardControls
@@ -164,8 +165,8 @@ export default function DashboardPage() {
                 <div className={styles.kpiGrid}>
                     <KPICard
                         label="平均学習時間 (生徒1人・1日あたり)"
-                        value={stats ? Math.floor(stats.avgDurationPerVisit.value / 60) : 0}
-                        unit={'時間 ' + (stats ? `${stats.avgDurationPerVisit.value % 60}分` : '')}
+                        value={stats ? splitMinutes(stats.avgDurationPerVisit.value).hours : 0}
+                        unit={'時間 ' + (stats ? `${splitMinutes(stats.avgDurationPerVisit.value).mins}分` : '')}
                         trend={stats?.avgDurationPerVisit.trend && stats.avgDurationPerVisit.trend > 0 ? 'up' : stats?.avgDurationPerVisit.trend && stats.avgDurationPerVisit.trend < 0 ? 'down' : 'neutral'}
                         trendValue={stats ? `${Math.abs(stats.avgDurationPerVisit.trend)}%` : ''}
                         icon={<Clock size={24} />}

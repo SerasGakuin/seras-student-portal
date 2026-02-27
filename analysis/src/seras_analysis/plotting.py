@@ -49,12 +49,21 @@ plt.rcParams.update({
     "figure.constrained_layout.use": True,
 })
 
-def _prepare_data(df: pl.DataFrame, start_date: Optional[Union[str, date]] = None) -> Tuple[pl.DataFrame, pl.Series]:
+def _prepare_data(
+    df: pl.DataFrame,
+    start_date: Optional[Union[str, date]] = None,
+    end_date: Optional[Union[str, date]] = None,
+) -> Tuple[pl.DataFrame, pl.Series]:
     """日時フィルタリングとソートを行うヘルパー関数"""
     if start_date:
         if isinstance(start_date, str):
             start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
         df = df.filter(pl.col("Date") >= start_date)
+
+    if end_date:
+        if isinstance(end_date, str):
+            end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+        df = df.filter(pl.col("Date") <= end_date)
 
     df_sorted = df.sort("Timestamp")
     unique_dates = df_sorted["Date"].unique().sort()
@@ -74,9 +83,9 @@ def _setup_axis(ax: plt.Axes, title: str, xlabel: str = "Hour", ylabel: str = "O
     ax.grid(True, axis='y', linestyle=":", alpha=0.6)
     ax.tick_params(axis='both', colors=COLORS["text_sub"], labelsize=9)
 
-def plot_daily_trends(df: pl.DataFrame, start_date: Optional[Union[str, date]] = None) -> None:
+def plot_daily_trends(df: pl.DataFrame, start_date: Optional[Union[str, date]] = None, end_date: Optional[Union[str, date]] = None) -> None:
     """日ごとの在室人数トレンド（合計）を重ね合わせてプロットします。"""
-    df_sorted, unique_dates = _prepare_data(df, start_date)
+    df_sorted, unique_dates = _prepare_data(df, start_date, end_date)
     
     if len(unique_dates) == 0:
         print("プロットするデータがありません。")
@@ -138,9 +147,9 @@ def plot_daily_trends(df: pl.DataFrame, start_date: Optional[Union[str, date]] =
     sns.despine(left=True)
     plt.show()
 
-def plot_daily_breakdown(df: pl.DataFrame, start_date: Optional[Union[str, date]] = None) -> None:
+def plot_daily_breakdown(df: pl.DataFrame, start_date: Optional[Union[str, date]] = None, end_date: Optional[Union[str, date]] = None) -> None:
     """日ごとの詳細（積み上げ面グラフ）をスモールマルチプルでプロットします。"""
-    df_sorted, unique_dates = _prepare_data(df, start_date)
+    df_sorted, unique_dates = _prepare_data(df, start_date, end_date)
     
     if len(unique_dates) == 0:
         print("プロットするデータがありません。")
@@ -194,12 +203,12 @@ def plot_daily_breakdown(df: pl.DataFrame, start_date: Optional[Union[str, date]
     plt.tight_layout()
     plt.show()
 
-def plot_average_occupancy_heatmap(df: pl.DataFrame, start_date: Optional[Union[str, date]] = None) -> None:
+def plot_average_occupancy_heatmap(df: pl.DataFrame, start_date: Optional[Union[str, date]] = None, end_date: Optional[Union[str, date]] = None) -> None:
     """
     曜日×時間の平均在室ヒートマップをプロットします。
     「いつ混んでいるか？」を直感的に可視化します。
     """
-    df_sorted, _ = _prepare_data(df, start_date)
+    df_sorted, _ = _prepare_data(df, start_date, end_date)
     
     # Hour/Weekdayカラムがない場合の補完
     if "Hour" not in df_sorted.columns:

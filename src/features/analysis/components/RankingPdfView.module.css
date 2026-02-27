@@ -1,0 +1,433 @@
+/* 月間学習時間ランキング A4 PDF — エディトリアル・インフォグラフィック
+   html-to-image でキャプチャするため、CSS変数ではなく直値を使用
+   フォント: Inter (numbers/latin) + Noto Sans JP (japanese) - layout.tsx でロード済み
+   カラー: 7色のみ（有彩色は #f29f30 の1色） */
+
+/* ============================================
+   A4 キャンバス
+   ============================================ */
+.pdfCanvas {
+    width: 794px;
+    min-height: 1123px;
+    background: #f8fafc;
+    box-sizing: border-box;
+    font-family: 'Inter', 'Noto Sans JP', sans-serif;
+    color: #1e293b;
+    overflow: hidden;
+}
+
+/* ============================================
+   ヘッダー（ダーク単色）
+   ============================================ */
+.header {
+    background: #0f172a;
+    padding: 36px 48px 32px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+}
+
+.headerLeft {
+    display: flex;
+    flex-direction: column;
+}
+
+.schoolName {
+    font-size: 11px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.4);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+
+.title {
+    font-size: 15px;
+    font-weight: 900;
+    color: #ffffff;
+    margin: 0;
+    letter-spacing: 1px;
+}
+
+.monthBadge {
+    font-size: 15px;
+    font-weight: 900;
+    color: #ffffff;
+    letter-spacing: 1px;
+}
+
+/* ============================================
+   グループセクション
+   ============================================ */
+.groupSection {
+    margin-bottom: 20px;
+}
+
+.groupHeader {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e293b;
+    padding: 0 48px;
+    margin: 28px 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.groupHeaderAccent {
+    display: inline-block;
+    width: 3px;
+    height: 18px;
+    background: #f29f30;
+    flex-shrink: 0;
+}
+
+.groupSubtext {
+    font-weight: 400;
+    font-size: 11px;
+    color: #64748b;
+}
+
+/* ============================================
+   HeroCard（1位用 — 全幅）
+   ============================================ */
+.heroCard {
+    margin: 0 48px 12px;
+    background: #ffffff;
+    border-left: 4px solid #f29f30;
+    border-radius: 6px;
+    padding: 20px 24px 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.heroTop {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+}
+
+.heroRank {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e293b;
+    flex-shrink: 0;
+}
+
+.heroName {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.heroGrade {
+    font-size: 11px;
+    font-weight: 400;
+    color: #64748b;
+    margin-left: auto;
+}
+
+.heroBottom {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding-left: 29px;
+}
+
+.heroHoursContainer {
+    display: flex;
+    align-items: baseline;
+    gap: 1px;
+    flex-shrink: 0;
+}
+
+.heroHoursValue {
+    font-size: 36px;
+    font-weight: 900;
+    color: #f29f30;
+    line-height: 1;
+}
+
+.heroHoursUnit {
+    font-size: 13px;
+    font-weight: 400;
+    color: #64748b;
+    margin-left: 2px;
+}
+
+.heroMinsValue {
+    font-size: 22px;
+    font-weight: 900;
+    color: #f29f30;
+    margin-left: 4px;
+}
+
+.heroMinsUnit {
+    font-size: 13px;
+    font-weight: 400;
+    color: #64748b;
+    margin-left: 1px;
+}
+
+.heroBarTrack {
+    flex: 1;
+    height: 3px;
+    background: #e2e8f0;
+}
+
+.heroBarFill {
+    height: 100%;
+    background: #f29f30;
+}
+
+.heroDays {
+    font-size: 11px;
+    font-weight: 400;
+    color: #64748b;
+    flex-shrink: 0;
+}
+
+/* ============================================
+   RunnerUpCard（2位3位 — 横並び半幅）
+   ============================================ */
+.runnerUpRow {
+    display: flex;
+    gap: 12px;
+    padding: 0 48px;
+    margin-bottom: 16px;
+}
+
+.runnerUpCard {
+    flex: 1;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 14px 18px 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.runnerUpTop {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.runnerUpRank {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+    flex-shrink: 0;
+}
+
+.runnerUpName {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.runnerUpGrade {
+    font-size: 11px;
+    font-weight: 400;
+    color: #64748b;
+    margin-left: auto;
+}
+
+.runnerUpHoursContainer {
+    display: flex;
+    align-items: baseline;
+    gap: 1px;
+}
+
+.runnerUpHoursValue {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1;
+}
+
+.runnerUpHoursUnit {
+    font-size: 11px;
+    font-weight: 400;
+    color: #64748b;
+    margin-left: 2px;
+}
+
+.runnerUpMinsValue {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-left: 3px;
+}
+
+.runnerUpMinsUnit {
+    font-size: 11px;
+    font-weight: 400;
+    color: #64748b;
+    margin-left: 1px;
+}
+
+.runnerUpBarTrack {
+    height: 3px;
+    background: #e2e8f0;
+    margin-top: 8px;
+}
+
+.runnerUpBarFill {
+    height: 100%;
+    background: #e2e8f0;
+}
+
+/* ============================================
+   CompactRow（4位以降 — 罫線区切り行）
+   ============================================ */
+.compactList {
+    padding: 0 48px;
+}
+
+.compactRow {
+    display: flex;
+    align-items: center;
+    padding: 9px 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.compactRow:last-child {
+    border-bottom: none;
+}
+
+.compactRank {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+    width: 32px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.compactName {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.compactGrade {
+    font-size: 11px;
+    font-weight: 400;
+    color: #64748b;
+    margin-right: 16px;
+}
+
+.compactInlineBar {
+    width: 60px;
+    height: 3px;
+    background: #e2e8f0;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.compactInlineBarFill {
+    height: 100%;
+    background: #e2e8f0;
+}
+
+.compactHours {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+    min-width: 70px;
+    text-align: right;
+}
+
+.compactHoursUnit {
+    font-size: 11px;
+    font-weight: 400;
+    color: #64748b;
+    margin-left: 1px;
+}
+
+/* ============================================
+   サマリーバー（ダーク）
+   ============================================ */
+.summaryBar {
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 20px;
+    background: #0f172a;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 11px;
+    font-weight: 400;
+    margin: 14px 48px 0;
+    border-radius: 6px;
+}
+
+.summaryValue {
+    font-weight: 700;
+    color: #ffffff;
+    font-size: 12px;
+}
+
+/* ============================================
+   空状態
+   ============================================ */
+.emptyGroup {
+    padding: 16px 48px;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 400;
+}
+
+/* ============================================
+   フッター
+   ============================================ */
+.footer {
+    text-align: center;
+    padding: 24px 48px;
+    font-size: 10px;
+    color: #64748b;
+    font-weight: 400;
+    letter-spacing: 0.5px;
+}
+
+/* ============================================
+   スクロールコンテナ（画面プレビュー用）
+   ============================================ */
+.scrollContainer {
+    overflow-x: auto;
+    margin-bottom: 16px;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* ============================================
+   PDFダウンロードボタン
+   ============================================ */
+.downloadButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #fff;
+    background: #f29f30;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.downloadButton:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(242, 159, 48, 0.3);
+}
+
+.downloadButton:disabled {
+    opacity: 0.5;
+    cursor: wait;
+    transform: none;
+    box-shadow: none;
+}

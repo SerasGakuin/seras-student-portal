@@ -4,7 +4,7 @@ import { GoogleSheetOccupancyRepository } from '@/repositories/googleSheets/Goog
 import { GoogleSheetStudentRepository } from '@/repositories/googleSheets/GoogleSheetStudentRepository';
 import { EntryExitLog } from '@/repositories/interfaces/IOccupancyRepository';
 import { BadgeService } from '@/services/badgeService';
-import { toJst, toJstDateString, toJstMonthString } from '@/lib/dateUtils';
+import { toJst, toJstDateString, toJstMonthString, countUniqueVisitDays } from '@/lib/dateUtils';
 import {
     calculateEffectiveDuration,
     calculateSingleLogDuration
@@ -324,18 +324,14 @@ export class DashboardService {
                 : 0;
 
             // 2. Calculate Visits (Unique Days)
-            const visitedDays = new Set<string>();
+            const visitCount = countUniqueVisitDays(studentLogs);
             let lastVisit: string | null = null;
 
             studentLogs.forEach(log => {
-                const dateStr = toJstDateString(new Date(log.entryTime));
-                visitedDays.add(dateStr);
                 if (!lastVisit || new Date(log.entryTime) > new Date(lastVisit)) {
                     lastVisit = log.entryTime;
                 }
             });
-
-            const visitCount = visitedDays.size;
 
             ranking.push({
                 name,

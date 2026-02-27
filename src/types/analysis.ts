@@ -49,3 +49,42 @@ export interface OccupancyAnalysisData {
   period: { from: string; to: string };
   totalDays: number;
 }
+
+// ============================================
+// 月間学習時間ランキング
+// ============================================
+
+/** 1生徒の月間集計（サービス内部用） */
+export interface StudentMonthlyStats {
+  name: string;
+  grade: string;
+  totalMinutes: number;
+  attendanceDays: number;
+}
+
+/** ランキング表示用の1生徒 */
+export interface RankedStudent {
+  rank: number;
+  name: string;
+  grade: string;
+  totalHours: number;       // 小数1位
+  totalMinutes: number;
+  attendanceDays: number;
+}
+
+/** グループランキング */
+export interface RankedGroup {
+  label: string;            // "受験部門" or "一般部門"
+  students: RankedStudent[];
+  totalStudents: number;    // グループ全体の在塾生数
+}
+
+/** 月間ランキング API レスポンス */
+export interface MonthlyRankingData {
+  month: string;            // "YYYY-MM"
+  monthLabel: string;       // "2026年02月"
+  examGroup: RankedGroup;
+  generalGroup: RankedGroup;
+  topN: number;
+  generatedAt: string;      // ISO timestamp
+}

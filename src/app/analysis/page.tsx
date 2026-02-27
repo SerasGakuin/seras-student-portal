@@ -8,7 +8,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { useRole } from '@/hooks/useRole';
 import { useLiff } from '@/lib/liff';
 import { api } from '@/lib/api';
-import { OccupancyAnalysisData } from '@/types/analysis';
+import { OccupancyAnalysisData, MonthlyRankingData } from '@/types/analysis';
 
 import { AnalysisSelector } from '@/features/analysis/components/AnalysisSelector';
 import { AnalysisDateRange } from '@/features/analysis/components/AnalysisDateRange';
@@ -16,6 +16,8 @@ import { ChartContainer } from '@/features/analysis/components/ChartContainer';
 import { OccupancyHeatmap } from '@/features/analysis/components/OccupancyHeatmap';
 import { DailyTrendsChart } from '@/features/analysis/components/DailyTrendsChart';
 import { DailyBreakdownChart } from '@/features/analysis/components/DailyBreakdownChart';
+import { MonthSelector } from '@/features/analysis/components/MonthSelector';
+import { RankingPdfView } from '@/features/analysis/components/RankingPdfView';
 
 import styles from './analysis.module.css';
 
@@ -32,12 +34,23 @@ function getDefaultDates() {
   };
 }
 
+function getDefaultMonth(): string {
+  const now = new Date();
+  const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const yyyy = prev.getFullYear();
+  const mm = String(prev.getMonth() + 1).padStart(2, '0');
+  return `${yyyy}-${mm}`;
+}
+
 export default function AnalysisPage() {
   const [analysisType, setAnalysisType] = useState('occupancy');
   const defaults = getDefaultDates();
   const [dateFrom, setDateFrom] = useState(defaults.from);
   const [dateTo, setDateTo] = useState(defaults.to);
+  const [month, setMonth] = useState(getDefaultMonth);
+  const [topN, setTopN] = useState(5);
   const [data, setData] = useState<OccupancyAnalysisData | null>(null);
+  const [rankingData, setRankingData] = useState<MonthlyRankingData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,21 +67,41 @@ export default function AnalysisPage() {
 
   const lineUserId = profile?.userId ?? null;
 
+  // 分析タイプ切替時にデータクリア
+  const handleTypeSelect = (id: string) => {
+    setAnalysisType(id);
+    setData(null);
+    setRankingData(null);
+    setError(null);
+  };
+
   const handleRun = async () => {
-    if (!dateFrom || !dateTo) return;
     setIsLoading(true);
     setError(null);
-    setData(null);
 
     try {
-      const result = await api.analysis.getOccupancyData(lineUserId, dateFrom, dateTo);
-      setData(result);
+      if (analysisType === 'occupancy') {
+        if (!dateFrom || !dateTo) return;
+        setRankingData(null);
+        const result = await api.analysis.getOccupancyData(lineUserId, dateFrom, dateTo);
+        setData(result);
+      } else if (analysisType === 'ranking') {
+        if (!month) return;
+        setData(null);
+        const result = await api.analysis.getMonthlyRanking(lineUserId, month, topN);
+        setRankingData(result);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : '分析データの取得に失敗しました');
     } finally {
       setIsLoading(false);
     }
   };
+
+  // 実行ボタンの有効判定
+  const isRunDisabled = isLoading || (
+    analysisType === 'occupancy' ? (!dateFrom || !dateTo) : !month
+  );
 
   if (isRoleLoading) {
     return (
@@ -89,23 +122,33 @@ export default function AnalysisPage() {
 
       <main>
         {/* 分析タイプ選択 */}
-        <AnalysisSelector selected={analysisType} onSelect={setAnalysisType} />
+        <AnalysisSelector selected={analysisType} onSelect={handleTypeSelect} />
 
         {/* パラメータ設定 */}
         <GlassCard style={{ marginBottom: 'var(--spacing-lg)' }}>
           <div style={{ padding: '4px 0' }}>
-            <AnalysisDateRange
-              from={dateFrom}
-              to={dateTo}
-              onChange={(from, to) => {
-                setDateFrom(from);
-                setDateTo(to);
-              }}
-            />
+            {analysisType === 'occupancy' && (
+              <AnalysisDateRange
+                from={dateFrom}
+                to={dateTo}
+                onChange={(from, to) => {
+                  setDateFrom(from);
+                  setDateTo(to);
+                }}
+              />
+            )}
+            {analysisType === 'ranking' && (
+              <MonthSelector
+                month={month}
+                onMonthChange={setMonth}
+                topN={topN}
+                onTopNChange={setTopN}
+              />
+            )}
             <button
               className={styles.runButton}
               onClick={handleRun}
-              disabled={isLoading || !dateFrom || !dateTo}
+              disabled={isRunDisabled}
             >
               {isLoading ? (
                 <>
@@ -131,12 +174,12 @@ export default function AnalysisPage() {
           <div className={styles.results}>
             <div className={styles.skeletonChart} />
             <div className={styles.skeletonChart} />
-            <div className={styles.skeletonChart} />
+            {analysisType === 'occupancy' && <div className={styles.skeletonChart} />}
           </div>
         )}
 
-        {/* 結果表示 */}
-        {data && !isLoading && (
+        {/* 在室状況分析の結果 */}
+        {data && !isLoading && analysisType === 'occupancy' && (
           <>
             <div className={styles.periodBadge}>
               {data.period.from} 〜 {data.period.to}（{data.totalDays}日間）
@@ -156,6 +199,11 @@ export default function AnalysisPage() {
               </ChartContainer>
             </div>
           </>
+        )}
+
+        {/* ランキングの結果 */}
+        {rankingData && !isLoading && analysisType === 'ranking' && (
+          <RankingPdfView data={rankingData} />
         )}
 
         <BackLink href="/" style={{ marginTop: 'var(--spacing-xl)' }}>

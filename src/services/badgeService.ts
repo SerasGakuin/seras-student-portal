@@ -7,12 +7,14 @@ import {
     getLastWeekJst,
     getWeekBeforeLastJst,
     formatWeekPeriod,
+    getUniqueVisitDaySet,
 } from '@/lib/dateUtils';
 import {
     calculateEffectiveDuration,
     calculateDurationInTimeRange,
 } from '@/lib/durationUtils';
 import { normalizeName } from '@/lib/stringUtils';
+import { formatMinutesHoursOnly } from '@/lib/formatUtils';
 import { calculateRanksWithTies, getTopNWithTies } from '@/lib/rankingUtils';
 import {
     BadgeType,
@@ -128,12 +130,7 @@ export class BadgeService {
             s.nightDuration = calculateDurationInTimeRange(studentLogs, 20, 24, toJst);
 
             // 4. Visit Days (unique dates)
-            studentLogs.forEach(log => {
-                const entry = new Date(log.entryTime);
-                const entryJst = toJst(entry);
-                const dateStr = `${entryJst.getFullYear()}/${entryJst.getMonth() + 1}/${entryJst.getDate()}`;
-                s.visitDays.add(dateStr);
-            });
+            s.visitDays = getUniqueVisitDaySet(studentLogs);
         });
 
         // Process Previous Week (for Growth / RISING_STAR)
@@ -225,7 +222,7 @@ export class BadgeService {
 
         // 1. HEAVY_USER (Total Duration)
         // Min threshold: > 0 means >= 1 (any positive value)
-        processRanking(s => s.totalDuration, 'HEAVY_USER', s => Math.floor(s.totalDuration / 60) + 'h', 1);
+        processRanking(s => s.totalDuration, 'HEAVY_USER', s => formatMinutesHoursOnly(s.totalDuration), 1);
 
         // 2. EARLY_BIRD (Morning Duration)
         // Min threshold: > 30 means >= 31
@@ -233,7 +230,7 @@ export class BadgeService {
 
         // 3. NIGHT_OWL (Night Duration)
         // Min threshold: > 60 means >= 61
-        processRanking(s => s.nightDuration, 'NIGHT_OWL', s => Math.floor(s.nightDuration / 60) + 'h', 61);
+        processRanking(s => s.nightDuration, 'NIGHT_OWL', s => formatMinutesHoursOnly(s.nightDuration), 61);
 
         // 4. CONSISTENT (Visit Days)
         // Min threshold: >= 3
@@ -256,10 +253,7 @@ export class BadgeService {
         processRanking(
             s => s.totalDuration - s.prevTotalDuration,
             'RISING_STAR',
-            s => {
-                const diff = Math.floor((s.totalDuration - s.prevTotalDuration) / 60);
-                return '+' + diff + 'h';
-            },
+            s => '+' + formatMinutesHoursOnly(s.totalDuration - s.prevTotalDuration),
             121
         );
     }

@@ -10,20 +10,31 @@ src/
 ├── services/
 │   ├── analysisService.ts         # 在室状況分析のサービス層
 │   ├── analysisService.test.ts    # そのテスト
+│   ├── rankingAnalysisService.ts  # 月間ランキング分析のサービス層
 │   └── <newType>AnalysisService.ts  # ← 新分析はサービスを分ける
 ├── app/
 │   ├── analysis/page.tsx          # 統一ページ（分析タイプで切り替え）
 │   └── api/analysis/
 │       ├── occupancy/route.ts     # 在室状況 API
+│       ├── ranking/route.ts       # 月間ランキング API
 │       └── <newType>/route.ts     # ← 新分析は別ルート
 ├── features/analysis/components/
 │   ├── AnalysisSelector.tsx       # 分析タイプ選択（ANALYSIS_TYPES 配列）
 │   ├── AnalysisDateRange.tsx      # 日付範囲（共通パラメータ）
+│   ├── MonthSelector.tsx          # 月選択（ランキング用）
 │   ├── ChartContainer.tsx         # PNG DL付きラッパー（共通）
 │   ├── OccupancyHeatmap.tsx       # 在室状況専用
 │   ├── DailyTrendsChart.tsx       # 在室状況専用
-│   └── DailyBreakdownChart.tsx    # 在室状況専用
-└── lib/api.ts                     # API クライアント
+│   ├── DailyBreakdownChart.tsx    # 在室状況専用
+│   ├── RankingPdfView.tsx         # 月間ランキングPDF（表彰台レイアウト）
+│   └── RankingPdfView.module.css  # PDF用CSS（直値指定、CSS変数不使用）
+├── lib/
+│   ├── api.ts                     # API クライアント
+│   ├── formatUtils.ts             # 分→時間表示の共通ユーティリティ
+│   └── dateUtils.ts               # 日付・通塾日数の共通ユーティリティ
+└── lib/__tests__/
+    ├── formatUtils.test.ts        # formatUtils のテスト
+    └── dateUtils.test.ts          # dateUtils のテスト
 ```
 
 ## 新しい分析タイプを追加する手順
@@ -108,6 +119,48 @@ const ANALYSIS_TYPES: AnalysisType[] = [
 
 ---
 
+## 共通ユーティリティ（DRY）
+
+### 時間表示 (`src/lib/formatUtils.ts`)
+
+分数→時間表示の変換は全コンポーネント共通。**`Math.floor(x/60)` + `x%60` を直接書かない**。
+
+```typescript
+import { splitMinutes, formatMinutesHm, formatMinutesHoursOnly } from '@/lib/formatUtils';
+
+// JSX内で時間・分を個別にスタイリングしたい場合
+const { hours, mins } = splitMinutes(totalMinutes);
+// → { hours: 2, mins: 5 }
+
+// 文字列が必要な場合（tooltip、title属性など）
+formatMinutesHm(125);          // → "2h 5m"
+
+// 時間のみ（バッジの表示値など）
+formatMinutesHoursOnly(125);   // → "2h"
+```
+
+使用箇所: RankingPdfView, RankingWidget, RankingDetailView, StudentStatsView, RankerListCard, ActivityHeatmap, dashboard/page.tsx, badgeService
+
+### 通塾日数カウント (`src/lib/dateUtils.ts`)
+
+JST基準のユニーク通塾日数カウントも共通化済み。**手動で Set を構築しない**。
+
+```typescript
+import { countUniqueVisitDays, getUniqueVisitDaySet } from '@/lib/dateUtils';
+
+// 日数だけ必要な場合
+const days = countUniqueVisitDays(studentLogs);  // number
+
+// Set<string> が必要な場合（badgeServiceのvisitDays等）
+const daySet = getUniqueVisitDaySet(studentLogs);  // Set<string>
+```
+
+入力型は `{ entryTime: string }[]` で、`EntryExitLog` に依存しない。内部で `toJstDateString()` を使用。
+
+使用箇所: rankingAnalysisService, badgeService, dashboardService
+
+---
+
 ## 教訓・注意点
 
 ### Recharts の型
@@ -143,7 +196,7 @@ mockGetServerSession.mockResolvedValue({ user: { email: '...' } });
 
 ### データソース
 
-在室状況は `occupancy_logs` ワークシートを使用。新分析が別のワークシートを参照する場合、`CONFIG.SPREADSHEET` にシート名を追加する。
+在室状況は `occupancy_logs` ワークシートを使用。月間ランキングは `入退室記録` ワークシート（`GoogleSheetOccupancyRepository`経由）を使用。新分析が別のワークシートを参照する場合、`CONFIG.SPREADSHEET` にシート名を追加する。
 
 ### ChartContainer と PNG エクスポート
 
@@ -152,7 +205,22 @@ mockGetServerSession.mockResolvedValue({ user: { email: '...' } });
 
 ### パラメータ UI
 
-現在は `AnalysisDateRange`（from/to）が共通パラメータ。分析タイプ固有のパラメータ（例: 学年フィルタ）が必要な場合は、分析タイプごとの設定コンポーネントを作り、`page.tsx` で切り替える。
+`AnalysisDateRange`（from/to）は在室状況分析で使用。月間ランキングは `MonthSelector`（月選択 + TopN選択）を使用。分析タイプ固有のパラメータが必要な場合は、分析タイプごとの設定コンポーネントを作り、`page.tsx` で `analysisType` に応じて切り替える。
+
+### PDF エクスポート
+
+月間ランキングでは `html-to-image`（既存）+ `jspdf` でA4 PDF を生成。フロー:
+1. A4サイズ (794×1123px) の固定レイアウトコンポーネントを `toPng(ref, { pixelRatio: 3, backgroundColor: '#f8fafc' })` でキャプチャ
+2. `jsPDF` で A4 PDF に埋め込み（動的インポートでSSR回避）
+3. PDF用CSSではCSS変数ではなく直値を使用（`html-to-image` の互換性のため）
+
+**PDFデザイン方針**（掲示板用のインパクト重視）:
+- **ダークヘッダー**: `#0f172a` → `#1e293b` グラデーション + ドットグリッドオーバーレイ
+- **表彰台レイアウト**: Top3は大型カード（2位-1位-3位配置）、4位以降はコンパクト行
+- **鮮やかなメダルカラー**: ゴールド `#fbbf24`、シルバー `#94a3b8`、ブロンズ `#d97706`
+- **プログレスバー**: 各生徒に1位の時間に対する相対バー
+- **フォント**: Inter (数字・英字) + Noto Sans JP (日本語)、ウェイト差 900 vs 500
+- **CSS Modules**: `composes:` で表彰台カード共通スタイルを継承（podiumCard → podiumCard1/2/3）
 
 ### CSS
 
