@@ -66,7 +66,7 @@ const normalizeName = (name: string) => name.replace(/[\s\u200B-\u200D\uFEFF]/g,
 **原因**: 退室時刻が未入力（23:00のCronが実行前）
 
 **自動補完ロジック**:
-毎日23:00 JSTに `/api/cron/fill-exit-time` が実行され、未退室ログに対して:
+毎日23:00 JSTに `/api/cron/nightly` が実行され、未退室ログに対して:
 1. 過去7日間の個人平均滞在時間で補完
 2. 個人データがない場合は全体平均を使用
 3. 全体データもない場合は3時間（デフォルト）

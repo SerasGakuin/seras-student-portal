@@ -74,7 +74,7 @@ export interface RankedStudent {
 
 /** グループランキング */
 export interface RankedGroup {
-  label: string;            // "受験部門" or "一般部門"
+  label: string;            // "受験生の部" or "高2以下の部"
   students: RankedStudent[];
   totalStudents: number;    // グループ全体の在塾生数
 }

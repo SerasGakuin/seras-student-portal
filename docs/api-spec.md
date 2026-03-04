@@ -159,9 +159,10 @@ LINEユーザーが生徒として登録済みか確認
         maxValue: number;
       };
       trends: {
-        weekdayMean: { time: number; total: number }[];
-        weekendMean: { time: number; total: number }[];
+        weekdayMean: TrendsPoint[];
+        weekendMean: TrendsPoint[];
       };
+      // TrendsPoint = { time: number; total: number; p10: number; p25: number; p75: number; p90: number }
       breakdown: {
         date: string;
         day: string;
@@ -174,7 +175,7 @@ LINEユーザーが生徒として登録済みか確認
 *   **キャッシュ**: Google Sheetsデータは1時間キャッシュ（`unstable_cache`）
 
 #### GET /api/analysis/ranking
-月間学習時間ランキングデータを取得する。入退室記録から生徒ごとの学習時間を集計し、受験部門/一般部門に分けてランキング。
+月間学習時間ランキングデータを取得する。入退室記録から生徒ごとの学習時間を集計し、受験生の部/高2以下の部に分けてランキング。
 
 *   **認証**: `canViewDashboard` 権限必須
 *   **Query Parameters**:
@@ -187,7 +188,7 @@ LINEユーザーが生徒として登録済みか確認
       month: string;            // "YYYY-MM"
       monthLabel: string;       // "2026年02月"
       examGroup: {
-        label: string;          // "受験部門"
+        label: string;          // "受験生の部"
         students: {
           rank: number;
           name: string;
