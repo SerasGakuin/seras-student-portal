@@ -78,7 +78,7 @@ export function calculateMonthlyStudentStats(
 }
 
 /**
- * 統計データを受験部門/一般部門に分割し、各グループ内でランキングする
+ * 統計データを受験生の部/高2以下の部に分割し、各グループ内でランキングする
  *
  * 再利用: getTopNWithTies() でOlympic式タイ対応ランキング
  */

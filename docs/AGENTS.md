@@ -22,6 +22,7 @@
 | APIの追加/変更 | `docs/api-spec.md` |
 | 権限ルールの変更 | `docs/permissions.md` |
 | バッジロジックの変更 | `docs/specs/dashboard-spec.md` |
+| 分析機能の追加/変更 | `docs/analysis-dev-guide.md`, `docs/api-spec.md` |
 
 ## ルール3: 技術スタック
 

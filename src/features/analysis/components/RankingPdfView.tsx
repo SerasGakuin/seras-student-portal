@@ -267,10 +267,10 @@ export function RankingPdfView({ data }: RankingPdfViewProps) {
                         <span className={styles.monthBadge}>{data.monthLabel}</span>
                     </div>
 
-                    {/* 受験部門 */}
+                    {/* 受験生の部 */}
                     <GroupRanking group={data.examGroup} />
 
-                    {/* 一般部門 */}
+                    {/* 高2以下の部 */}
                     <GroupRanking group={data.generalGroup} />
 
                     {/* フッター */}
