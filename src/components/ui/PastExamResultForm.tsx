@@ -76,7 +76,7 @@ export function PastExamResultForm() {
                                 style={{ color: 'gray', cursor: 'default', pointerEvents: 'none' }}
                                 aria-disabled="true"
                             >
-                                前方一致する候補がありません
+                                部分一致する候補がありません
                             </li>
                         )}
                     </ul>
