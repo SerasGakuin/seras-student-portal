@@ -1,7 +1,7 @@
 // src/repositories/googleSheets/GoogleSheetStudentInfoRepository.ts
 
 import { IStudentInfoRepository } from '../interfaces/IStudentInfoRepository';
-import { StudentInfoRecord } from '@/lib/StudentInfoRecord';
+import { StudentInfoRecord } from '@/lib/types/StudentInfoRecord';
 import { StudentSchema } from '@/lib/schema';
 import { getGoogleSheets } from '@/lib/googleSheets';
 import { unstable_cache } from 'next/cache';

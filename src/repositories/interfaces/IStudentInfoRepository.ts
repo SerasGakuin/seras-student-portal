@@ -1,6 +1,6 @@
 // src/repositories/interfaces/IStudentInfoRepository.ts
 
-import { StudentInfoRecord } from '@/lib/StudentInfoRecord';
+import { StudentInfoRecord } from '@/lib/types/StudentInfoRecord';
 
 /**
  * 生徒の情報を取得するリポジトリの2026-03-31での最新版です。
