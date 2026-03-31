@@ -20,7 +20,7 @@ export function PastExamResultList() {
   } = usePastExamResults();
 
   // --- ページネーション状態 ---
-  const ITEMS_PER_PAGE = 30;
+  const ITEMS_PER_PAGE = 30; // 1ページあたりの最大アイテム数
   const [currentPage, setCurrentPage] = useState(1);
 
   // 検索ワード変更検知用のステート
@@ -93,65 +93,58 @@ export function PastExamResultList() {
       )}
 
       {/* 一覧表示 */}
-      {currentItems.length === 0 ? (
-        <p className={styles.emptyMessage}>データがありません。</p>
-      ) : (
-        <>
-          <ul className={styles.list}>
-            {currentItems.map((result) => (
-              <li key={result.recordId} className={styles.listItem}>
-                <div className={styles.itemMain}>
-                  <span className={styles.university}>
-                    {result.universityName}
-                  </span>
-                  <span className={styles.subject}>{result.subjectName}</span>
-                </div>
-                <div className={styles.itemSub}>
-                  <span>{result.year}年度</span>
-                  <span>{result.termName}</span>
-                  <span className={styles.score}>
-                    {result.totalScore ?? "-"}点
-                  </span>
-                </div>
-                {result.memo && <p className={styles.memo}>{result.memo}</p>}
+      {currentItems.map((result) => (
+        <li key={result.recordId} className={styles.listItem}>
+          <div className={styles.itemMain}>
+            <span className={styles.university}>{result.universityName}</span>
+            <span className={styles.subject}>{result.subjectName}</span>
+          </div>
+          <div className={styles.itemSub}>
+            <span>{result.year}年度</span>
+            <span>{result.termName}</span>
+            <span className={styles.score}>{result.totalScore ?? "-"}点</span>
+          </div>
+          {result.memo && <p className={styles.memo}>{result.memo}</p>}
 
-                {/* 削除ボタン */}
-                {deletableMap.get(result.recordId) && (
+          {/* 削除ボタン：deletingIdがある間（＝誰かを削除中）は全て無効化 */}
+          {deletableMap.get(result.recordId) && (
+            <button
+              className={styles.deleteIconButton}
+              onClick={() => handleDeleteClick(result.recordId)}
+              disabled={deletingId !== null}
+            >
+              🗑
+            </button>
+          )}
+
+          {/* インライン確認ダイアログ */}
+          {confirmId === result.recordId && (
+            <div className={styles.inlineOverlay}>
+              <div className={styles.inlineDialog}>
+                <span className={styles.inlineText}>削除しますか？</span>
+                <div className={styles.inlineActions}>
                   <button
-                    className={styles.deleteIconButton}
-                    onClick={() => handleDeleteClick(result.recordId)}
+                    className={styles.confirmButtonSmall}
+                    onClick={handleDeleteConfirm}
+                    /* ここでdeletingIdを使用して連打を防止 */
+                    disabled={deletingId !== null}
                   >
-                    🗑
+                    {deletingId === result.recordId ? "削除中..." : "削除"}
                   </button>
-                )}
-
-                {/* この項目専用のインライン確認ダイアログ */}
-                {confirmId === result.recordId && (
-                  <div className={styles.inlineOverlay}>
-                    <div className={styles.inlineDialog}>
-                      <span className={styles.inlineText}>削除しますか？</span>
-                      <div className={styles.inlineActions}>
-                        <button
-                          className={styles.confirmButtonSmall}
-                          onClick={handleDeleteConfirm}
-                        >
-                          削除
-                        </button>
-                        <button
-                          className={styles.cancelButtonSmall}
-                          onClick={handleDeleteCancel}
-                        >
-                          中止
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
+                  <button
+                    className={styles.cancelButtonSmall}
+                    onClick={handleDeleteCancel}
+                    /* 削除処理中はキャンセルも不可にするのが安全 */
+                    disabled={deletingId !== null}
+                  >
+                    中止
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </li>
+      ))}
     </section>
   );
 }
