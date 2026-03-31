@@ -2,7 +2,7 @@
 
 "use client";
 
-import { usePastExamResults } from "@/hooks/usePastExamResults";
+import { usePastExamResults } from "@/hooks/exam-result/usePastExamResults"; // ビジネスロジックをインポート
 import styles from "./PastExamResultList.module.css";
 
 export function PastExamResultList() {
