@@ -3,6 +3,9 @@ import { getGoogleSheets } from './googleSheets';
 
 const SPREADSHEET_ID = process.env.STUDENT_SPREADSHEET_ID;
 
+/**
+ * スプレッドシートの生徒マスターを参照して検索する。
+ */
 export const getStudentFromLineId = async (lineId: string): Promise<Student | null> => {
     if (!SPREADSHEET_ID) {
         throw new Error('STUDENT_SPREADSHEET_ID is not defined');
