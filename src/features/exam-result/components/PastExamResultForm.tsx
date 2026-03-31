@@ -90,21 +90,21 @@ export function PastExamResultForm() {
         )}
       </div>
 
-      {/* ===================== */}
       {/* 2. 科目の選択 */}
-      {/* 大学を選択するまで操作できない。 */}
-      {/* ===================== */}
       <div className={styles.field}>
-        <label className={styles.label}>
-          科目(大学を選択するまで操作できません)
-        </label>
+        <label className={styles.label}>科目</label>
         <select
           className={styles.select}
           disabled={selectedUniversity === null}
           value={selectedSubject?.id ?? ""}
           onChange={(e) => handleSelectSubject(Number(e.target.value))}
         >
-          <option value="">選択してください</option>
+          {/* 大学未選択なら説明を表示、選択済みなら通常の「選択してください」を表示 */}
+          <option value="">
+            {selectedUniversity === null
+              ? "大学・学部・学科を先に入力してください"
+              : "科目を選択してください"}
+          </option>
           {subjects.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}
@@ -113,21 +113,20 @@ export function PastExamResultForm() {
         </select>
       </div>
 
-      {/* ===================== */}
       {/* 3. 年度の選択 */}
-      {/* 科目を選択するまで操作できない。 */}
-      {/* ===================== */}
       <div className={styles.field}>
-        <label className={styles.label}>
-          年度(科目を選択するまで操作できません)
-        </label>
+        <label className={styles.label}>年度</label>
         <select
           className={styles.select}
           disabled={selectedSubject === null}
           value={selectedYear?.year ?? ""}
           onChange={(e) => handleSelectYear(Number(e.target.value))}
         >
-          <option value="">選択してください</option>
+          <option value="">
+            {selectedSubject === null
+              ? "科目を先に選択してください"
+              : "年度を選択してください"}
+          </option>
           {years.map((y) => (
             <option key={y.year} value={y.year}>
               {y.year}年度
@@ -136,21 +135,20 @@ export function PastExamResultForm() {
         </select>
       </div>
 
-      {/* ===================== */}
       {/* 4. 試験回の選択 */}
-      {/* 年度を選択するまで操作できない。 */}
-      {/* ===================== */}
       <div className={styles.field}>
-        <label className={styles.label}>
-          試験回(年度を選択するまで操作できません)
-        </label>
+        <label className={styles.label}>試験回</label>
         <select
           className={styles.select}
           disabled={selectedYear === null}
           value={selectedTerm?.examId ?? ""}
           onChange={(e) => handleSelectTerm(Number(e.target.value))}
         >
-          <option value="">選択してください</option>
+          <option value="">
+            {selectedYear === null
+              ? "年度を先に選択してください"
+              : "試験回を選択してください"}
+          </option>
           {terms.map((t) => (
             <option key={t.examId} value={t.examId}>
               {t.termName}
@@ -159,31 +157,38 @@ export function PastExamResultForm() {
         </select>
       </div>
 
-      {/* ===================== */}
       {/* 5. 得点の入力 */}
-      {/* 省略可能。試験回を選択するまで操作できない。 */}
-      {/* ===================== */}
       <div className={styles.field}>
         <label className={styles.label}>得点</label>
         <input
           className={styles.input}
           type="number"
-          placeholder="得点を入力（省略可）"
+          min="0"
+          placeholder={
+            selectedTerm === null
+              ? "試験回を先に選択してください"
+              : "得点を入力（省略可）"
+          }
           disabled={selectedTerm === null}
           value={totalScore}
-          onChange={(e) => setTotalScore(e.target.value)}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val !== "" && Number(val) < 0) return;
+            setTotalScore(val);
+          }}
         />
       </div>
 
-      {/* ===================== */}
       {/* 6. メモの入力 */}
-      {/* 省略可能。256バイトまで入力できる。試験回を選択するまで操作できない。 */}
-      {/* ===================== */}
       <div className={styles.field}>
         <label className={styles.label}>メモ</label>
         <textarea
           className={styles.textarea}
-          placeholder={`メモを入力（省略可・${memoMaxBytes}バイトまで）`}
+          placeholder={
+            selectedTerm === null
+              ? "試験回を先に選択してください"
+              : `メモを入力（省略可・${memoMaxBytes}バイトまで）`
+          }
           disabled={selectedTerm === null}
           value={memo}
           onChange={(e) => setMemo(e.target.value)}
