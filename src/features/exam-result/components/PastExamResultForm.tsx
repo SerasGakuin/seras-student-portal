@@ -66,11 +66,10 @@ export function PastExamResultForm() {
           onChange={(e) => handleUniversityQueryChange(e.target.value)}
         />
 
-        {/* サジェスト候補エリア。入力中かつ大学未選択の場合に表示する。 */}
+        {/* サジェスト候補エリア */}
         {isUniversityQueryActive && (
           <ul className={styles.suggestionList}>
             {universitySuggestions.length > 0 ? (
-              // 前方一致する候補がある場合：候補を一覧表示する
               universitySuggestions.map((u) => (
                 <li
                   className={styles.suggestionItem}
@@ -81,8 +80,7 @@ export function PastExamResultForm() {
                 </li>
               ))
             ) : (
-              // 前方一致する候補がない場合：押せない灰色の案内を表示する
-              <li className={styles.suggestionEmpty} aria-disabled="true">
+              <li className={styles.suggestionEmpty}>
                 部分一致する候補がありません
               </li>
             )}

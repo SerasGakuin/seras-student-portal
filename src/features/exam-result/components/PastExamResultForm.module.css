@@ -47,14 +47,48 @@
 }
 
 /* サジェストリスト */
-.suggestionItem {
-  color: var(--text-main);
+/* --- サジェストリストの外枠 (selectのメニューのように見せる) --- */
+.suggestionList {
+    width: 100%;
+    box-sizing: border-box;
+    margin: 4px 0 0 0;
+    padding: 4px 0;
+    list-style: none;
+    background-color: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* 少し浮かせてメニュー感を出す */
+    position: absolute; /* 他の要素を押し下げないようにする場合 */
+    z-index: 10;
+    max-height: 200px;
+    overflow-y: auto;
 }
 
+/* --- 各選択肢 --- */
+.suggestionItem {
+    padding: 10px 12px;
+    color: var(--text-main);
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.suggestionItem:hover {
+    background-color: rgba(0, 0, 0, 0.04); /* ホバー時の強調 */
+}
+
+/* --- 候補がない時の表示 --- */
 .suggestionEmpty {
-  color: var(--text-sub); /* 元の style={{ color: 'gray' }} を置換 */
-  cursor: default;
-  pointer-events: none;
+    padding: 10px 12px;
+    color: var(--text-sub);
+    font-size: 0.9rem;
+    cursor: default;
+}
+
+/* 親要素に position: relative を追加して absolute を効かせる */
+.field {
+    margin-bottom: 20px;
+    position: relative; 
 }
 
 .submitMessage {
