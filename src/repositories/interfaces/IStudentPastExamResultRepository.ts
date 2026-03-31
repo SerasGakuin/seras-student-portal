@@ -1,6 +1,11 @@
 // src/repositories/interfaces/IStudentPastExamResultRepository.ts
 
 /**
+ * 生徒の過去問成績を管理するリポジトリのインターフェースです。
+ * 実装は2026-03-31現在は/local/に置きます。ローカルサーバーにデータを保存するという意味です。
+ */
+
+/**
  * 過去問結果の閲覧用データ。
  * results テーブルを基に関連情報を結合したものです。
  */
