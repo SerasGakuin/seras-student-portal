@@ -14,6 +14,7 @@ const COLS = {
 
 /**
  * スプレッドシートの生徒マスターを参照して検索する。
+ * @deprecated - repositories/に新しい実装があるようです
  */
 export const getStudentFromLineId = async (lineId: string): Promise<Student | null> => {
     if (!SPREADSHEET_ID) {
