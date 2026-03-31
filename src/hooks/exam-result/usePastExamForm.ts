@@ -78,10 +78,10 @@ async function fetchSubjects(univId: number): Promise<SubjectOption[]> {
     ];
 }
 
-/** 年度一覧の生成のための基準年。基本的には最近6年をよく使用すると仮定 */
+/** 年度一覧の生成のための基準年。最大でも100カ年と仮定 */
 const BASE_YEAR = new Date().getFullYear();
 const years = [];
-for(let i = 0; i < 6; i++) {
+for(let i = 0; i < 100; i++) {
     years.push({ year: (BASE_YEAR - i) });
 }
 
@@ -94,7 +94,7 @@ for(let i = 0; i < 6; i++) {
 async function fetchYears(univId: number, subjectId: number): Promise<YearOption[]> {
     // モックデータ
     void univId; void subjectId;
-    return years;
+    return Object.freeze(years);
 }
 
 /**
