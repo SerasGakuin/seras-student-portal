@@ -317,7 +317,7 @@ export function usePastExamForm() {
       await submitResult({
         examId: selectedTerm.examId,
         totalScore: totalScore ? Number(totalScore) : null,
-        memo: memo || null,
+        memo: String(memo).trim() || null,
       });
       setSubmitMessage("登録しました！");
       resetForm();
