@@ -135,15 +135,18 @@ export function usePastExamResults() {
   const [confirmId, setConfirmId] = useState<number | null>(null);
 
   /**
-   * 検索クエリで絞り込んだ成績一覧を返します。
-   * 大学名・科目名・試験回・メモのいずれかに検索クエリが含まれるものを返します。
+   * 検索クエリで絞り込み、かつ新しい順（登録日時降順）にソートした成績一覧を返します。
    */
   const filteredResults = useMemo(() => {
-    return results.filter((r) =>
+    const filtered = results.filter((r) =>
       [r.universityName, r.subjectName, r.termName, r.memo].some((v) =>
         v?.includes(searchQuery),
       ),
     );
+
+    // タイムスタンプ（regUtcMs）で降順ソート
+    // b - a > 0 なら bの方が新しいので前に来る
+    return [...filtered].sort((a, b) => b.regUtcMs - a.regUtcMs);
   }, [results, searchQuery]);
 
   /**
