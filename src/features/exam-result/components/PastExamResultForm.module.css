@@ -1,0 +1,68 @@
+/* 文字色の適用 */
+
+.section {
+  color: var(--text-main);
+}
+
+.title {
+  color: var(--text-main);
+  font-weight: 900;
+}
+
+.description {
+  color: var(--text-sub);
+}
+
+.label {
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+/* 入力・選択・テキストエリア共通 */
+.input,
+.select,
+.textarea {
+  color: var(--text-main);
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--text-sub);
+  opacity: 0.7;
+}
+
+/* カウンター・補足情報 */
+.counter {
+  color: var(--text-sub);
+}
+
+.errorText {
+  color: #ff4d4f; /* エラーは視認性のために赤を推奨しますが、subに寄せるならvar(--text-sub) */
+}
+
+/* サジェストリスト */
+.suggestionItem {
+  color: var(--text-main);
+}
+
+.suggestionEmpty {
+  color: var(--text-sub); /* 元の style={{ color: 'gray' }} を置換 */
+  cursor: default;
+  pointer-events: none;
+}
+
+.submitMessage {
+  color: var(--text-main);
+}
+
+/* 構造維持のための最低限の余白設定*/
+.field {
+  margin-bottom: 1rem;
+}
+.label {
+  display: block;
+  margin-bottom: 0.4rem;
+}
+.hr {
+  opacity: 0.1;
+}
