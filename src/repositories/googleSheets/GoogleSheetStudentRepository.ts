@@ -4,6 +4,9 @@ import { Student, StudentSchema } from '@/lib/schema';
 import { getGoogleSheets } from '@/lib/googleSheets';
 import { unstable_cache } from 'next/cache';
 
+/**
+ * @note - カプセル化の徹底されたクラス対応版へ移行したいです
+ */
 export class GoogleSheetStudentRepository implements IStudentRepository {
 
     // Cached fetch function using unstable_cache inside

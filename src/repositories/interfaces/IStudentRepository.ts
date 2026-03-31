@@ -1,5 +1,8 @@
 import { Student } from '@/lib/schema';
 
+/**
+ * @note - カプセル化の徹底されたクラス対応版へ移行したいです
+ */
 export interface IStudentRepository {
     /**
      * Finds a student by their LINE ID.
