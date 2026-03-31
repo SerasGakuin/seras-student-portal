@@ -137,19 +137,21 @@ export function usePastExamResults() {
    * 検索クエリで絞り込んだ成績一覧を返します。
    * 大学名・科目名・試験回・メモのいずれかに検索クエリが含まれるものを返します。
    */
-  const filteredResults = results.filter((r) =>
-    [r.universityName, r.subjectName, r.termName, r.memo].some((v) =>
-      v?.includes(searchQuery),
-    ),
-  );
+  const filteredResults = useMemo(() => {
+    return results.filter((r) =>
+      [r.universityName, r.subjectName, r.termName, r.memo].some((v) =>
+        v?.includes(searchQuery),
+      ),
+    );
+  }, [results, searchQuery]);
 
   /**
    * 各レコードが削除可能かどうかを判定したMapを返します。
    * コンポーネント側でisDeletableを直接呼ばなくて済むようにします。
    */
-  const deletableMap = new Map(
-    results.map((r) => [r.recordId, isDeletable(r.regUtcMs)]),
-  );
+  const deletableMap = useMemo(() => {
+    return new Map(results.map((r) => [r.recordId, isDeletable(r.regUtcMs)]));
+  }, [results]);
 
   /**
    * 削除確認ポップアップを表示します。
