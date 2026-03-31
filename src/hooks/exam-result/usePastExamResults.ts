@@ -64,8 +64,8 @@ const MOCK_RESULTS: PastExamResultItem[] = (() => {
       year: 2999,
       termName: "前期",
       totalScore: "1234567890",
-      memo: "簡単だった",
-      regUtcMs: 0,
+      memo: "他のデータはランダム生成なので現実に存在する大学とは限りません",
+      regUtcMs: Number.MAX_SAFE_INTEGER,
     },
   ];
 
