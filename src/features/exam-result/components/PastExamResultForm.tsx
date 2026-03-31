@@ -61,7 +61,7 @@ export function PastExamResultForm() {
         <input
           className={styles.input}
           type="text"
-          placeholder="大学名を入力してください"
+          placeholder="大学・学部・学科名を入力してください"
           value={
             selectedUniversity ? selectedUniversity.fullName : universityQuery
           }
@@ -95,7 +95,9 @@ export function PastExamResultForm() {
       {/* 大学を選択するまで操作できない。 */}
       {/* ===================== */}
       <div className={styles.field}>
-        <label className={styles.label}>科目</label>
+        <label className={styles.label}>
+          科目(大学を選択するまで操作できません)
+        </label>
         <select
           className={styles.select}
           disabled={selectedUniversity === null}
@@ -116,7 +118,9 @@ export function PastExamResultForm() {
       {/* 科目を選択するまで操作できない。 */}
       {/* ===================== */}
       <div className={styles.field}>
-        <label className={styles.label}>年度</label>
+        <label className={styles.label}>
+          年度(科目を選択するまで操作できません)
+        </label>
         <select
           className={styles.select}
           disabled={selectedSubject === null}
@@ -137,7 +141,9 @@ export function PastExamResultForm() {
       {/* 年度を選択するまで操作できない。 */}
       {/* ===================== */}
       <div className={styles.field}>
-        <label className={styles.label}>試験回</label>
+        <label className={styles.label}>
+          試験回(年度を選択するまで操作できません)
+        </label>
         <select
           className={styles.select}
           disabled={selectedYear === null}
