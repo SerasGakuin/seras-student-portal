@@ -54,7 +54,7 @@ export default function PortalHome() {
           />
 
           <PortalCard
-            href="/exam-result-form"
+            href="/exam-result"
             title="過去問成績"
             description="過去問の成績を記録・管理"
             icon={

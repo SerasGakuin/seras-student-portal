@@ -41,7 +41,8 @@ export function PastExamResultForm() {
 
     return (
         <section>
-            <h2>成績を追加する</h2>
+            <h3>成績を追加する</h3>
+            <hr></hr>
 
             {/* ===================== */}
             {/* 1. 大学・学部・学科の選択 */}
