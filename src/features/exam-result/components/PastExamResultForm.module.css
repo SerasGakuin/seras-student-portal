@@ -1,108 +1,121 @@
-/* 文字色の適用 */
+/* ==========================================================================
+   PastExamResultForm Component Styles
+   デザインシステム（--text-main, --text-sub）に基づいたカラー設計
+   ========================================================================== */
 
+/* --- 全体・レイアウト設定 --- */
 .section {
-  color: var(--text-main);
+  color: var(--text-main); /* 基本テキストカラーの適用 */
 }
 
 .title {
   color: var(--text-main);
-  font-weight: 900;
+  font-size: 1.2rem;
+  font-weight: 900; /* 強調のため太字に設定 */
 }
 
 .description {
-  color: var(--text-sub);
+  color: var(--text-sub); /* 補助テキスト（補足説明）用カラー */
+  font-size: 0.85rem;
+}
+
+.hr {
+  opacity: 0.1; /* 区切り線を控えめに表示 */
+  margin: 1rem 0;
+}
+
+/* --- フォームフィールド（各入力項目のラップ） --- */
+.field {
+  margin-bottom: 1rem;
+  position: relative; /* サジェストリスト（absolute）の基準点となる */
 }
 
 .label {
+  display: block; /* ラベルを独立した行にする */
+  margin-bottom: 0.4rem;
   color: var(--text-main);
   font-weight: 700;
+  font-size: 0.9rem;
 }
 
-/* 入力・選択・テキストエリア共通 */
+/* --- 入力要素共通（input, select, textarea） --- */
 .input,
 .select,
 .textarea {
-  width: 100%; /* 左右いっぱいに広げる */
-  box-sizing: border-box; /* パディングを含めて100%にする */
-  display: block; /* 確実に一行占有させる */
+  width: 100%; /* 親要素の幅いっぱいに広げる */
+  box-sizing: border-box; /* paddingとborderをwidthに含める */
+  display: block; /* 要素の前後で改行を確実にする */
   color: var(--text-main);
   padding: 8px;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 6px;
+  background-color: #fff;
+  font-size: 1rem;
 }
 
+/* プレースホルダーのスタイル */
 .input::placeholder,
 .textarea::placeholder {
   color: var(--text-sub);
-  opacity: 0.7;
+  opacity: 0.7; /* 少し透過させてプレースホルダーらしさを強調 */
 }
 
-/* カウンター・補足情報 */
+/* --- バリデーション・補助情報 --- */
 .counter {
+  display: block;
+  margin-top: 4px;
   color: var(--text-sub);
+  font-size: 0.75rem;
 }
 
 .errorText {
-  color: #ff4d4f; /* エラーは視認性のために赤を推奨しますが、subに寄せるならvar(--text-sub) */
+  color: #ff4d4f; /* 警告色は視認性の高い赤系を維持 */
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 
-/* サジェストリスト */
-/* --- サジェストリストの外枠 (selectのメニューのように見せる) --- */
+/* --- 大学名サジェスト（プルダウン形式のメニュー） --- */
 .suggestionList {
-    width: 100%;
-    box-sizing: border-box;
-    margin: 4px 0 0 0;
-    padding: 4px 0;
-    list-style: none;
-    background-color: #fff;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 6px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* 少し浮かせてメニュー感を出す */
-    position: absolute; /* 他の要素を押し下げないようにする場合 */
-    z-index: 10;
-    max-height: 200px;
-    overflow-y: auto;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 4px 0 0 0;
+  padding: 4px 0;
+  list-style: none; /* リストの・を消去 */
+  background-color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* 浮き上がったような視覚効果 */
+  position: absolute; /* 他の入力項目を押し下げずに重ねて表示 */
+  z-index: 10; /* 前面に表示させる */
+  max-height: 200px; /* 候補が多い場合にスクロールさせる */
+  overflow-y: auto;
 }
 
-/* --- 各選択肢 --- */
+/* 各候補アイテム */
 .suggestionItem {
-    padding: 10px 12px;
-    color: var(--text-main);
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.suggestionItem:hover {
-    background-color: rgba(0, 0, 0, 0.04); /* ホバー時の強調 */
-}
-
-/* --- 候補がない時の表示 --- */
-.suggestionEmpty {
-    padding: 10px 12px;
-    color: var(--text-sub);
-    font-size: 0.9rem;
-    cursor: default;
-}
-
-/* 親要素に position: relative を追加して absolute を効かせる */
-.field {
-    margin-bottom: 20px;
-    position: relative; 
-}
-
-.submitMessage {
+  padding: 10px 12px;
   color: var(--text-main);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background-color 0.2s; /* ホバー時の変化を滑らかに */
 }
 
-/* 構造維持のための最低限の余白設定*/
-.field {
-  margin-bottom: 1rem;
+/* マウスホバーまたはフォーカス時の強調 */
+.suggestionItem:hover {
+  background-color: rgba(0, 0, 0, 0.04);
 }
-.label {
-  display: block;
-  margin-bottom: 0.4rem;
+
+/* 候補が見つからない時の案内表示 */
+.suggestionEmpty {
+  padding: 10px 12px;
+  color: var(--text-sub);
+  font-size: 0.9rem;
+  cursor: default; /* クリック不可であることを示す */
 }
-.hr {
-  opacity: 0.1;
+
+/* --- 送信関連 --- */
+.submitMessage {
+  margin-top: 1rem;
+  color: var(--text-main);
+  font-size: 0.9rem;
 }
