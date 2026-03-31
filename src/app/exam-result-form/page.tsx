@@ -8,6 +8,14 @@ import { LoginRequired } from '@/components/ui/LoginRequired';
 import { PastExamResultList } from '@/components/ui/PastExamResultList';
 import { PastExamResultForm } from '@/components/ui/PastExamResultForm';
 
+/**
+ * 過去問成績ページ
+ * - 学生は過去問の成績を記録・管理できる
+ * - 成績は学生ごとに保存される
+ * - 成績の一覧表示と新規登録フォームを提供する
+ * 
+ * 細かいコンポーネントはcomponents/ui/に定義されています。
+ */ 
 export default function PastExamResultsPage() {
     const { isLoading, student } = useLiff();
 
