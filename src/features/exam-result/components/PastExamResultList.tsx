@@ -67,6 +67,31 @@ export function PastExamResultList() {
         />
       </div>
 
+      {/* ページネーション UI */}
+      {totalPages > 1 && (
+        <div className={styles.pagination}>
+          <button
+            className={styles.pageButton}
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+          >
+            &lt;
+          </button>
+
+          <span className={styles.pageInfo}>
+            {currentPage} / {totalPages}
+          </span>
+
+          <button
+            className={styles.pageButton}
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+          >
+            &gt;
+          </button>
+        </div>
+      )}
+
       {/* 一覧表示 */}
       {currentItems.length === 0 ? (
         <p className={styles.emptyMessage}>データがありません。</p>
@@ -103,33 +128,6 @@ export function PastExamResultList() {
               </li>
             ))}
           </ul>
-
-          {/* ページネーション UI */}
-          {totalPages > 1 && (
-            <div className={styles.pagination}>
-              <button
-                className={styles.pageButton}
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-              >
-                &lt;
-              </button>
-
-              <span className={styles.pageInfo}>
-                {currentPage} / {totalPages}
-              </span>
-
-              <button
-                className={styles.pageButton}
-                onClick={() =>
-                  setCurrentPage((p) => Math.min(totalPages, p + 1))
-                }
-                disabled={currentPage === totalPages}
-              >
-                &gt;
-              </button>
-            </div>
-          )}
         </>
       )}
 

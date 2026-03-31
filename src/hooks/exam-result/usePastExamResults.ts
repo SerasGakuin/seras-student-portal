@@ -1,6 +1,7 @@
 // src/app/exam-result-form/hooks/usePastExamResults.ts
 
 import { useState } from "react";
+import { useMemo } from "react";
 
 /** 成績一覧の1件分のデータ */
 export interface PastExamResultItem {
