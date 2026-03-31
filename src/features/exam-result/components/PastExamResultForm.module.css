@@ -22,7 +22,13 @@
 .input,
 .select,
 .textarea {
+  width: 100%; /* 左右いっぱいに広げる */
+  box-sizing: border-box; /* パディングを含めて100%にする */
+  display: block; /* 確実に一行占有させる */
   color: var(--text-main);
+  padding: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
 }
 
 .input::placeholder,
