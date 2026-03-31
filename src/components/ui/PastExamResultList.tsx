@@ -4,14 +4,10 @@
 
 import { usePastExamResults } from '@/hooks/usePastExamResults';
 
-/** 登録から24時間以内かどうかを判定します */
-function isDeletable(regUtcMs: number): boolean {
-    return Date.now() - regUtcMs < 24 * 60 * 60 * 1000;
-}
-
 export function PastExamResultList() {
     const {
         filteredResults,
+        deletableMap,
         searchQuery,
         setSearchQuery,
         deletingId,
@@ -44,7 +40,7 @@ export function PastExamResultList() {
                             <span>{result.termName}</span>
                             <span>{result.totalScore ?? '-'}点</span>
                             <span>{result.memo ?? ''}</span>
-                            {isDeletable(result.regUtcMs) && (
+                            {deletableMap.get(result.recordId) && (
                                 <button
                                     onClick={() => handleDeleteClick(result.recordId)}
                                     disabled={deletingId === result.recordId}

@@ -38,6 +38,18 @@ const MOCK_RESULTS: PastExamResultItem[] = [
     },
 ];
 
+/** 削除可能とみなす登録からの経過時間（ミリ秒） */
+const DELETABLE_DURATION_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * 登録から24時間以内かどうかを判定します。
+ * UIでの削除ボタン表示制御に使用します。
+ * @param regUtcMs 登録日時（UTCミリ秒）
+ */
+function isDeletable(regUtcMs: number): boolean {
+    return Date.now() - regUtcMs < DELETABLE_DURATION_MS;
+}
+
 /**
  * 過去問成績の一覧取得・削除を管理するカスタムフックです。
  * 現在はモックデータを使用しています。
@@ -46,13 +58,10 @@ const MOCK_RESULTS: PastExamResultItem[] = [
 export function usePastExamResults() {
     // 成績一覧データ
     const [results, setResults] = useState<PastExamResultItem[]>(MOCK_RESULTS);
-
     // 検索クエリ
     const [searchQuery, setSearchQuery] = useState('');
-
     // 削除処理中のレコードID（ローディング制御に使用）
     const [deletingId, setDeletingId] = useState<number | null>(null);
-
     // 削除確認ポップアップの対象レコードID（nullなら非表示）
     const [confirmId, setConfirmId] = useState<number | null>(null);
 
@@ -63,6 +72,14 @@ export function usePastExamResults() {
     const filteredResults = results.filter(r =>
         [r.universityName, r.subjectName, r.termName, r.memo]
             .some(v => v?.includes(searchQuery))
+    );
+
+    /**
+     * 各レコードが削除可能かどうかを判定したMapを返します。
+     * コンポーネント側でisDeletableを直接呼ばなくて済むようにします。
+     */
+    const deletableMap = new Map(
+        results.map(r => [r.recordId, isDeletable(r.regUtcMs)])
     );
 
     /**
@@ -104,6 +121,8 @@ export function usePastExamResults() {
     return {
         /** 検索後の成績一覧 */
         filteredResults,
+        /** レコードIDをキーとした削除可否Map */
+        deletableMap,
         /** 検索クエリ */
         searchQuery,
         /** 検索クエリを更新する関数 */
