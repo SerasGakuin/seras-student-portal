@@ -2,7 +2,8 @@
 
 "use client";
 
-import { usePastExamResults } from "@/hooks/exam-result/usePastExamResults"; // ビジネスロジックをインポート
+import { useState, useMemo } from "react";
+import { usePastExamResults } from "@/hooks/exam-result/usePastExamResults";
 import styles from "./PastExamResultList.module.css";
 
 export function PastExamResultList() {
@@ -17,6 +18,38 @@ export function PastExamResultList() {
     handleDeleteCancel,
     handleDeleteConfirm,
   } = usePastExamResults();
+
+  // --- ページネーション状態 ---
+  const ITEMS_PER_PAGE = 30;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // 検索ワード変更検知用のステート
+  const [prevSearchQuery, setPrevSearchQuery] = useState(searchQuery);
+
+  /**
+   * 【重要】useEffectを使わないステート調整
+   * レンダリング中に前回のクエリと比較し、変更があればその場でページを1に戻します。
+   * これによりカスケードレンダリング（描画後の再描画）を防ぎます。
+   */
+  if (searchQuery !== prevSearchQuery) {
+    setPrevSearchQuery(searchQuery);
+    setCurrentPage(1);
+  }
+
+  // 全ページ数の計算
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredResults.length / ITEMS_PER_PAGE),
+  );
+
+  /**
+   * 現在のページに表示するデータのみを抽出
+   * 非表示のページのデータはDOMから破棄されます。
+   */
+  const currentItems = useMemo(() => {
+    const offset = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredResults.slice(offset, offset + ITEMS_PER_PAGE);
+  }, [filteredResults, currentPage]);
 
   return (
     <section className={styles.section}>
@@ -34,41 +67,70 @@ export function PastExamResultList() {
         />
       </div>
 
-      {/* 一覧 */}
-      {filteredResults.length === 0 ? (
+      {/* 一覧表示 */}
+      {currentItems.length === 0 ? (
         <p className={styles.emptyMessage}>データがありません。</p>
       ) : (
-        <ul className={styles.list}>
-          {filteredResults.map((result) => (
-            <li key={result.recordId} className={styles.listItem}>
-              <div className={styles.itemMain}>
-                <span className={styles.university}>
-                  {result.universityName}
-                </span>
-                <span className={styles.subject}>{result.subjectName}</span>
-              </div>
-              <div className={styles.itemSub}>
-                <span>{result.year}年度</span>
-                <span>{result.termName}</span>
-                <span className={styles.score}>
-                  {result.totalScore ?? "-"}点
-                </span>
-              </div>
-              {result.memo && <p className={styles.memo}>{result.memo}</p>}
+        <>
+          <ul className={styles.list}>
+            {currentItems.map((result) => (
+              <li key={result.recordId} className={styles.listItem}>
+                <div className={styles.itemMain}>
+                  <span className={styles.university}>
+                    {result.universityName}
+                  </span>
+                  <span className={styles.subject}>{result.subjectName}</span>
+                </div>
+                <div className={styles.itemSub}>
+                  <span>{result.year}年度</span>
+                  <span>{result.termName}</span>
+                  <span className={styles.score}>
+                    {result.totalScore ?? "-"}点
+                  </span>
+                </div>
+                {result.memo && <p className={styles.memo}>{result.memo}</p>}
 
-              {deletableMap.get(result.recordId) && (
-                <button
-                  className={styles.deleteIconButton}
-                  onClick={() => handleDeleteClick(result.recordId)}
-                  disabled={deletingId === result.recordId}
-                  aria-label="削除"
-                >
-                  🗑
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
+                {deletableMap.get(result.recordId) && (
+                  <button
+                    className={styles.deleteIconButton}
+                    onClick={() => handleDeleteClick(result.recordId)}
+                    disabled={deletingId === result.recordId}
+                    aria-label="削除"
+                  >
+                    🗑
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+
+          {/* ページネーション UI */}
+          {totalPages > 1 && (
+            <div className={styles.pagination}>
+              <button
+                className={styles.pageButton}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                &lt;
+              </button>
+
+              <span className={styles.pageInfo}>
+                {currentPage} / {totalPages}
+              </span>
+
+              <button
+                className={styles.pageButton}
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
+                disabled={currentPage === totalPages}
+              >
+                &gt;
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {/* 削除確認ポップアップ */}
