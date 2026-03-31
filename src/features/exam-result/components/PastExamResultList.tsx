@@ -115,43 +115,42 @@ export function PastExamResultList() {
                 </div>
                 {result.memo && <p className={styles.memo}>{result.memo}</p>}
 
+                {/* 削除ボタン */}
                 {deletableMap.get(result.recordId) && (
                   <button
                     className={styles.deleteIconButton}
                     onClick={() => handleDeleteClick(result.recordId)}
-                    disabled={deletingId === result.recordId}
-                    aria-label="削除"
                   >
                     🗑
                   </button>
+                )}
+
+                {/* この項目専用のインライン確認ダイアログ */}
+                {confirmId === result.recordId && (
+                  <div className={styles.inlineOverlay}>
+                    <div className={styles.inlineDialog}>
+                      <span className={styles.inlineText}>削除しますか？</span>
+                      <div className={styles.inlineActions}>
+                        <button
+                          className={styles.confirmButtonSmall}
+                          onClick={handleDeleteConfirm}
+                        >
+                          削除
+                        </button>
+                        <button
+                          className={styles.cancelButtonSmall}
+                          onClick={handleDeleteCancel}
+                        >
+                          中止
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </li>
             ))}
           </ul>
         </>
-      )}
-
-      {/* 削除確認ポップアップ */}
-      {confirmId !== null && (
-        <div className={styles.overlay}>
-          <div className={styles.dialog} role="dialog" aria-modal="true">
-            <p className={styles.dialogText}>本当に削除しますか？</p>
-            <div className={styles.dialogActions}>
-              <button
-                className={styles.confirmButton}
-                onClick={handleDeleteConfirm}
-              >
-                削除する
-              </button>
-              <button
-                className={styles.cancelButton}
-                onClick={handleDeleteCancel}
-              >
-                キャンセル
-              </button>
-            </div>
-          </div>
-        </div>
       )}
     </section>
   );

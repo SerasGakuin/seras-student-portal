@@ -5,6 +5,7 @@
 
 /* --- 全体設定 --- */
 .section {
+  position: relative; /* インラインオーバーレイの基準点 */
   color: var(--text-main);
 }
 
@@ -17,7 +18,7 @@
 
 .hr {
   border: none;
-  border-top: 1px solid rgba(0, 0, 0, 0.05); /* 非常に薄い線で区切る */
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
   margin-bottom: 20px;
 }
 
@@ -33,7 +34,7 @@
   border: 1px solid rgba(0, 0, 0, 0.1);
   color: var(--text-main);
   font-size: 0.95rem;
-  box-sizing: border-box; /* paddingが幅を突き破らないように設定 */
+  box-sizing: border-box;
 }
 
 .searchInput::placeholder {
@@ -49,15 +50,23 @@
 }
 
 .list {
-  list-style: none; /* デフォルトの・を消去 */
+  list-style: none;
   padding: 0;
   margin: 0;
 }
 
 .listItem {
-  position: relative; /* 削除ボタン（absolute）の配置基準 */
+  position: relative; /* 削除ボタンやインラインダイアログの配置基準 */
   padding: 16px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.03); /* 項目間の細い区切り線 */
+  padding-right: 64px; /* ボタンと重ならないための余白 */
+  border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+  background-color: #fff;
+  min-height: 80px;
+  transition: background-color 0.2s ease;
+}
+
+.listItem:hover {
+  background-color: rgba(0, 0, 0, 0.01);
 }
 
 /* 大学名・科目名などのメイン情報 */
@@ -67,7 +76,7 @@
   font-weight: 700;
   color: var(--text-main);
   margin-bottom: 4px;
-  flex-wrap: wrap; /* スマホ表示時に折り返しを許可 */
+  flex-wrap: wrap;
 }
 
 /* 年度・回・得点などの補助情報 */
@@ -81,10 +90,10 @@
 
 .score {
   font-weight: 700;
-  color: var(--text-main); /* スコアは重要な情報なのでメイン色で強調 */
+  color: var(--text-main);
 }
 
-/* メモ欄（左側に細い線を入れた引用風のデザイン） */
+/* メモ欄 */
 .memo {
   font-size: 0.85rem;
   color: var(--text-sub);
@@ -96,34 +105,24 @@
 
 /* --- 削除ボタン（ゴミ箱ボタン） --- */
 .deleteIconButton {
-  /* 【配置】transformを使わず、右上からの距離で固定 */
   position: absolute;
-  top: 16px; /* 上から16px */
-  right: 16px; /* 右から16px */
-
-  /* 【サイズと形状】 */
+  top: 16px;
+  right: 16px;
   width: 40px;
   height: 40px;
   display: flex !important;
   align-items: center;
   justify-content: center;
-
-  /* 【見た目】標準的な枠線と影 */
   background-color: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.15); /* 枠線を少し太く濃く */
+  border: 1px solid rgba(0, 0, 0, 0.15);
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* 軽い影 */
-
-  /* 【文字・アイコン】 */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   font-size: 1.2rem;
-  color: #333; /* 明示的に濃い色を指定 */
   cursor: pointer;
-  z-index: 10; /* 重なり順を上げる */
-
+  z-index: 5;
   transition: all 0.2s ease;
 }
 
-/* ホバー時の挙動 */
 .deleteIconButton:hover:not(:disabled) {
   border-color: #ff4d4f;
   background-color: #fff1f0;
@@ -131,12 +130,43 @@
   box-shadow: 0 4px 8px rgba(255, 77, 79, 0.2);
 }
 
-/* 処理中（disabled） */
 .deleteIconButton:disabled {
   opacity: 0.3;
   cursor: not-allowed;
   background-color: #f5f5f5;
-  border-color: #ddd;
+}
+
+/* --- インライン削除確認エリア（項目の上に重なる） --- */
+.inlineOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.96); /* 項目を白っぽく隠す */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: inherit;
+}
+
+.inlineDialog {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.inlineText {
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: #ff4d4f;
+}
+
+.inlineActions {
+  display: flex;
+  gap: 12px;
 }
 
 /* --- ページネーションコントロール --- */
@@ -169,72 +199,59 @@
   border-color: rgba(0, 0, 0, 0.2);
 }
 
-.pageButton:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
+/* --- 共通ボタン（削除確認用） --- */
+
+/* 実行ボタン（赤） */
+.confirmButton {
+  padding: 8px 20px;
+  background: #ff4d4f;
+  color: white;
+  border: 1px solid rgba(0, 0, 0, 0.1); /* わずかに境界線を付けて輪郭をはっきりさせる */
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(255, 77, 79, 0.2); /* 赤色の軽い影 */
+}
+
+.confirmButton:hover:not(:disabled) {
+  background: #ff7875; /* 少し明るい赤へ */
+  box-shadow: 0 4px 10px rgba(255, 77, 79, 0.3); /* 浮き上がり強調 */
+  transform: translateY(-1px); /* わずかに上に浮く */
+}
+
+/* キャンセルボタン（グレー） */
+.cancelButton {
+  padding: 8px 20px;
+  background: #ffffff; /* 白背景に変更 */
+  color: var(--text-main);
+  border: 1px solid rgba(0, 0, 0, 0.15); /* 標準的な枠線を導入 */
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.cancelButton:hover:not(:disabled) {
+  background: #f5f5f5;
+  border-color: rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+/* 共通の押した瞬間（クリック時）の沈み込み */
+.confirmButton:active,
+.cancelButton:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .pageInfo {
   font-size: 0.9rem;
   color: var(--text-sub);
-  font-weight: 500;
   min-width: 60px;
   text-align: center;
-}
-
-/* --- 削除確認ダイアログ（モーダル） --- */
-.overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.3); /* 背景を暗くする */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-}
-
-.dialog {
-  background: white;
-  padding: 24px;
-  border-radius: 16px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* 浮き出し効果 */
-  max-width: 90%;
-  width: 320px;
-}
-
-.dialogText {
-  color: var(--text-main);
-  font-weight: 700;
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-.dialogActions {
-  display: flex;
-  gap: 12px;
-}
-
-.confirmButton {
-  flex: 1;
-  padding: 10px;
-  background: #ff4d4f; /* 破壊的な操作のため警告色（赤）を直接指定 */
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.cancelButton {
-  flex: 1;
-  padding: 10px;
-  background: #f0f0f0;
-  color: var(--text-main);
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
 }
