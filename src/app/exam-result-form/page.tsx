@@ -38,15 +38,15 @@ export default function PastExamResultsPage() {
         subtitle="自分の過去問の成績を記録・管理できます"
       />
       <main>
+        <GlassCard className="animate-slide-up" style={{ textAlign: "left" }}>
+          <PastExamResultForm />
+        </GlassCard>
+
         <GlassCard
           className="animate-slide-up"
           style={{ textAlign: "left", marginBottom: "1.5rem" }}
         >
           <PastExamResultList />
-        </GlassCard>
-
-        <GlassCard className="animate-slide-up" style={{ textAlign: "left" }}>
-          <PastExamResultForm />
         </GlassCard>
 
         <BackLink href="/">ポータルに戻る</BackLink>
