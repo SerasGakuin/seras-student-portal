@@ -4,13 +4,17 @@ import { useState, useEffect } from 'react';
 
 /** 大学の選択肢 */
 export interface UniversityOption {
+    /** 大学ID */
     id: number;
+    /** 大学名 */
     fullName: string;
 }
 
 /** 科目の選択肢 */
 export interface SubjectOption {
+    /** 科目ID */
     id: number;
+    /** 科目名 */
     name: string;
 }
 
