@@ -72,8 +72,17 @@ async function fetchSubjects(univId: number): Promise<SubjectOption[]> {
     return [
         { id: 1, name: '数学' },
         { id: 2, name: '英語' },
-        { id: 3, name: '物理' },
+        { id: 3, name: '国語' },
+        { id: 4, name: '国語' },
+        { id: 5, name: '国語' },
     ];
+}
+
+/** 年度一覧の生成のための基準年。基本的には最近6年をよく使用すると仮定 */
+const BASE_YEAR = new Date().getFullYear();
+const years = [];
+for(let i = 0; i < 6; i++) {
+    years.push({ year: (BASE_YEAR - i) });
 }
 
 /**
@@ -85,11 +94,7 @@ async function fetchSubjects(univId: number): Promise<SubjectOption[]> {
 async function fetchYears(univId: number, subjectId: number): Promise<YearOption[]> {
     // モックデータ
     void univId; void subjectId;
-    return [
-        { year: 2024 },
-        { year: 2023 },
-        { year: 2022 },
-    ];
+    return years;
 }
 
 /**
