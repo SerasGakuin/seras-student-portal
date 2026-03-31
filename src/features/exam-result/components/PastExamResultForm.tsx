@@ -41,7 +41,8 @@ export function PastExamResultForm() {
 
     return (
         <section>
-            <h3>成績を追加する</h3>
+            <h3>成績を登録する</h3>
+            登録後、24h以内なら一覧から削除できます。
             <hr></hr>
 
             {/* ===================== */}

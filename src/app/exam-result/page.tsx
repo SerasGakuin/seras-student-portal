@@ -5,8 +5,8 @@ import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { BackLink } from "@/components/ui/BackLink";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { LoginRequired } from "@/components/ui/LoginRequired";
-import { PastExamResultList } from "@/components/ui/exam-result/PastExamResultList";
-import { PastExamResultForm } from "@/components/ui/exam-result/PastExamResultForm";
+import { PastExamResultList } from "@/features/exam-result/components/PastExamResultList";
+import { PastExamResultForm } from "@/features/exam-result/components/PastExamResultForm";
 import { GlassCard } from "@/components/ui/GlassCard";
 
 /**
