@@ -1,4 +1,4 @@
-// src/lib/StudentInfoRecord.ts
+// StudentInfoRecord.ts
 import { Student } from '@/lib/schema';
 
 /**
