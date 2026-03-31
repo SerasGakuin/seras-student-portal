@@ -3,12 +3,21 @@ import { getGoogleSheets } from './googleSheets';
 
 const SPREADSHEET_ID = process.env.STUDENT_SPREADSHEET_ID;
 
+
+// データとして必要な列。
+const COLS = {
+    LINE_ID: '生徒LINEID',
+    NAME: '名前',
+    GRADE: '学年',
+    STATUS: 'Status',
+};
+
 /**
  * スプレッドシートの生徒マスターを参照して検索する。
  */
 export const getStudentFromLineId = async (lineId: string): Promise<Student | null> => {
     if (!SPREADSHEET_ID) {
-        throw new Error('STUDENT_SPREADSHEET_ID is not defined');
+        throw new Error('環境変数STUDENT_SPREADSHEET_IDが未定義です。');
     }
 
     const sheets = await getGoogleSheets();
@@ -27,20 +36,14 @@ export const getStudentFromLineId = async (lineId: string): Promise<Student | nu
         const headers = rows[0];
 
         // Dynamic column mapping
+        // 動的に列名と列番号を整合。
         const colMap = new Map<string, number>();
         headers.forEach((header, index) => {
             colMap.set(header, index);
         });
 
-        // Required columns
-        const COLS = {
-            LINE_ID: '生徒LINEID',
-            NAME: '名前',
-            GRADE: '学年',
-            STATUS: 'Status',
-        };
-
-        // Validate existence of required columns
+        // 必要な列なのに、実際のシートにない場合はエラー
+        // TODO: 呼び出し元でフォールバックする余地がないので修正したい。後で。
         const missingCols = Object.values(COLS).filter(col => !colMap.has(col));
         if (missingCols.length > 0) {
             console.error(`Missing required columns: ${missingCols.join(', ')}`);
