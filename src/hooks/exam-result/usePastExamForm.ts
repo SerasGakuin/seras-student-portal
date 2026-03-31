@@ -28,13 +28,15 @@ export interface TermOption {
 /** メモの最大バイト数 */
 const MEMO_MAX_BYTES = 256;
 
+/** UTF-8エンコーダ */
+const textEncoder = new TextEncoder();
 /**
  * メモのバイト数を計算します。
  * 日本語などのマルチバイト文字も正確にカウントします。
  * @param str 対象の文字列
  */
 function getByteLength(str: string): number {
-    return new TextEncoder().encode(str).byteLength;
+    return textEncoder.encode(str).byteLength;
 }
 
 // ============================================================
