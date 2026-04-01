@@ -1,11 +1,11 @@
-// src/app/exam-result-form/components/PastExamResultForm.tsx
-
 "use client";
 
 import { Button } from "@/components/ui/Button";
+import { FormGroup } from "@/components/ui/FormGroup"; // インポート
+import { FormInput } from "@/components/ui/FormInput"; // インポート
 
-import { usePastExamForm } from "@/services/exam-result/usePastExamForm"; // ビジネスロジックをインポート
-import styles from "./PastExamResultForm.module.css"; // スタイルをインポート
+import { usePastExamForm } from "@/services/exam-result/usePastExamForm";
+import styles from "./PastExamResultForm.module.css";
 
 export function PastExamResultForm() {
   const {
@@ -36,10 +36,6 @@ export function PastExamResultForm() {
     handleSubmit,
   } = usePastExamForm();
 
-  /**
-   * 大学名の入力欄にテキストが入力されているかどうかを返します。
-   * サジェスト候補エリアの表示制御に使用します。
-   */
   const isUniversityQueryActive =
     universityQuery.length > 0 && !selectedUniversity;
 
@@ -49,17 +45,11 @@ export function PastExamResultForm() {
       <p className={styles.description}>
         登録後、24h以内なら一覧から削除できます。
       </p>
-      <hr className={styles.hr}></hr>
+      <hr className={styles.hr} />
 
-      {/* ===================== */}
       {/* 1. 大学・学部・学科の選択 */}
-      {/* テキスト入力によるIMEサジェスト方式。 */}
-      {/* 入力内容に前方一致する候補を一覧表示し、クリックで選択する。 */}
-      {/* ===================== */}
-      <div className={styles.field}>
-        <label className={styles.label}>大学・学部・学科</label>
-        <input
-          className={styles.input}
+      <FormGroup label="大学・学部・学科">
+        <FormInput
           type="text"
           placeholder="大学・学部・学科名を入力してください"
           value={
@@ -67,8 +57,6 @@ export function PastExamResultForm() {
           }
           onChange={(e) => handleUniversityQueryChange(e.target.value)}
         />
-
-        {/* サジェスト候補エリア */}
         {isUniversityQueryActive && (
           <ul className={styles.suggestionList}>
             {universitySuggestions.length > 0 ? (
@@ -88,18 +76,16 @@ export function PastExamResultForm() {
             )}
           </ul>
         )}
-      </div>
+      </FormGroup>
 
       {/* 2. 科目の選択 */}
-      <div className={styles.field}>
-        <label className={styles.label}>科目</label>
+      <FormGroup label="科目">
         <select
           className={styles.select}
           disabled={selectedUniversity === null}
           value={selectedSubject?.id ?? ""}
           onChange={(e) => handleSelectSubject(Number(e.target.value))}
         >
-          {/* 大学未選択なら説明を表示、選択済みなら通常の「選択してください」を表示 */}
           <option value="">
             {selectedUniversity === null
               ? "大学・学部・学科を先に入力してください"
@@ -111,11 +97,10 @@ export function PastExamResultForm() {
             </option>
           ))}
         </select>
-      </div>
+      </FormGroup>
 
       {/* 3. 年度の選択 */}
-      <div className={styles.field}>
-        <label className={styles.label}>年度</label>
+      <FormGroup label="年度">
         <select
           className={styles.select}
           disabled={selectedSubject === null}
@@ -133,11 +118,10 @@ export function PastExamResultForm() {
             </option>
           ))}
         </select>
-      </div>
+      </FormGroup>
 
       {/* 4. 試験回の選択 */}
-      <div className={styles.field}>
-        <label className={styles.label}>試験回</label>
+      <FormGroup label="試験回">
         <select
           className={styles.select}
           disabled={selectedYear === null}
@@ -155,13 +139,11 @@ export function PastExamResultForm() {
             </option>
           ))}
         </select>
-      </div>
+      </FormGroup>
 
       {/* 5. 得点の入力 */}
-      <div className={styles.field}>
-        <label className={styles.label}>得点</label>
-        <input
-          className={styles.input}
+      <FormGroup label="得点">
+        <FormInput
           type="number"
           min="0"
           placeholder={
@@ -177,11 +159,13 @@ export function PastExamResultForm() {
             setTotalScore(val);
           }}
         />
-      </div>
+      </FormGroup>
 
       {/* 6. メモの入力 */}
-      <div className={styles.field}>
-        <label className={styles.label}>メモ</label>
+      <FormGroup
+        label="メモ"
+        error={isMemoOverLimit ? "※上限を超えています" : undefined}
+      >
         <textarea
           className={styles.textarea}
           placeholder={
@@ -193,24 +177,15 @@ export function PastExamResultForm() {
           value={memo}
           onChange={(e) => setMemo(e.target.value)}
         />
-        {/* バイト数カウンター。上限を超えた場合は警告を表示する。 */}
         <span className={styles.counter}>
           {memoByteLength} / {memoMaxBytes} バイト
-          {isMemoOverLimit && (
-            <span className={styles.errorText}> ※上限を超えています</span>
-          )}
         </span>
-      </div>
+      </FormGroup>
 
-      {/* ===================== */}
-      {/* 登録ボタン */}
-      {/* フォームが入力済みでない場合、または登録処理中は操作できない。 */}
-      {/* ===================== */}
       <Button onClick={handleSubmit} disabled={!isFormReady || isSubmitting}>
         {isSubmitting ? "登録中..." : "追加する"}
       </Button>
 
-      {/* 登録結果メッセージ。成功・失敗に応じたメッセージを表示する。 */}
       {submitMessage && <p className={styles.submitMessage}>{submitMessage}</p>}
     </section>
   );
