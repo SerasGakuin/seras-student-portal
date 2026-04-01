@@ -2,6 +2,8 @@
 
 "use client";
 
+import { Button } from "@/components/ui/Button";
+
 import { usePastExamForm } from "@/services/exam-result/usePastExamForm"; // ビジネスロジックをインポート
 import styles from "./PastExamResultForm.module.css"; // スタイルをインポート
 
@@ -204,13 +206,9 @@ export function PastExamResultForm() {
       {/* 登録ボタン */}
       {/* フォームが入力済みでない場合、または登録処理中は操作できない。 */}
       {/* ===================== */}
-      <button
-        className={styles.submitButton}
-        onClick={handleSubmit}
-        disabled={!isFormReady || isSubmitting}
-      >
+      <Button onClick={handleSubmit} disabled={!isFormReady || isSubmitting}>
         {isSubmitting ? "登録中..." : "追加する"}
-      </button>
+      </Button>
 
       {/* 登録結果メッセージ。成功・失敗に応じたメッセージを表示する。 */}
       {submitMessage && <p className={styles.submitMessage}>{submitMessage}</p>}
