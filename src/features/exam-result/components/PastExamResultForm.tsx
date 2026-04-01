@@ -11,7 +11,8 @@ import styles from "./PastExamResultForm.module.css";
  * 過去の試験結果を登録するフォームコンポーネント
  *  - 大学・学部・学科の選択（オートコンプリート）
  *  - 科目の選択（大学に紐づく科目のみ）
- */ 
+ * ...
+ */
 export function PastExamResultForm() {
   const {
     selectedUniversity,
