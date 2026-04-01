@@ -2,6 +2,10 @@
 
 本アプリケーションは Google Sheets を簡易データベースとして使用しています。
 
+(2026-04-01)
+自社サーバーのdbも利用先に追加されました。
+こちらはリポジトリ経由で自社サーバ側のapiをたたいてアクセスするもので、内部構造はapiリクエスト受信側が管理するので、このプロジェクトの開発者は意識する必要はありません。
+
 ## 生徒マスター (Student Master Sheet)
 **Config Key**: `STUDENT_SPREADSHEET_ID`
 
@@ -72,3 +76,37 @@
 | **D** | Building (本館/2号館) |
 | **E** | UserAgent / Context |
 
+
+## (自社サーバー) 過去問成績データベース
+**更新日**: 2026-04-01  
+**接続方式**: 自社サーバーAPI経由 (Repositoryパターンによる抽象化)  
+**実装場所**: `src/repositories/local/` (2026-03-31時点)
+
+スプレッドシートによる管理とは別に、自社サーバー側のRDBで管理されるデータ群です。
+開発者は `IStudentPastExamResultRepository` インターフェースを介してアクセスし、内部のAPIリクエスト詳細はリポジトリ層が隠蔽します。
+
+### 過去問成績データ (results テーブル定義)
+生徒が受験した過去問の得点や実施回数を保持します。
+
+| プロパティ名 | 型 | 説明 | 備考 |
+| :--- | :--- | :--- | :--- |
+| **recordId** | number | 成績レコードの一意なID | `results.id` |
+| **examId** | number | 試験定義のID | `results.exam_id` |
+| **studentId** | number | 生徒の内部識別ID | `students`テーブルと紐付け |
+| **attemptNumber** | number | 受験回数 | 1回目、2回目など |
+| **totalScore** | number \| null | 合計得点 | 未入力時は null |
+| **descJson** | string \| null | 補足情報 (JSON) | 設問別データ等の拡張用 |
+| **regUtcMs** | number | 登録日時 | UTCミリ秒 |
+
+### 提供される機能 (Repository Methods)
+
+* **findByStudentId(studentId)**:
+    特定の生徒の全成績履歴を配列で返します。
+* **add(studentId, data)**:
+    新規成績レコードを作成します。`attemptNumber` を省略した場合は `1` として処理されます。
+* **delete(studentId, recordId)**:
+    特定の成績レコードを削除します。
+
+### 運用上の注意
+* **データの整合性**: `studentId` は生徒マスター（Spreadsheet）側の識別子と同期している必要があります。
+* **実装の局所化**: 2026-04-01現在の実装は `/local/` 配下に置かれ、サーバーサイドAPIとの通信を担います。
