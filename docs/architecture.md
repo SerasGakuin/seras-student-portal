@@ -68,7 +68,8 @@ seras-student-portal/
 │   │
 │   ├── repositories/           # データアクセス層 (Repository Layer)
 │   │   ├── interfaces/         # インターフェース定義 (IStudentRepository, IOccupancyRepository)
-│   │   └── googleSheets/       # Google Sheets 実装 (GoogleSheetStudentRepository 等)
+│   │   ├── googleSheets/       # Google Sheets 実装 (GoogleSheetStudentRepository 等)
+│   │   └── local/              # ローカルサーバ上の独自データベースなど。
 │   │
 │   ├── lib/                    # インフラ/ユーティリティ層
 │   │   ├── api.ts              # フロントエンド用 API クライアント
