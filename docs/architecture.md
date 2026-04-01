@@ -28,6 +28,7 @@ seras-student-portal/
 │   │   │   └── reserveMeeting/ # 面談予約 API
 │   │   ├── analysis/           # データ分析ページ (Client Component)
 │   │   ├── booking/            # 予約画面ページ (Server Components)
+│   │   ├── exam-result/        # 生徒の過去問成績の管理ページ
 │   │   ├── dashboard/          # 講師用ダッシュボードページ (Client Component)
 │   │   └── occupancy/          # 混雑状況画面ページ
 │   │
@@ -42,12 +43,15 @@ seras-student-portal/
 │   │   │   └── components/     # OccupancyCard, ChampionsCard, GuideCard など
 │   │   ├── dashboard/          # ダッシュボード機能 UI
 │   │   │   └── components/     # KPICard, RankingWidget, CumulativeGrowthChart など
+│   │   ├── exam-result/        # 生徒の過去問成績の管理ページ UI
+│   │   │   └── components/     # 
 │   │   └── analysis/           # データ分析機能 UI
 │   │       └── components/     # AnalysisSelector, OccupancyHeatmap, RankingPdfView など
 │   │
 │   ├── hooks/                  # カスタムフック
 │   │   ├── useRole.ts          # ハイブリッド認証 (LINE + Google) ロール判定
-│   │   └── useGoogleAuth.ts    # Google OAuth 状態管理
+│   │   ├── useGoogleAuth.ts    # Google OAuth 状態管理
+│   │   └── exam-result/        # 生徒の過去問成績の管理ページのビジネスロジック
 │   │
 │   ├── services/               # ビジネスロジック層 (Service Layer)
 │   │   ├── studentService.ts   # 生徒データの取得 (Repository経由)

@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { usePastExamResults } from "@/hooks/exam-result/usePastExamResults";
+import { usePastExamResults } from "@/services/exam-result/usePastExamResults";
 import styles from "./PastExamResultList.module.css";
 
 export function PastExamResultList() {
