@@ -61,6 +61,9 @@ export function PastExamResultList() {
   return (
     <section className={styles.section}>
       <h3 className={styles.title}>記録されている成績一覧</h3>
+      <p className={styles.description}>
+        登録後、24h以内なら一覧から削除できます。
+      </p>
       <hr className={styles.hr}></hr>
 
       {/* 検索バー */}

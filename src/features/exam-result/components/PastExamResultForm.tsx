@@ -48,9 +48,6 @@ export function PastExamResultForm() {
   return (
     <section className={styles.section}>
       <h3 className={styles.title}>成績を登録する</h3>
-      <p className={styles.description}>
-        登録後、24h以内なら一覧から削除できます。
-      </p>
       <hr className={styles.hr} />
 
       {/* 1. 大学・学部・学科の選択 */}
