@@ -37,9 +37,11 @@ export default function PastExamResultsPage() {
         subtitle="自分の過去問の成績を記録・管理できます"
       />
       <main>
+        {/* 成績登録フォーム */}
           <PastExamResultForm />
 
-          <PastExamResultList />
+        {/* 成績一覧 */}
+        <PastExamResultList />
 
         <BackLink href="/">ポータルに戻る</BackLink>
       </main>
