@@ -4,81 +4,87 @@ import {
   IStudentPastExamResultRepository,
   PastExamResult,
   PastExamResultInput,
-} from '../interfaces/IStudentPastExamResultRepository';
-
-/** 生徒IDの種別。生徒マスタースプレッドシートで管理している一意なIDを示します。 */
-const STUDENT_ID_TYPE = 'student_master_id';
+} from "../interfaces/IStudentPastExamResultRepository";
 
 /**
- * ローカルサーバー（seras-local-server-portal）経由で
- * 過去問データベースにアクセスするリポジトリの実装です。
+ * VercelのAPI Routes (/api/exam-result-form) を介して
+ * ローカルサーバーのDBと通信するリポジトリの実装です。
+ * * フロントエンドからはこのクラスを介することで、
+ * 直接外部APIキーを扱うことなく安全にデータ操作を行います。
  */
 export class LocalStudentPastExamResultRepository implements IStudentPastExamResultRepository {
-
-  /** ローカルサーバーのベースURL */
-  private readonly baseUrl: string;
-  /** APIキー */
-  private readonly apiKey: string;
-
-  constructor() {
-    this.baseUrl = process.env.LOCAL_PORTAL_URL ?? '';
-    this.apiKey = process.env.LOCAL_PORTAL_API_KEY ?? '';
-  }
-
-  /**
-   * ローカルサーバーへのHTTPリクエストを共通処理します。
-   * 認証ヘッダーの付与と、エラーレスポンスの検出を行います。
-   * @param path リクエスト先のパス
-   * @param options fetchのオプション
-   */
-  private async request(path: string, options?: RequestInit): Promise<unknown> {
-    const res = await fetch(`${this.baseUrl}${path}`, {
-      ...options,
-      headers: {
-        'x-api-key': this.apiKey,
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
-    });
-    if (!res.ok) throw new Error(`[LocalStudentPastExamResultRepository] ${res.status} ${path}`);
-    return res.json();
-  }
+  private readonly apiPath = "/api/exam-result-form";
 
   /**
    * 指定した生徒の過去問結果をすべて取得します。
-   * @param studentId 対象生徒の内部ID（studentsテーブルのid）
+   * API Route側で type=results として処理されるリクエストを送ります。
    */
   async findByStudentId(studentId: number): Promise<PastExamResult[]> {
-    const data = await this.request(
-      `/past-exam-result-db/student/results?student_id=${studentId}&student_id_type=${STUDENT_ID_TYPE}`
-    ) as { results: PastExamResult[] };
-    return data.results;
+    // クエリパラメータを構築
+    // student_id_typeは現状、内部ID固定（'id'）として送信する設計と仮定します
+    const params = new URLSearchParams({
+      type: "results",
+      student_id: studentId.toString(),
+      student_id_type: "id",
+    });
+
+    const response = await fetch(`${this.apiPath}?${params.toString()}`);
+
+    if (!response.ok) {
+      throw new Error(`過去問結果の取得に失敗しました: ${response.statusText}`);
+    }
+
+    // API Route (route.ts) から返されるJSONをキャストして返却
+    return (await response.json()) as PastExamResult[];
   }
 
   /**
    * 指定した生徒の過去問結果を新規追加します。
-   * @param studentId 対象生徒の内部ID（studentsテーブルのid）
-   * @param data 追加する成績データ
+   * POSTメソッドで body にデータを込めて送信します。
    */
   async add(studentId: number, data: PastExamResultInput): Promise<void> {
-    await this.request('/past-exam-result-db/student/result', {
-      method: 'POST',
-      body: JSON.stringify({
-        student_id: studentId,
-        student_id_type: STUDENT_ID_TYPE,
-        exam_id: data.examId,
-        total_score: data.totalScore ?? null,
-      }),
+    // サーバー側の期待する形式に合わせ、student_idをマージしたリクエストボディを作成
+    const body = {
+      student_id: studentId,
+      exam_id: data.examId,
+      attempt_number: data.attemptNumber ?? 1,
+      total_score: data.totalScore,
+      desc_json: data.descJson,
+    };
+
+    const response = await fetch(this.apiPath, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
     });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error ||
+          `成績データの追加に失敗しました: ${response.statusText}`,
+      );
+    }
   }
 
   /**
    * 指定した生徒の特定の過去問結果を削除します。
-   * サーバー側のエンドポイントが実装され次第、対応予定です。
-   * @param _studentId 対象生徒の内部ID（studentsテーブルのid）
-   * @param _recordId 削除対象のレコードID（resultsテーブルのid）
+   * DELETEメソッドを使用し、クエリパラメータでレコードIDを指定します。
    */
-  async delete(_studentId: number, _recordId: number): Promise<void> {
-    throw new Error('未実装です。サーバー側のエンドポイントが実装され次第、対応します。');
+  async delete(studentId: number, recordId: number): Promise<void> {
+    // 削除対象のレコードIDを指定（API Routeの仕様に合わせる）
+    const params = new URLSearchParams({
+      id: recordId.toString(),
+    });
+
+    const response = await fetch(`${this.apiPath}?${params.toString()}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      throw new Error(`成績データの削除に失敗しました: ${response.statusText}`);
+    }
   }
 }
