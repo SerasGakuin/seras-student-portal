@@ -10,9 +10,10 @@ import styles from "./PastExamResultList.module.css";
 // 将来的にはコンテキストやDIコンテナから取得する形にリファクタリング予定
 import { MockStudentPastExamResultRepository } from "@/repositories/mock/MockStudentPastExamResultRepository";
 
-export function PastExamResultList() {
+export function PastExamResultList() { 
+  // TODO: 2つとも今はモックなので、本番用データに差し替える。
   const resultRepo = new MockStudentPastExamResultRepository();
-  const studentId = 123; // TODO: ログインユーザーのIDを動的に取得するように修正
+  const studentId = 123;
 
   const {
     filteredResults,
