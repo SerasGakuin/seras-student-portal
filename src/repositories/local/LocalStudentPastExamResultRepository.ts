@@ -49,7 +49,7 @@ export class LocalStudentPastExamResultRepository implements IStudentPastExamRes
       exam_id: data.examId,
       attempt_number: data.attemptNumber ?? 1,
       total_score: data.totalScore,
-      desc_json: data.descJson,
+      memo: data.memo,
     };
 
     const response = await fetch(this.apiPath, {

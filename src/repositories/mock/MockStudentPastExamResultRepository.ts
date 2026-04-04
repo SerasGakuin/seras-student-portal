@@ -28,10 +28,7 @@ export class MockStudentPastExamResultRepository implements IStudentPastExamResu
       studentId: studentId,
       attemptNumber: 1,
       totalScore: 1234567890, // 型定義上は number なので受け入れ可能
-      descJson: JSON.stringify({
-        memo: "他のデータはランダム生成なので現実に存在する大学とは限りません",
-        special: "Serasのトリビア",
-      }),
+      memo: "他のデータはランダム生成なので現実に存在する大学とは限りません",
       regUtcMs: Number.MAX_SAFE_INTEGER, // 常に一番上にくる
     });
 
@@ -61,11 +58,7 @@ export class MockStudentPastExamResultRepository implements IStudentPastExamResu
         studentId: studentId,
         attemptNumber: (i % 3) + 1,
         totalScore: hasScore ? Math.floor(Math.random() * 61) + 40 : null,
-        descJson: hasMemo
-          ? JSON.stringify({
-              memo: memos[Math.floor(Math.random() * memos.length)],
-            })
-          : null,
+        memo: hasMemo ? memos[Math.floor(Math.random() * memos.length)] : null,
         regUtcMs: now - Math.floor(Math.random() * oneMonthMs),
       });
     }

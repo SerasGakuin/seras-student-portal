@@ -20,8 +20,8 @@ export interface PastExamResult {
   attemptNumber: number;
   /** results.total_score : 得点。未入力の場合はnull */
   totalScore: number | null;
-  /** results.desc_json : 補足情報（JSON文字列）。不要な場合はnull */
-  descJson: string | null;
+  /** results.memo : メモ。不要な場合はnull */
+  memo: string | null;
   /** results.reg_utc_ms : レコード登録日時（UTCミリ秒） */
   regUtcMs: number;
 }
@@ -36,8 +36,8 @@ export interface PastExamResultInput {
   attemptNumber?: number;
   /** results.total_score : 得点。未入力の場合は省略可能です */
   totalScore?: number;
-  /** results.desc_json : 補足情報（JSON文字列）。不要な場合は省略可能です */
-  descJson?: string;
+  /** results.memo : メモ。不要な場合は省略可能 */
+  memo?: string | null;
 }
 
 export interface IStudentPastExamResultRepository {
