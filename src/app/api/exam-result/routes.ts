@@ -37,9 +37,16 @@ export async function GET(request: Request) {
 
   // 試験定義（univId への同期を確認）
   if (type === "exams") {
-    const univId =
-      searchParams.get("univId") || searchParams.get("universityId");
-    const res = await _dbFetch(`/master/exams?universityId=${univId}`);
+    // フロントエンドからは univId で送られてくる
+    const univId = searchParams.get("univId");
+    if (!univId) {
+      return Response.json(
+        { error: "univId が不足しています。" },
+        { status: 400 },
+      );
+    }
+    // Express 側のエンドポイントも univId を期待するように同期
+    const res = await _dbFetch(`/master/exams?univId=${univId}`);
     return Response.json(await res.json(), { status: res.status });
   }
 
@@ -75,9 +82,10 @@ export async function POST(request: Request) {
   } catch (error) {
     return Response.json(
       {
-        error:"リクエスト処理中にエラーが発生しました" +(error as Error).message,
+        error:
+          "リクエスト処理中にエラーが発生しました" + (error as Error).message,
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }
