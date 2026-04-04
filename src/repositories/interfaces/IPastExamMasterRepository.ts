@@ -2,14 +2,24 @@
 
 export interface University {
   id: number;
-  name: string;
+  fullName: string;
 }
 
-export interface Exam {
-  id: number;
-  univId: number;
-  name: string;
-  year?: number; // 年度などが必要な場合
+/**
+ * 大学に紐づく試験情報の要約。
+ * 科目・年度・回を一気に取得し、フロントエンドで絞り込むための構造です。
+ */
+export interface ExamSummary {
+  /** 試験を一意に特定するID */
+  examId: number;
+  /** 科目ID */
+  subjectId: number;
+  /** 科目名 (例: "数学", "英語") */
+  subjectName: string;
+  /** 実施年度 (西暦) */
+  utcYear: number;
+  /** 試験回名 (例: "前期", "後期", "第1回") */
+  termName: string;
 }
 
 /**
@@ -20,5 +30,5 @@ export interface IPastExamMasterRepository {
   getUniversities(): Promise<University[]>;
 
   /** 指定した大学に紐づく試験一覧を取得します */
-  getExamsByUniversityId(univId: number): Promise<Exam[]>;
+  getExamsByUniversityId(univId: number): Promise<ExamSummary[]>;
 }

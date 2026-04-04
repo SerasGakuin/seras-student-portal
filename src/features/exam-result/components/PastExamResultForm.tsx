@@ -1,10 +1,14 @@
 "use client";
+import { useMemo } from "react";
 
 import { Button } from "@/components/ui/Button";
-import { FormGroup } from "@/components/ui/FormGroup"; // インポート
-import { FormInput } from "@/components/ui/FormInput"; // インポート
+import { FormGroup } from "@/components/ui/FormGroup";
+import { FormInput } from "@/components/ui/FormInput";
 
 import { usePastExamForm } from "@/services/exam-result/usePastExamForm";
+import { MockPastExamMasterRepository } from "@/repositories/mock/MockPastExamMasterRepository";
+import { MockStudentPastExamResultRepository } from "@/repositories/mock/MockStudentPastExamResultRepository";
+
 import styles from "./PastExamResultForm.module.css";
 
 /**
@@ -14,6 +18,14 @@ import styles from "./PastExamResultForm.module.css";
  * ...
  */
 export function PastExamResultForm() {
+  // 必要なリポジトリなどを準備 TODO: 本番用に変える
+  const masterRepo = useMemo(() => new MockPastExamMasterRepository(), []);
+  const resultRepo = useMemo(
+    () => new MockStudentPastExamResultRepository(),
+    [],
+  );
+  const studentId = 12345; // 適切なIDを動的に取得するように修正予定
+
   const {
     selectedUniversity,
     selectedSubject,
@@ -40,7 +52,7 @@ export function PastExamResultForm() {
     handleSelectYear,
     handleSelectTerm,
     handleSubmit,
-  } = usePastExamForm();
+  } = usePastExamForm(masterRepo, resultRepo, studentId);
 
   const isUniversityQueryActive =
     universityQuery.length > 0 && !selectedUniversity;

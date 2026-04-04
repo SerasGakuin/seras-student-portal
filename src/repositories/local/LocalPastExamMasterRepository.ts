@@ -3,7 +3,7 @@
 import {
   IPastExamMasterRepository,
   University,
-  Exam,
+  ExamSummary,
 } from "../interfaces/IPastExamMasterRepository";
 
 /**
@@ -44,7 +44,7 @@ export class LocalPastExamMasterRepository implements IPastExamMasterRepository 
    * * @param universityId 大学を識別する内部ID（univ_id）
    * @returns 該当する大学の試験定義の配列。
    */
-  async getExamsByUniversityId(universityId: number): Promise<Exam[]> {
+  async getExamsByUniversityId(universityId: number): Promise<ExamSummary[]> {
     /**
      * API Route 側が期待するパラメータ:
      * - type: リクエストの種類 ('exams')
@@ -64,6 +64,6 @@ export class LocalPastExamMasterRepository implements IPastExamMasterRepository 
     }
 
     // 取得したJSONを Exam 型の配列としてキャストして返却
-    return (await res.json()) as Exam[];
+    return (await res.json()) as ExamSummary[];
   }
 }
