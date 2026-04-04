@@ -2,29 +2,41 @@
 
 /**
  * 生徒の過去問成績を管理するリポジトリのインターフェースです。
- * 実装は2026-03-31現在は/local/に置きます。ローカルサーバーにデータを保存するという意味です。
+ * 実装は /local/ に置き、ローカルサーバーのDB（Express経由）と通信します。
  */
 
 /**
  * 過去問結果の閲覧用データ。
- * results テーブルを基に関連情報を結合したものです。
+ * DB側の ExamResultView (v_results_details ビュー) に対応します。
  */
 export interface PastExamResult {
-  /** results.id : 成績実績レコードのID */
+  /** results.id : 成績実績レコードの固有ID */
   recordId: number;
-  /** results.examId : 試験定義のID */
+  /** exams.id : 試験定義のID */
   examId: number;
-  /** results.studentId : 生徒のID */
-  studentId: number;
-  /** results.studentIdType : 生徒を識別するためのタイプ */
-  studentIdType: string;
-  /** results.attemptNumber : 同一試験に対する受験回数 */
+
+  // --- 表示用付随情報 ---
+  /** students.name : 生徒名 */
+  studentName: string;
+  /** universities.full_name : 大学名 */
+  universityName: string;
+  /** subjects.name : 科目名 */
+  subjectName: string;
+  /** exams.utc_year : 試験年度 */
+  examYear: number;
+  /** exams.term_name : 試験区分（前期・後期など） */
+  examTerm: string;
+
+  // --- 実績データ ---
+  /** results.attempt_number : 同一試験に対する受験回数 */
   attemptNumber: number;
-  /** results.totalScore : 得点。未入力の場合はnull */
+  /** results.score : 得点（totalScoreとして統一） */
   totalScore: number | null;
-  /** results.memo : メモ。不要な場合はnull */
+  /** 評価用満点（実施満点 or 公称満点） */
+  maxScore: number;
+  /** results.memo : メモ */
   memo: string | null;
-  /** results.regUtcMs : レコード登録日時（UTCミリ秒） */
+  /** results.reg_utc_ms : レコード登録日時（UTCミリ秒） */
   regUtcMs: number;
 }
 
@@ -32,34 +44,36 @@ export interface PastExamResult {
  * 過去問結果を新規追加する際に必要なデータです。
  */
 export interface PastExamResultInput {
-  /** results.examId : 対象となる試験定義のID */
+  /** 対象となる試験定義のID */
   examId: number;
-  /** results.attemptNumber    : 受験回数。省略した場合は1として扱われます */
+  /** 受験回数。省略した場合はサーバー側で自動インクリメントされます */
   attemptNumber?: number;
-  /** results.totalScore : 得点。未入力の場合は省略可能です */
+  /** 得点。未入力の場合は省略可能です */
   totalScore?: number;
-  /** results.memo : メモ。不要な場合は省略可能 */
+  /** 実施満点。一部の大問のみ解いた場合などに指定します */
+  maxScore?: number;
+  /** メモ。不要な場合は省略可能 */
   memo?: string | null;
 }
 
 export interface IStudentPastExamResultRepository {
   /**
    * 指定した生徒の過去問結果をすべて取得します。
-   * @param studentId 対象生徒の内部ID（studentsテーブルのid）
+   * @param studentId 生徒を識別するためのID（例: master_idの値）
    */
-  findByStudentId(studentId: number): Promise<PastExamResult[]>;
+  findByStudentId(studentId: string | number): Promise<PastExamResult[]>;
 
   /**
    * 指定した生徒の過去問結果を新規追加します。
-   * @param studentId 対象生徒の内部ID（studentsテーブルのid）
+   * @param studentId 生徒を識別するためのID
    * @param data 追加する成績データ
    */
-  add(studentId: number, data: PastExamResultInput): Promise<void>;
+  add(studentId: string | number, data: PastExamResultInput): Promise<void>;
 
   /**
    * 指定した生徒の特定の過去問結果を削除します。
-   * @param studentId 対象生徒の内部ID（studentsテーブルのid）
-   * @param recordId 削除対象のレコードID（resultsテーブルのid）
+   * @param studentId 生徒を識別するためのID
+   * @param recordId 削除対象のレコードID
    */
-  delete(studentId: number, recordId: number): Promise<void>;
+  delete(studentId: string | number, recordId: number): Promise<void>;
 }

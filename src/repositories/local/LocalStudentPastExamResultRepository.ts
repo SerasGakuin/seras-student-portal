@@ -8,55 +8,62 @@ import {
 
 /**
  * VercelのAPI Routes (/api/exam-result-form) を介して
- * ローカルサーバーのDBと通信するリポジトリの実装です。
+ * ローカルサーバーのDB（Express）と通信するリポジトリの実装です。
  */
 export class LocalStudentPastExamResultRepository implements IStudentPastExamResultRepository {
   private readonly apiPath = "/api/exam-result-form";
 
   /**
    * 生徒を識別するためのキーのタイプ。
-   * ここでは一貫して "master_id" を使用するように定義します。
+   * システム全体で "master_id" をデフォルトとして使用。
    */
   private readonly studentIdType = "master_id";
 
   /**
    * 指定した生徒の過去問結果をすべて取得します。
    */
-  async findByStudentId(studentId: number): Promise<PastExamResult[]> {
+  async findByStudentId(studentId: string | number): Promise<PastExamResult[]> {
     const params = new URLSearchParams({
       type: "results",
       studentId: studentId.toString(),
-      studentIdType: this.studentIdType, // キータイプを付与
+      studentIdType: this.studentIdType,
     });
 
     const response = await fetch(`${this.apiPath}?${params.toString()}`);
 
     if (!response.ok) {
-      throw new Error(`過去問結果の取得に失敗しました: ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error ||
+          `過去問結果の取得に失敗しました: ${response.statusText}`,
+      );
     }
 
+    // DB側の ExamResultView 構造がそのまま PastExamResult として返ってくる
     return (await response.json()) as PastExamResult[];
   }
 
   /**
    * 指定した生徒の過去問結果を新規追加します。
    */
-  async add(studentId: number, data: PastExamResultInput): Promise<void> {
-    // リクエストボディにも生徒識別情報を一貫して含める
+  async add(
+    studentId: string | number,
+    data: PastExamResultInput,
+  ): Promise<void> {
+    // サーバー側の ExamResultInput (DB層) が期待するキャメルケースで構築
     const body = {
-      studentId: studentId,
+      studentId: studentId.toString(),
       studentIdType: this.studentIdType,
       examId: data.examId,
-      attemptNumber: data.attemptNumber ?? 1,
-      totalScore: data.totalScore,
+      attemptNumber: data.attemptNumber, // undefinedならサーバー側で自動採番される
+      totalScore: data.totalScore, // score ではなく totalScore で統一
+      maxScore: data.maxScore, // ★追加：実施満点を送信
       memo: data.memo,
     };
 
     const response = await fetch(this.apiPath, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
 
@@ -71,11 +78,11 @@ export class LocalStudentPastExamResultRepository implements IStudentPastExamRes
 
   /**
    * 指定した生徒の特定の過去問結果を削除します。
-   * セキュリティと一貫性のため、recordId に加えて生徒識別情報を送信します。
    */
-  async delete(studentId: number, recordId: number): Promise<void> {
+  async delete(studentId: string | number, recordId: number): Promise<void> {
+    // サーバー側のバリデーションに必要な情報をクエリパラメータに乗せる
     const params = new URLSearchParams({
-      recordId: recordId.toString(), // route.tsの引数名に合わせる
+      recordId: recordId.toString(),
       studentId: studentId.toString(),
       studentIdType: this.studentIdType,
     });
