@@ -7,7 +7,7 @@ export interface University {
 
 export interface Exam {
   id: number;
-  universityId: number;
+  univId: number;
   name: string;
   year?: number; // 年度などが必要な場合
 }
@@ -20,5 +20,5 @@ export interface IPastExamMasterRepository {
   getUniversities(): Promise<University[]>;
 
   /** 指定した大学に紐づく試験一覧を取得します */
-  getExamsByUniversityId(universityId: number): Promise<Exam[]>;
+  getExamsByUniversityId(univId: number): Promise<Exam[]>;
 }

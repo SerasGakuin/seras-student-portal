@@ -6,7 +6,14 @@ import { useState, useMemo } from "react";
 import { usePastExamResults } from "@/services/exam-result/usePastExamResults";
 import styles from "./PastExamResultList.module.css";
 
+// ここでリポジトリのインスタンスを生成
+// 将来的にはコンテキストやDIコンテナから取得する形にリファクタリング予定
+import { MockStudentPastExamResultRepository } from "@/repositories/mock/MockStudentPastExamResultRepository";
+
 export function PastExamResultList() {
+  const resultRepo = new MockStudentPastExamResultRepository();
+  const studentId = 123; // TODO: ログインユーザーのIDを動的に取得するように修正
+
   const {
     filteredResults,
     deletableMap,
@@ -17,7 +24,7 @@ export function PastExamResultList() {
     handleDeleteClick,
     handleDeleteCancel,
     handleDeleteConfirm,
-  } = usePastExamResults();
+  } = usePastExamResults(resultRepo, studentId);
 
   // --- ページネーション状態 ---
   const ITEMS_PER_PAGE = 30; // 1ページあたりの最大アイテム数
@@ -100,14 +107,14 @@ export function PastExamResultList() {
             <span className={styles.subject}>{result.subjectName}</span>
           </div>
           <div className={styles.itemSub}>
-            <span>{result.year}年度</span>
-            <span>{result.termName}</span>
+            <span>{result.examYear}年度</span>
+            <span>{result.examTerm}</span>
             <span className={styles.score}>{result.totalScore ?? "-"}点</span>
           </div>
           {result.memo && <p className={styles.memo}>{result.memo}</p>}
 
           {/* 削除ボタン：deletingIdがある間（＝誰かを削除中）は全て無効化 */}
-          {deletableMap.get(result.recordId) && (
+          {deletableMap[result.recordId] && (
             <button
               className={styles.deleteIconButton}
               onClick={() => handleDeleteClick(result.recordId)}

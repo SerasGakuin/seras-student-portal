@@ -62,7 +62,7 @@ export class MockPastExamMasterRepository implements IPastExamMasterRepository {
    * 指定された大学に対し、約100件の試験定義を生成します。
    * (大学ID 1000件 × 各100件 = 合計10万件規模のデータ空間を想定)
    */
-  async getExamsByUniversityId(universityId: number): Promise<Exam[]> {
+  async getExamsByUniversityId(univId: number): Promise<Exam[]> {
     await new Promise((resolve) => setTimeout(resolve, 400));
 
     const faculties = [
@@ -89,18 +89,18 @@ export class MockPastExamMasterRepository implements IPastExamMasterRepository {
 
     // 各大学ごとに100件の試験を生成
     return Array.from({ length: 100 }, (_, i) => {
-      const examId = universityId * 10000 + i; // 重複しないID生成
+      const examId = univId * 10000 + i; // 重複しないID生成
       const faculty = faculties[i % faculties.length];
       const dept =
         departments[Math.floor(i / faculties.length) % departments.length];
       const category = categories[i % categories.length];
 
-      return {
+      return /**@type {Exam} */({
         id: examId,
-        universityId: universityId,
+        univId: univId,
         name: `${faculty} ${dept} (${category})`,
         year: 2026 - (i % 10), // 直近10年分の過去問を想定
-      };
+      });
     });
   }
 }
