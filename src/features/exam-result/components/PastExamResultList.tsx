@@ -6,14 +6,13 @@ import { useState, useMemo } from "react";
 import { usePastExamResults } from "@/services/exam-result/usePastExamResults";
 import styles from "./PastExamResultList.module.css";
 
+import { GlassCardFoldable } from "@/components/ui/GlassCardFoldable";
+
 // ここでリポジトリのインスタンスを生成
 // 将来的にはコンテキストやDIコンテナから取得する形にリファクタリング予定
 import { MockStudentPastExamResultRepository } from "@/repositories/mock/MockStudentPastExamResultRepository";
 
-export function PastExamResultList() { 
-  // --- 折りたたみ状態 (デフォルトは展開) ---
-  const [isExpanded, setIsExpanded] = useState(true);
-  
+export function PastExamResultList() {
   // TODO: 2つとも今はモックなので、本番用データに差し替える。
   const resultRepo = new MockStudentPastExamResultRepository();
   const studentId = 123;
@@ -63,102 +62,108 @@ export function PastExamResultList() {
   }, [filteredResults, currentPage]);
 
   return (
-    <section className={styles.section}>
-      <h3 className={styles.title}>記録されている成績一覧</h3>
-      <p className={styles.description}>
-        登録後、24h以内なら一覧から削除できます。
-      </p>
-      <hr className={styles.hr}></hr>
+    <GlassCardFoldable
+      className="animate-slide-up"
+      style={{ textAlign: "left", marginBottom: "1.5rem" }}
+      title="過去の成績一覧"
+    >
+      <section className={styles.section}>
+        <h3 className={styles.title}>記録されている成績一覧</h3>
+        <p className={styles.description}>
+          登録後、24h以内なら一覧から削除できます。
+        </p>
+        <hr className={styles.hr}></hr>
 
-      {/* 検索バー */}
-      <div className={styles.searchWrapper}>
-        <input
-          className={styles.searchInput}
-          type="text"
-          placeholder="大学名・科目などで検索"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-      </div>
-
-      {/* ページネーション UI */}
-      {totalPages > 1 && (
-        <div className={styles.pagination}>
-          <button
-            className={styles.pageButton}
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-          >
-            &lt;
-          </button>
-
-          <span className={styles.pageInfo}>
-            {currentPage} / {totalPages}
-          </span>
-
-          <button
-            className={styles.pageButton}
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages}
-          >
-            &gt;
-          </button>
+        {/* 検索バー */}
+        <div className={styles.searchWrapper}>
+          <input
+            className={styles.searchInput}
+            type="text"
+            placeholder="大学名・科目などで検索"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
-      )}
 
-      {/* 一覧表示 */}
-      {currentItems.map((result) => (
-        <li key={result.recordId} className={styles.listItem}>
-          <div className={styles.itemMain}>
-            <span className={styles.university}>{result.universityName}</span>
-            <span className={styles.subject}>{result.subjectName}</span>
-          </div>
-          <div className={styles.itemSub}>
-            <span>{result.examYear}年度</span>
-            <span>{result.examTerm}</span>
-            <span className={styles.score}>{result.totalScore ?? "-"}点</span>
-          </div>
-          {result.memo && <p className={styles.memo}>{result.memo}</p>}
-
-          {/* 削除ボタン：deletingIdがある間（＝誰かを削除中）は全て無効化 */}
-          {deletableMap[result.recordId] && (
+        {/* ページネーション UI */}
+        {totalPages > 1 && (
+          <div className={styles.pagination}>
             <button
-              className={styles.deleteIconButton}
-              onClick={() => handleDeleteClick(result.recordId)}
-              disabled={deletingId !== null}
+              className={styles.pageButton}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
             >
-              🗑
+              &lt;
             </button>
-          )}
 
-          {/* インライン確認ダイアログ */}
-          {confirmId === result.recordId && (
-            <div className={styles.inlineOverlay}>
-              <div className={styles.inlineDialog}>
-                <span className={styles.inlineText}>削除しますか？</span>
-                <div className={styles.inlineActions}>
-                  <button
-                    className={styles.confirmButtonSmall}
-                    onClick={handleDeleteConfirm}
-                    /* ここでdeletingIdを使用して連打を防止 */
-                    disabled={deletingId !== null}
-                  >
-                    {deletingId === result.recordId ? "削除中..." : "削除"}
-                  </button>
-                  <button
-                    className={styles.cancelButtonSmall}
-                    onClick={handleDeleteCancel}
-                    /* 削除処理中はキャンセルも不可にするのが安全 */
-                    disabled={deletingId !== null}
-                  >
-                    中止
-                  </button>
+            <span className={styles.pageInfo}>
+              {currentPage} / {totalPages}
+            </span>
+
+            <button
+              className={styles.pageButton}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+            >
+              &gt;
+            </button>
+          </div>
+        )}
+
+        {/* 一覧表示 */}
+        {currentItems.map((result) => (
+          <li key={result.recordId} className={styles.listItem}>
+            <div className={styles.itemMain}>
+              <span className={styles.university}>{result.universityName}</span>
+              <span className={styles.subject}>{result.subjectName}</span>
+            </div>
+            <div className={styles.itemSub}>
+              <span>{result.examYear}年度</span>
+              <span>{result.examTerm}</span>
+              <span className={styles.score}>{result.totalScore ?? "-"}点</span>
+            </div>
+            {result.memo && <p className={styles.memo}>{result.memo}</p>}
+
+            {/* 削除ボタン：deletingIdがある間（＝誰かを削除中）は全て無効化 */}
+            {deletableMap[result.recordId] && (
+              <button
+                className={styles.deleteIconButton}
+                onClick={() => handleDeleteClick(result.recordId)}
+                disabled={deletingId !== null}
+              >
+                🗑
+              </button>
+            )}
+
+            {/* インライン確認ダイアログ */}
+            {confirmId === result.recordId && (
+              <div className={styles.inlineOverlay}>
+                <div className={styles.inlineDialog}>
+                  <span className={styles.inlineText}>削除しますか？</span>
+                  <div className={styles.inlineActions}>
+                    <button
+                      className={styles.confirmButtonSmall}
+                      onClick={handleDeleteConfirm}
+                      /* ここでdeletingIdを使用して連打を防止 */
+                      disabled={deletingId !== null}
+                    >
+                      {deletingId === result.recordId ? "削除中..." : "削除"}
+                    </button>
+                    <button
+                      className={styles.cancelButtonSmall}
+                      onClick={handleDeleteCancel}
+                      /* 削除処理中はキャンセルも不可にするのが安全 */
+                      disabled={deletingId !== null}
+                    >
+                      中止
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-        </li>
-      ))}
-    </section>
+            )}
+          </li>
+        ))}
+      </section>
+    </GlassCardFoldable>
   );
 }

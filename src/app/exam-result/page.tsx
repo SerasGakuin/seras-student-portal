@@ -42,12 +42,7 @@ export default function PastExamResultsPage() {
           <PastExamResultForm />
         </GlassCard>
 
-        <GlassCard
-          className="animate-slide-up"
-          style={{ textAlign: "left", marginBottom: "1.5rem" }}
-        >
           <PastExamResultList />
-        </GlassCard>
 
         <BackLink href="/">ポータルに戻る</BackLink>
       </main>
