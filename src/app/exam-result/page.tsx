@@ -7,7 +7,6 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { LoginRequired } from "@/components/ui/LoginRequired";
 import { PastExamResultList } from "@/features/exam-result/components/PastExamResultList";
 import { PastExamResultForm } from "@/features/exam-result/components/PastExamResultForm";
-import { GlassCard } from "@/components/ui/GlassCard";
 
 /**
  * 過去問成績ページ
@@ -38,9 +37,7 @@ export default function PastExamResultsPage() {
         subtitle="自分の過去問の成績を記録・管理できます"
       />
       <main>
-        <GlassCard className="animate-slide-up" style={{ textAlign: "left" }}>
           <PastExamResultForm />
-        </GlassCard>
 
           <PastExamResultList />
 
