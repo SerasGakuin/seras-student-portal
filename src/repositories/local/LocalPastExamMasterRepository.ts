@@ -52,7 +52,7 @@ export class LocalPastExamMasterRepository implements IPastExamMasterRepository 
      */
     const params = new URLSearchParams({
       type: "exams",
-      univ_id: universityId.toString(),
+      univId: universityId.toString(),
     });
 
     const res = await fetch(`${this.apiPath}?${params.toString()}`);

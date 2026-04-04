@@ -21,11 +21,10 @@ export class LocalStudentPastExamResultRepository implements IStudentPastExamRes
    */
   async findByStudentId(studentId: number): Promise<PastExamResult[]> {
     // クエリパラメータを構築
-    // student_id_typeは現状、内部ID固定（'id'）として送信する設計と仮定します
     const params = new URLSearchParams({
       type: "results",
-      student_id: studentId.toString(),
-      student_id_type: "id",
+      studentId: studentId.toString(),
+      studentIdType: "id",
     });
 
     const response = await fetch(`${this.apiPath}?${params.toString()}`);
@@ -45,10 +44,10 @@ export class LocalStudentPastExamResultRepository implements IStudentPastExamRes
   async add(studentId: number, data: PastExamResultInput): Promise<void> {
     // サーバー側の期待する形式に合わせ、student_idをマージしたリクエストボディを作成
     const body = {
-      student_id: studentId,
-      exam_id: data.examId,
-      attempt_number: data.attemptNumber ?? 1,
-      total_score: data.totalScore,
+      studentId: studentId,
+      examId: data.examId,
+      attemptNumber: data.attemptNumber ?? 1,
+      totalScore: data.totalScore,
       memo: data.memo,
     };
 
