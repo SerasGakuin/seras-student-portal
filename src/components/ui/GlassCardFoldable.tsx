@@ -1,16 +1,29 @@
-// components/ui/GlassCardFoldable.tsx
 "use client";
 
 import React, { useState } from "react";
 import styles from "./GlassCardFoldable.module.css";
 
+/**
+ * GlassCardFoldable のプロパティ定義
+ */
 interface GlassCardFoldableProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** カード内に表示するメインコンテンツ（10万件のリストなど） */
   children: React.ReactNode;
+  /** ヘッダー中央に表示するタイトル（必須） */
   title: string;
+  /** タイトルの右横に表示する数値やラベル（例: 検索ヒット件数） */
   badge?: string | number;
+  /** 初期表示時に展開(true)するか、折りたたむ(false)か */
   defaultExpanded?: boolean;
 }
 
+/**
+ * 【汎用UI】折りたたみ機能付きガラススタイルカード
+ * * @description
+ * 既存の GlassCard のデザイン変数を継承しつつ、開閉ロジックを追加した特化型コンポーネント。
+ * 非表示（isExpanded=false）時には children を DOM から物理的に除外することで、
+ * 大規模データの保持に伴うブラウザのメモリ・再描画負荷を低減します。
+ */
 export const GlassCardFoldable = ({
   children,
   className = "",
@@ -19,7 +32,6 @@ export const GlassCardFoldable = ({
   defaultExpanded = true,
   ...props
 }: GlassCardFoldableProps) => {
-  // 開閉状態を管理する内部ステート
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   return (
@@ -27,34 +39,35 @@ export const GlassCardFoldable = ({
       className={`${styles.card} ${className}`}
       {...props}
       style={{
-        // インラインでの背景効果設定（既存の GlassCard との整合性維持）
         backdropFilter: "blur(8px)",
         WebkitBackdropFilter: "blur(8px)",
         ...props.style,
       }}
     >
-      {/* クリックで開閉可能なヘッダーエリア */}
       <header
         className={styles.header}
         onClick={() => setIsExpanded(!isExpanded)}
         role="button"
         aria-expanded={isExpanded}
+        tabIndex={0} // キーボード操作用
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setIsExpanded(!isExpanded);
+          }
+        }}
       >
         <div className={styles.titleGroup}>
           <h3 className={styles.titleText}>{title}</h3>
-          {/* バッジが指定されている場合のみ表示 */}
           {badge !== undefined && <span className={styles.badge}>{badge}</span>}
         </div>
-        {/* 開閉状態に応じて回転する矢印アイコン */}
         <span className={`${styles.arrow} ${isExpanded ? styles.rotated : ""}`}>
           ▼
         </span>
       </header>
 
-      {/* パフォーマンス最適化の核：
-        isExpanded が false の場合、children を含めた content 領域を DOM から物理的に削除します。
-        これにより、非表示時のブラウザのメモリ負荷と描画コストを最小限に抑えます。
-      */}
+      {/* 開閉状態の条件付きレンダリング：
+          display: none ではなく物理削除することで、10万件のDOM負荷をゼロにする。 */}
       {isExpanded && <div className={styles.content}>{children}</div>}
     </div>
   );

@@ -1,11 +1,17 @@
+/* ========================================
+   GlassCardFoldable Component Styles
+   ======================================== */
+
 .card {
-  /* 既存の変数をそのまま利用して一貫性を保持 */
   background: var(--card-bg);
   border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: var(--card-border-radius);
   box-shadow: var(--shadow-card);
   margin-bottom: 24px;
-  overflow: hidden; /* 折りたたみ時の必須設定 */
+  overflow: hidden; /* 子要素の角の突き抜けを防止 */
+  /* コンポーネント側で制御するため、ルートのpaddingはなしにする */
+  padding: 0 !important;
+  position: relative;
   transition:
     transform var(--transition-bounce),
     box-shadow var(--transition-normal);
@@ -20,10 +26,16 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--card-padding);
   cursor: pointer;
   user-select: none;
   transition: background 0.2s;
+
+  /* * 余白の再設計: 
+   * 上(Top)は既存の 0.6倍 でシュッとさせつつ、
+   * 下(Bottom)を 0.2倍 に絞ることで、展開時にコンテンツと「泣き別れ」になるのを防ぎます。
+   */
+  padding: calc(var(--card-padding) * 0.6) var(--card-padding)
+    calc(var(--card-padding) * 0.2) var(--card-padding);
 }
 
 .header:hover {
@@ -38,21 +50,23 @@
 
 .titleText {
   margin: 0;
-  font-size: 1.1rem;
   font-weight: 600;
+  line-height: 1.2; /* 行高を詰め、文字上下の隙間を排除 */
+  color: inherit;
 }
 
 .badge {
-  background: rgba(0, 0, 0, 0.1);
-  padding: 2px 8px;
+  background: rgba(0, 0, 0, 0.15);
+  padding: 1px 8px;
   border-radius: 12px;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 
 .arrow {
-  font-size: 0.8rem;
-  transition: transform 0.3s ease;
-  opacity: 0.6;
+  font-size: 0.7rem;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0.5;
 }
 
 .rotated {
@@ -60,7 +74,22 @@
 }
 
 .content {
-  /* cardのpaddingではなく、contentのpaddingとして定義することで、
-       閉じている時に余計な空白が出ないようにする */
-  padding: 0 var(--card-padding) var(--card-padding) var(--card-padding);
+  /* * コンテンツ領域の余白:
+   * 上部(Top)を 0 に設定。これにより header の padding-bottom だけが「間隔」となり、
+   * タイトルとコンテンツがガチッと密着します。
+   * 下部(Bottom)は 0 にし、最後の子要素の margin でカード底の余白を制御します。
+   */
+  padding: 0 var(--card-padding) 0 var(--card-padding);
+}
+
+/* * 内部要素の余白リセット:
+ * children の最初のエレメントに margin-top があると隙間が空くため、強制的に 0 にします。
+ * 最後のエレメントにはカード全体のパディング分だけ余白を持たせ、底面の見た目を整えます。
+ */
+.content > *:first-child {
+  margin-top: 0;
+}
+
+.content > *:last-child {
+  margin-bottom: var(--card-padding);
 }
