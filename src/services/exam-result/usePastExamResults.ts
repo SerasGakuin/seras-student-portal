@@ -14,16 +14,28 @@ const DELETABLE_DURATION_MS = 24 * 60 * 60 * 1000;
  */
 export function usePastExamResults(
   resultRepo: IStudentPastExamResultRepository,
-  studentId: string | number, // number固定から string | number に修正
+  studentId: string | number,
 ) {
   // 生データ
   const [rawResults, setRawResults] = useState<PastExamResult[]>([]);
-  // 検索クエリ
+
+  // 1. UIの入力欄と同期するState（即時反映）
   const [searchQuery, setSearchQuery] = useState("");
-  // 各種ステータス
+  // 2. 実際の計算に使用するState（遅延反映）
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<number | null>(null); // API通信中のID
   const [confirmId, setConfirmId] = useState<number | null>(null); // モーダル表示用ID
+
+  // --- デバウンス処理の実装 ---
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   /**
    * データの初期読み込み
@@ -35,7 +47,6 @@ export function usePastExamResults(
       setRawResults(data);
     } catch (e) {
       console.error("Failed to fetch results:", e);
-      // 実運用ではトースト通知などへの差し替えを検討
     } finally {
       setIsLoading(false);
     }
@@ -46,15 +57,14 @@ export function usePastExamResults(
   }, [loadData]);
 
   /**
-   * 10万件規模のフィルタリング。
-   * universityName や subjectName も検索対象に含め、
-   * パフォーマンスのために sort は必要な時だけに抑制します。
+   * 10万件規模のフィルタリングとソート。
+   * debouncedQuery に依存させることでタイピング中の負荷を劇的に下げます。
    */
   const filteredResults = useMemo(() => {
     let data = rawResults;
 
-    if (searchQuery.trim() !== "") {
-      const query = searchQuery.toLowerCase();
+    if (debouncedQuery.trim() !== "") {
+      const query = debouncedQuery.toLowerCase();
       data = data.filter((r) => {
         return (
           r.universityName.toLowerCase().includes(query) ||
@@ -66,10 +76,9 @@ export function usePastExamResults(
       });
     }
 
-    // 10万件の非破壊ソート（regUtcMs 降順）
-    // すでにDB側で ORDER BY されているはずですが、UI側での整合性のため維持
+    // 10万件の非破壊ソート
     return [...data].sort((a, b) => b.regUtcMs - a.regUtcMs);
-  }, [rawResults, searchQuery]);
+  }, [rawResults, debouncedQuery]);
 
   /** 削除可能かどうかの判定関数 */
   const checkIsDeletable = useCallback((regUtcMs: number) => {
@@ -77,8 +86,8 @@ export function usePastExamResults(
   }, []);
 
   /**
-   * 10万件のデータに対して、削除可否をキャッシュする。
-   * 計算量を抑えるため、表示対象（filteredResults）のみ回す。
+   * 削除可否のキャッシュ。
+   * filteredResults（表示対象）のみを対象に計算します。
    */
   const deletableMap = useMemo(() => {
     const map: Record<number, boolean> = {};
@@ -89,18 +98,17 @@ export function usePastExamResults(
   }, [filteredResults, checkIsDeletable]);
 
   /**
-   * 削除実行処理（モーダルで「確定」を押した時）
+   * 削除実行処理
    */
   const handleDeleteConfirm = async () => {
     if (confirmId === null) return;
 
     const targetId = confirmId;
     setDeletingId(targetId);
-    setConfirmId(null); // モーダルは即座に閉じる
+    setConfirmId(null);
 
     try {
       await resultRepo.delete(studentId, targetId);
-      // 成功したらリストから物理削除（楽観的更新に近い挙動）
       setRawResults((prev) => prev.filter((r) => r.recordId !== targetId));
     } catch (e) {
       alert("削除に失敗しました: " + (e as Error).message);
@@ -109,7 +117,7 @@ export function usePastExamResults(
     }
   };
 
-  /** 削除ボタン押下時（確認モーダルを開く） */
+  /** 削除ボタン押下時 */
   const handleDeleteClick = useCallback((recordId: number) => {
     setConfirmId(recordId);
   }, []);
