@@ -162,7 +162,8 @@ Google Sheetsのデータ構造変更に強い設計にしています。
 | コンポーネント | 用途 |
 | :--- | :--- |
 | `PageHeader` | ページタイトルとサブタイトル表示 |
-| `GlassCard` | グラスモーフィズム風のカードコンテナ |
+| `GlassCard` | グラスモーフィズム風のカードコンテナ。|
+| `GlassCardFoldable` | 折り畳めるバージョンの`GlassCard` |
 | `Button` | スタイル統一されたボタン |
 | `Skeleton` | ローディングプレースホルダー |
 | `DocumentLinkIcon` | Google Docs/Sheets へのリンクアイコン |

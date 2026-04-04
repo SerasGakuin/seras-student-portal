@@ -1,0 +1,66 @@
+.card {
+  /* 既存の変数をそのまま利用して一貫性を保持 */
+  background: var(--card-bg);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: var(--card-border-radius);
+  box-shadow: var(--shadow-card);
+  margin-bottom: 24px;
+  overflow: hidden; /* 折りたたみ時の必須設定 */
+  transition:
+    transform var(--transition-bounce),
+    box-shadow var(--transition-normal);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--card-padding);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.header:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.titleGroup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.titleText {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.badge {
+  background: rgba(0, 0, 0, 0.1);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+}
+
+.arrow {
+  font-size: 0.8rem;
+  transition: transform 0.3s ease;
+  opacity: 0.6;
+}
+
+.rotated {
+  transform: rotate(180deg);
+}
+
+.content {
+  /* cardのpaddingではなく、contentのpaddingとして定義することで、
+       閉じている時に余計な空白が出ないようにする */
+  padding: 0 var(--card-padding) var(--card-padding) var(--card-padding);
+}

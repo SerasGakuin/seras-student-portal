@@ -11,6 +11,9 @@ import styles from "./PastExamResultList.module.css";
 import { MockStudentPastExamResultRepository } from "@/repositories/mock/MockStudentPastExamResultRepository";
 
 export function PastExamResultList() { 
+  // --- 折りたたみ状態 (デフォルトは展開) ---
+  const [isExpanded, setIsExpanded] = useState(true);
+  
   // TODO: 2つとも今はモックなので、本番用データに差し替える。
   const resultRepo = new MockStudentPastExamResultRepository();
   const studentId = 123;
