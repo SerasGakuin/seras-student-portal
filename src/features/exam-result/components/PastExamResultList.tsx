@@ -66,6 +66,7 @@ export function PastExamResultList() {
       className="animate-slide-up"
       style={{ textAlign: "left", marginBottom: "1.5rem" }}
       title="記録されている成績一覧"
+      defaultExpanded={false} // デフォルトでおりたたみ
     >
       <section className={styles.section}>
         <hr className={styles.hr}></hr>
