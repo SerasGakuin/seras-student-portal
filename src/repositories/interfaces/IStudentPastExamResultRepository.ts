@@ -12,17 +12,19 @@
 export interface PastExamResult {
   /** results.id : 成績実績レコードのID */
   recordId: number;
-  /** results.exam_id : 試験定義のID */
+  /** results.examId : 試験定義のID */
   examId: number;
-  /** results.student_id : 生徒のID（studentsテーブルの内部ID） */
+  /** results.studentId : 生徒のID */
   studentId: number;
-  /** results.attempt_number : 同一試験に対する受験回数 */
+  /** results.studentIdType : 生徒を識別するためのタイプ */
+  studentIdType: string;
+  /** results.attemptNumber : 同一試験に対する受験回数 */
   attemptNumber: number;
-  /** results.total_score : 得点。未入力の場合はnull */
+  /** results.totalScore : 得点。未入力の場合はnull */
   totalScore: number | null;
   /** results.memo : メモ。不要な場合はnull */
   memo: string | null;
-  /** results.reg_utc_ms : レコード登録日時（UTCミリ秒） */
+  /** results.regUtcMs : レコード登録日時（UTCミリ秒） */
   regUtcMs: number;
 }
 
@@ -30,11 +32,11 @@ export interface PastExamResult {
  * 過去問結果を新規追加する際に必要なデータです。
  */
 export interface PastExamResultInput {
-  /** results.exam_id : 対象となる試験定義のID */
+  /** results.examId : 対象となる試験定義のID */
   examId: number;
-  /** results.attempt_number : 受験回数。省略した場合は1として扱われます */
+  /** results.attemptNumber    : 受験回数。省略した場合は1として扱われます */
   attemptNumber?: number;
-  /** results.total_score : 得点。未入力の場合は省略可能です */
+  /** results.totalScore : 得点。未入力の場合は省略可能です */
   totalScore?: number;
   /** results.memo : メモ。不要な場合は省略可能 */
   memo?: string | null;

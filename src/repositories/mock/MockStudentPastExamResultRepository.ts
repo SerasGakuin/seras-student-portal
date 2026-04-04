@@ -26,6 +26,7 @@ export class MockStudentPastExamResultRepository implements IStudentPastExamResu
       recordId: 0,
       examId: 999999,
       studentId: studentId,
+        studentIdType: "master_id",
       attemptNumber: 1,
       totalScore: 1234567890, // 型定義上は number なので受け入れ可能
       memo: "他のデータはランダム生成なので現実に存在する大学とは限りません",
